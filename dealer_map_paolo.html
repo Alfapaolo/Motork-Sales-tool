@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Dealer Map">
+<title>Dealer Map</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,sans-serif;background:#f5f5f0;height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+#toolbar{background:#fff;border-bottom:1px solid #e0e0d8;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;z-index:1000;flex-shrink:0}
+#bottom-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid #1a5cb8;padding:8px 10px;display:flex;gap:6px;align-items:center;z-index:2000;flex-shrink:0;flex-wrap:wrap}
+#map{flex:1;min-height:0;margin-bottom:70px}
+#omw-partenza,#omw-arrivo,#omw-via{border:1px solid #ccc;border-radius:6px;padding:5px 8px;font-size:13px;width:120px;outline:none}
+#omw-via{border-color:#f57c00;width:110px}
+#omw-via:focus{border-color:#f57c00;box-shadow:0 0 0 2px rgba(245,124,0,.2)}
+#omw-partenza:focus,#omw-arrivo:focus{border-color:#1a5cb8}
+.omw-via-label{font-size:10px;color:#f57c00;font-weight:700;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+#ai-search-panel{position:fixed;left:0;top:50px;bottom:70px;width:300px;background:#fff;border-right:2px solid #7b1fa2;z-index:1400;display:none;flex-direction:column;box-shadow:4px 0 16px rgba(0,0,0,.15)}
+#ai-search-header{background:#7b1fa2;color:#fff;padding:10px 12px;font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+#ai-search-close{background:none;border:none;color:#fff;font-size:18px;cursor:pointer;padding:0 2px;line-height:1}
+#ai-search-body{padding:10px;display:flex;flex-direction:column;gap:8px;flex:1;overflow:hidden}
+#ai-search-input{width:100%;border:1px solid #ce93d8;border-radius:6px;padding:7px 10px;font-size:13px;outline:none;resize:none;font-family:inherit;height:70px}
+#ai-search-input:focus{border-color:#7b1fa2}
+#ai-search-btn{background:#7b1fa2;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;align-self:flex-end}
+#ai-search-btn:active{transform:scale(.96)}
+#ai-search-results{overflow-y:auto;flex:1}
+#ai-search-status{font-size:11px;color:#888;padding:4px 0}
+.ai-item{border:1px solid #e0e0d8;border-radius:8px;padding:8px 10px;margin-bottom:6px;cursor:pointer;transition:background .15s}
+.ai-item:hover{background:#f9f0ff}
+.ai-item-name{font-weight:700;font-size:13px;color:#111;margin-bottom:3px}
+.ai-item-meta{font-size:11px;color:#666}
+.ai-item-badge{display:inline-block;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;margin-right:4px}
+#ai-search-toggle{background:#7b1fa2;color:#fff;border:none;border-radius:6px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+#map.ai-open{margin-left:300px}
+#omw-partenza:focus,#omw-arrivo:focus{border-color:#1a5cb8}
+#omw-km{border:1px solid #ccc;border-radius:6px;padding:5px 8px;font-size:13px;background:#fff;outline:none;cursor:pointer}
+#omw-go{background:#1a5cb8;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+#omw-go:active{transform:scale(.96)}
+#omw-clear{background:#e53935;color:#fff;border:none;border-radius:6px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer;display:none}
+#omw-export{background:#388e3c;color:#fff;border:none;border-radius:6px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer;display:none}
+.omw-label{font-size:10px;color:#1a5cb8;font-weight:700;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+#omw-result-panel{position:fixed;right:0;top:0;bottom:70px;width:280px;background:#fff;border-left:2px solid #1a5cb8;z-index:1500;display:none;flex-direction:column;box-shadow:-4px 0 16px rgba(0,0,0,.15)}
+#omw-panel-header{background:#1a5cb8;color:#fff;padding:10px 12px;font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+#omw-panel-close{background:none;border:none;color:#fff;font-size:18px;cursor:pointer;padding:0 2px;line-height:1}
+#omw-panel-list{overflow-y:auto;flex:1;padding:8px}
+.omw-item{border:1px solid #e0e0d8;border-radius:8px;padding:8px 10px;margin-bottom:6px;cursor:pointer;transition:background .15s}
+.omw-item:hover{background:#f0f4ff}
+.omw-item-name{font-weight:700;font-size:13px;color:#111;margin-bottom:3px}
+.omw-item-meta{font-size:11px;color:#666}
+.omw-item-dist{font-size:11px;color:#1a5cb8;font-weight:600;margin-top:3px}
+input[type=text]{border:1px solid #ddd;border-radius:6px;padding:5px 10px;font-size:13px;width:150px;outline:none}
+.btn{border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;white-space:nowrap;font-weight:500;transition:opacity .15s,transform .1s}
+.btn:active{transform:scale(.96)}
+.btn-blue{background:#1a5cb8;color:#fff}
+.btn-red{background:#e53935;color:#fff}
+.tb-label{font-size:10px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.divider{width:1px;height:22px;background:#e0e0d8;flex-shrink:0}
+.pill{border-radius:20px;padding:3px 9px;font-size:11px;font-weight:600;cursor:pointer;border:2px solid transparent;display:inline-block;transition:opacity .15s;user-select:none}
+.pill:active{transform:scale(.95)}
+.pill.off{opacity:.3}
+#status{font-size:11px;color:#888;white-space:nowrap}
+.popup-title{font-weight:600;font-size:14px;margin-bottom:6px;color:#111}
+.popup-row{font-size:12px;color:#444;margin-bottom:3px;display:flex;gap:6px}
+.popup-label{color:#888;min-width:72px;flex-shrink:0}
+.popup-badge{display:inline-block;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600}
+.popup-btn{margin-top:8px;width:100%;text-align:center;background:#1a5cb8;color:#ffe600;border:none;border-radius:6px;padding:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;display:block}
+#miss-bar{background:#fff3cd;border-bottom:1px solid #ffc107;padding:5px 10px;font-size:11px;color:#856404;display:none;flex-shrink:0;word-break:break-word}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:9999;display:none;white-space:nowrap}
+</style>
+</head>
+<body>
+<div id="toolbar">
+  <button class="btn btn-blue" onclick="document.getElementById('csv-input').click()">📂 Carica CSV</button>
+  <button class="btn btn-red" id="clear-btn" onclick="clearCache()">🗑 Svuota cache</button>
+  <input type="file" id="csv-input" accept=".csv,text/csv,text/plain,application/csv,application/vnd.ms-excel" style="display:none">
+  <span id="status">Carica un CSV per iniziare</span>
+  <div class="divider"></div>
+  <input type="text" id="search" placeholder="Cerca dealer…" oninput="filterMarkers()">
+  <button class="btn" style="background:#f5f5f0;padding:5px 8px;font-size:16px;line-height:1" onclick="locateMe()" title="Vicino a me">📍</button>
+  <button id="ai-search-toggle" onclick="toggleAiSearch()" title="Ricerca AI">🤖 AI Search</button>
+  <div class="divider"></div>
+  <span class="tb-label">Tipo</span>
+  <button class="btn" style="font-size:10px;padding:3px 6px" onclick="selAllTypes()">✓</button>
+  <button class="btn" style="font-size:10px;padding:3px 6px" onclick="selNoneTypes()">✗</button>
+  <div id="type-filters" style="display:flex;gap:3px;flex-wrap:wrap"></div>
+  <div class="divider"></div>
+  <span class="tb-label">Rating</span>
+  <div id="rating-filters" style="display:flex;gap:3px;flex-wrap:wrap"></div>
+</div>
+<div id="miss-bar" style="display:none"><span id="miss-text"></span><button onclick="downloadErrors()" style="font-size:10px;padding:2px 7px;border:1px solid #856404;border-radius:4px;background:#fff;color:#856404;cursor:pointer;white-space:nowrap">⬇ Scarica errori</button></div>
+<div id="map"></div>
+<!-- ON MY WAY BAR -->
+<div id="bottom-bar">
+  <span class="omw-label">🚗 On My Way</span>
+  <input type="text" id="omw-partenza" placeholder="Partenza…" value="">
+  <input type="text" id="omw-via" placeholder="Via… (opz.)" title="Passa per questo comune o concessionaria">
+  <input type="text" id="omw-arrivo" placeholder="Arrivo…" value="Gorle">
+  <select id="omw-km">
+    <option value="5">± 5 km</option>
+    <option value="10" selected>± 10 km</option>
+    <option value="15">± 15 km</option>
+  </select>
+  <button id="omw-go" onclick="runOnMyWay()">🔍 Cerca</button>
+  <button id="omw-clear" onclick="clearRoute()">✕ Pulisci</button>
+  <button id="omw-export" onclick="exportTXT()">⬇ TXT</button>
+</div>
+
+<!-- RESULT PANEL -->
+<div id="omw-result-panel">
+  <div id="omw-panel-header">
+    <span id="omw-panel-title">Dealer lungo il percorso</span>
+    <button id="omw-panel-close" onclick="document.getElementById('omw-result-panel').style.display='none'">✕</button>
+  </div>
+  <div id="omw-panel-list"></div>
+</div>
+
+<!-- AI SEARCH PANEL -->
+<div id="ai-search-panel">
+  <div id="ai-search-header">
+    <span>🤖 Ricerca AI Dealer</span>
+    <button id="ai-search-close" onclick="toggleAiSearch()">✕</button>
+  </div>
+  <div id="ai-search-body">
+    <textarea id="ai-search-input" placeholder="Es: concessionari Customer con WebSparK a Bergamo&#10;oppure: dealer senza LeadSparK in Piemonte con rating Hot"></textarea>
+    <div style="display:flex;gap:6px;align-items:center">
+      <button id="ai-search-btn" onclick="runAiSearch()">🔍 Cerca</button>
+      <span id="ai-search-status"></span>
+    </div>
+    <div id="ai-search-results"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+function toast(msg,duration){var t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(t._timer);t._timer=setTimeout(function(){t.style.display='none';},duration||2500);}
+
+var DB='dealermap',ST='csv';
+function dbOpen(){return new Promise(function(res,rej){var r=indexedDB.open(DB,1);r.onupgradeneeded=function(e){e.target.result.createObjectStore(ST);};r.onsuccess=function(e){res(e.target.result);};r.onerror=function(e){rej(e);};});}
+function dbSave(text){dbOpen().then(function(db){db.transaction(ST,'readwrite').objectStore(ST).put(text,'last');}).catch(function(){});}
+function dbLoad(){return dbOpen().then(function(db){return new Promise(function(res){var r=db.transaction(ST,'readonly').objectStore(ST).get('last');r.onsuccess=function(e){res(e.target.result||null);};r.onerror=function(){res(null);};});}).catch(function(){return null;});}
+function dbClear(){return new Promise(function(res,rej){var r=indexedDB.deleteDatabase(DB);r.onsuccess=res;r.onerror=rej;r.onblocked=res;});}
+
+var CITIES={};
+(function(){
+var raw=[
+"agrate brianza,45.5763,9.3525","alba,44.7008,8.0360","alessandria,44.9124,8.6151",
+"alpignano,45.0997,7.5244","aosta,45.7372,7.3205","arcore,45.6297,9.3203",
+"arconate,45.5500,8.8500","arenzano,44.4017,8.6836","arona,45.7597,8.5569",
+"asti,44.9003,8.2069","bareggio,45.4667,8.9833","barge,44.7167,7.3167",
+"baveno,45.9000,8.5000","bergamo,45.6983,9.6773","biella,45.5628,8.0530",
+"binasco,45.3333,9.0833","bollate,45.5381,9.1147","borgomanero,45.6933,8.4672",
+"borgosesia,45.7167,8.2833","bra,44.7000,7.8500","brescia,45.5415,10.2118",
+"bresso,45.5333,9.1833","brugherio,45.5500,9.2833","buccinasco,45.4167,9.0667",
+"busto arsizio,45.6114,8.8519","cagliari,39.2238,9.1217","calco,45.7500,9.4333",
+"caluso,45.3000,7.8833","cameri,45.5000,8.6667","cantu,45.7333,9.1333",
+"capriate san gervasio,45.6833,9.5333","carate brianza,45.6833,9.2333",
+"carignano,44.9000,7.6833","carmagnola,44.8500,7.7167","carnago,45.7333,8.9000",
+"caronno pertusella,45.5833,9.0333","carpi,44.7833,10.8833",
+"casale monferrato,45.1333,8.4500","casalpusterlengo,45.1833,9.6500",
+"casatenovo,45.6833,9.3167","casorate sempione,45.6667,8.7333",
+"cassano dadda,45.5167,9.5167","cassano magnago,45.6667,8.8167",
+"cassina de pecchi,45.5167,9.3500","castellanza,45.6167,8.8833",
+"castelletto sopra ticino,45.7167,8.6333","castelnuovo don bosco,44.9833,8.0167",
+"castiglione delle stiviere,45.3833,10.4833","cernusco sul naviglio,45.5167,9.3333",
+"cernuscosulnaviglio,45.5167,9.3333","cesano boscone,45.4500,9.0833",
+"cesano maderno,45.6167,9.1500","chieri,45.0000,7.8167","chivasso,45.1833,7.8833",
+"cinisello balsamo,45.5500,9.2167","cirie,45.2333,7.6000","cislago,45.6833,8.9667",
+"cologno monzese,45.5333,9.2833","como,45.8103,9.0861","cormano,45.5500,9.1667",
+"corsico,45.4333,9.1000","cortemilia,44.5833,8.1833","cossato,45.5667,8.1833",
+"crema,45.3578,9.6886","cremona,45.1333,10.0167","cuneo,44.3903,7.5486",
+"cusano milanino,45.5500,9.2000","dalmine,45.6500,9.6167","desio,45.6167,9.2167",
+"domodossola,46.1167,8.2833","erba,45.8167,9.2167","fagnano olona,45.6667,8.8667",
+"ferno,45.6667,8.7500","ferrara,44.8361,11.6197","fino mornasco,45.7500,9.0500",
+"firenze,43.7696,11.2558","fossano,44.5500,7.7167","gallarate,45.6578,8.7906",
+"garbagnate milanese,45.5667,9.0667","garlasco,45.2000,8.9167","gattico,45.7000,8.5167",
+"genova,44.4056,8.9463","gessate,45.5333,9.4333","giussano,45.7000,9.2167",
+"grugliasco,45.0667,7.5500","imperia,43.8886,8.0264","inzago,45.5333,9.4833",
+"ivrea,45.4667,7.8667","la spezia,44.1025,9.8238","lainate,45.5667,9.0167",
+"laveno mombello,45.9167,8.6167","leini,45.1833,7.7167",
+"lentate sul seveso,45.6833,9.1167","lissone,45.6167,9.2333",
+"locate di triulzi,45.3667,9.2167","lodi,45.3142,9.5031","lomazzo,45.7000,9.0333",
+"luino,46.0000,8.7333","magenta,45.4667,8.8833","malnate,45.8000,8.9000",
+"mandello del lario,45.9167,9.3167","manerbio,45.3667,10.1500","mantova,45.1564,10.7914",
+"mariano comense,45.7000,9.1667","marnate,45.6500,8.9000","meda,45.6667,9.1500",
+"melegnano,45.3583,9.3236","melzo,45.4833,9.4167","merate,45.7000,9.4167",
+"milano,45.4654,9.1859","moncalieri,44.9983,7.6833","mondovi,44.3833,7.8167",
+"monza,45.5833,9.2667","morbegno,46.1333,9.5667","mornago,45.7667,8.7833",
+"mortara,45.2500,8.7333","muggio,45.5833,9.2167","napoli,40.8522,14.2681",
+"nerviano,45.5500,8.9833","nichelino,44.9833,7.6500","nizza monferrato,44.7667,8.3500",
+"nova milanese,45.5833,9.2000","novara,45.4489,8.6222","novate milanese,45.5333,9.1333",
+"novi ligure,44.7603,8.7936","oggiono,45.7833,9.3667","omegna,45.8667,8.4167",
+"opera,45.3833,9.2000","orbassano,45.0000,7.5333","origgio,45.5833,9.0167",
+"paderno dugnano,45.5500,9.1667","palermo,38.1157,13.3615","parabiago,45.5500,8.9500",
+"pavia,45.1847,9.1583","peschiera borromeo,45.4333,9.3167","piacenza,45.0522,9.6931",
+"pioltello,45.5000,9.3333","pisa,43.7228,10.4017","poirino,44.9167,7.8333",
+"pontecurone,44.9667,8.7667","prato,43.8808,11.0961","racconigi,44.7667,7.6833",
+"rho,45.5267,9.0408","rivarolo canavese,45.3333,7.7167","rivoli,45.0667,7.5167",
+"robecco sul naviglio,45.4333,8.8833","roma,41.8955,12.4823",
+"ronco scrivia,44.6000,8.9500","rozzano,45.3833,9.1500","saluzzo,44.6444,7.4889",
+"saronno,45.6264,9.0350","sassari,40.7259,8.5556","savona,44.3089,8.4811",
+"segrate,45.4833,9.3000","seregno,45.6500,9.2000","sesto calende,45.7333,8.6333",
+"sesto san giovanni,45.5333,9.2333","settimo torinese,45.1333,7.7667",
+"seveso,45.6500,9.1333","siziano,45.3167,9.1500","solaro,45.6167,9.0667",
+"somma lombardo,45.6833,8.7167","sondrio,46.1697,9.8719","torino,45.0703,7.6869",
+"tortona,44.8958,8.8639","tradate,45.7167,8.9167","trecate,45.4333,8.7333",
+"treviglio,45.5236,9.5886","trieste,45.6503,13.7703","varese,45.8206,8.8257",
+"venaria reale,45.1167,7.6333","venezia,45.4375,12.3358","verbania,45.9333,8.5500",
+"vercelli,45.3197,8.4197","verona,45.4386,10.9928","vigevano,45.3167,8.8667",
+"vignate,45.5000,9.3833","villa guardia,45.7667,9.0167","villanova dasti,44.9333,8.0000",
+"vimercate,45.6167,9.3667","vinovo,44.9500,7.6333","vimodrone,45.5000,9.2833",
+"voghera,44.9931,9.0100","volpiano,45.2000,7.7833","volvera,44.9333,7.5833",
+"fenegro,45.7167,9.0333","gambolo,45.2500,8.8667","beinasco,45.0167,7.5833",
+"canelli,44.7167,8.2833","gaglianico,45.5500,8.0833","goito,45.2500,10.6667",
+"castrezzato,45.5167,9.9833","bagnolo piemonte,44.5667,7.3167",
+"trezzano sul naviglio,45.4167,9.0500","martignana po,45.1500,9.9667",
+"pianfei,44.4000,7.6500","porto mantovano,45.1833,10.8000","nebbiuno,45.7833,8.5167",
+"ternate,45.7833,8.7000","vigano san martino,45.7167,9.4167",
+"badia pavese,45.1167,9.1333","san zeno naviglio,45.4833,10.2167",
+"san maurizio canavese,45.2167,7.6333","cimena,45.1667,7.8500",
+"pessano con bornago,45.5500,9.3667","rezzato,45.5167,10.3167",
+"montirone,45.4667,10.1833","faloppio,45.8333,9.0000","castelcovati,45.5000,9.9667",
+"peveragno,44.3333,7.6167","curtatone,45.1333,10.7167","ceva,44.3833,8.0333",
+"chiari,45.5333,9.9333","robecchetto con induno,45.5333,8.8667",
+"bonate sopra,45.7167,9.5667","legnano,45.5953,8.9142","pedrengo,45.7000,9.7333",
+"castelverde,45.2000,10.0167","verdellino,45.6167,9.6000","asso,45.8667,9.2667",
+"sovico,45.6500,9.2667","senago,45.5667,9.0833","colico,46.1333,9.3833",
+"pavone canavese,45.4167,7.8500","san paolo,45.3500,9.0333","concesio,45.6167,10.2167",
+"caravaggio,45.5000,9.6500","ventimiglia,43.7897,7.6081",
+"castiglione olona,45.7333,8.8667","sanremo,43.8167,7.7667",
+"darfo boario terme,45.8833,10.1833","costa volpino,45.8667,10.1000",
+"albavilla,45.7833,9.2333","suzzara,44.9833,10.7333","albino,45.7667,9.8000",
+"bellusco,45.6167,9.3833","rovetta,45.9000,9.9667","gavirate,45.8333,8.7167",
+"sarezzo,45.6500,10.2000","berlingo,45.5000,10.0333","pontoglio,45.5500,9.8500",
+"moglia,44.9333,10.9167","turbigo,45.5333,8.7333","san vittore olona,45.6000,8.9667",
+"orzinuovi,45.4000,9.9167","vizzolo predabissi,45.3667,9.3333",
+"arquata scrivia,44.6833,8.8833","colico piano,46.1333,9.3833",
+"vedano al lambro,45.6167,9.2500","malonno,46.1167,10.3167","barzano,45.7167,9.3000",
+"basaluzzo,44.7667,8.7000","villadossola,46.0667,8.2667",
+"castiglione dadda,45.2833,9.6833","vertova,45.8000,9.8667",
+"bizzarone,45.8333,9.0167","treviolo,45.6833,9.6500","lecco,45.8564,9.3939",
+"lallio,45.6667,9.6667","secugnago,45.2333,9.5500","oleggio,45.5833,8.6333",
+"torre boldone,45.7167,9.7500","cavaria con premezzo,45.6833,8.8000",
+"urgnano,45.6167,9.6833","caresanablot,45.3500,8.3333","paruzzaro,45.7500,8.5167",
+"quinzano doglio,45.3667,10.0167","besana brianza,45.7000,9.2833",
+"romano di lombardia,45.5167,9.7500","burolo,45.4333,7.9167",
+"almenno san salvatore,45.7333,9.5833","mozzo,45.7000,9.6667",
+"olgiate molgora,45.7500,9.3833","clusone,45.8833,9.9500","capo di ponte,46.0333,10.3500",
+"chiuduno,45.6667,9.8333","valmadrera,45.8333,9.3667","pisano,45.7833,8.5000",
+"borgo san dalmazzo,44.3333,7.4833","sarnico,45.6667,9.9667","gorlago,45.6667,9.8167",
+"cosseria,44.3833,8.1833","breno,45.9500,10.3000","villongo,45.6500,9.9333",
+"piossasco,44.9833,7.4667","cavernago,45.6500,9.7833","rondissone,45.2333,7.9667",
+"gravellona toce,45.9167,8.4667","iseo,45.6500,10.0500","nibionno,45.7500,9.3167",
+"grumello del monte,45.6333,9.8167","galbiate,45.8167,9.3667","parre,45.8833,9.9667",
+"varedo,45.5833,9.1667","san secondo pinerolo,44.8667,7.2833",
+"vanzaghello,45.5500,8.8000","san paolo dargon,45.7333,9.8167",
+"calusco dadda,45.7833,9.4667","chiavari,44.3167,9.3167","capriolo,45.6333,9.9333",
+"mongrando,45.5500,8.0667","marcallo con casone,45.5000,8.8667",
+"roe volciano,45.5667,10.4167","lerici,44.0667,9.9167","limbiate,45.6000,9.1167",
+"besozzo,45.8667,8.6667","albenga,44.0500,8.2167","isorella,45.3500,10.3667",
+"paitone,45.5333,10.4000","castagnole delle lanze,44.7500,8.1500",
+"gorle,45.7000,9.7167","coccaglio,45.5500,9.9500","cornegliano laudense,45.2833,9.5833",
+"stradella,45.0833,9.3000","rovato,45.5667,9.9833","nosate,45.5000,8.7833",
+"diano marina,43.9167,8.0667","luserna san giovanni,44.8000,7.2500",
+"abbiategrasso,45.4000,8.9167","brembate di sopra,45.7333,9.5667",
+"palosco,45.6167,9.8667","mesenzana,45.9667,8.7333","gianico,45.9333,10.2333",
+"castano primo,45.5500,8.7833","olgiate olona,45.6333,8.8833",
+"nuvolera,45.5333,10.3667","albano santlessandro,45.7000,9.7500",
+"dubino,46.1333,9.4667","rapallo,44.3500,9.2333","scanzorosciate,45.7167,9.7667",
+"bozzolo,45.1000,10.4833","verolanuova,45.3333,10.0667",
+"pogliano milanese,45.5333,9.0000","saltrio,45.8833,8.9333",
+"piedimulera,46.0167,8.2500","ospitaletto,45.5500,10.0500",
+"castelli calepio,45.6333,9.8833","robbiate,45.7333,9.4333",
+"castiglione torinese,45.1333,7.8000","osnago,45.7167,9.3833",
+"arsago seprio,45.6833,8.7333","paratico,45.6500,9.9333",
+"cosio valtellino,46.1167,9.6167","castagnito,44.7167,8.0167",
+"rivalta di torino,45.0167,7.5333","curno,45.6833,9.6167","montorfano,45.7833,9.2000",
+"giaveno,45.0333,7.3500","serravalle sesia,45.6833,8.3000","prevalle,45.5333,10.4167",
+"cairate,45.7000,8.9000","olgiate comasco,45.7833,9.0000",
+"casnate con bernate,45.7667,9.0667","villasanta,45.5833,9.3000",
+"borgo san giovanni,45.2667,9.5000","nembro,45.7500,9.7500","verdello,45.6000,9.6333",
+"calcinato,45.4500,10.4167","lumezzane,45.6333,10.2667","seriate,45.6833,9.7333",
+"sandigliano,45.5500,8.1167","pontida,45.7500,9.5333","martinengo,45.5667,9.7833",
+"ornago,45.5833,9.3667","savigliano,44.6500,7.6500","busca,44.5167,7.4833",
+"valbrembo,45.7333,9.6167","sannazzaro de burgondi,45.1167,8.9000",
+"dogliani,44.5333,7.9500","brembate,45.7000,9.5333","salo,45.6000,10.5167",
+"montano lucino,45.7833,9.0500","camporosso,43.7833,7.6333",
+"antegnate,45.5167,9.8000","gussago,45.5667,10.1333","roncadelle,45.5167,10.1667",
+"travagliato,45.5167,9.9667","castegnato,45.5500,10.0167","gonzaga,44.9500,10.8167",
+"masserano,45.6000,8.2167","passirano,45.5833,10.0333","gavardo,45.5833,10.4333",
+"desenzano del garda,45.4667,10.5333","trofarello,44.9667,7.7333",
+"bolzano,46.4983,11.3548","saluggia,45.2333,8.0333","montichiari,45.4167,10.3833",
+"barzago,45.7500,9.3500","san giuliano milanese,45.4000,9.2833",
+"bedizzole,45.5333,10.3833","inverigo,45.7167,9.2167","carcare,44.3500,8.1833",
+"albisola superiore,44.3333,8.5083","cirimido,45.7500,9.0333","cuveglio,45.9167,8.7167",
+"esine,45.9333,10.2500","scarmagno,45.4167,7.9667","sarzana,44.1167,9.9667",
+"erbusco,45.5833,9.9667","acqui terme,44.6833,8.4667","cerro maggiore,45.5833,8.9500",
+"ozegna,45.3333,7.7667","broni,45.0667,9.2667","casalmaggiore,44.9833,10.4167",
+"pieve emanuele,45.3667,9.1500","villanova di mondovi,44.3500,7.7833",
+"quistello,45.0000,10.9833","grassobbio,45.6500,9.7000",
+"lurago derba,45.7500,9.2000","liscate,45.4833,9.3833","ranica,45.7167,9.7333",
+"cittiglio,45.9333,8.7000","trenzano,45.4833,9.9667","caponago,45.5333,9.3333",
+"cavenago di brianza,45.5667,9.3833","lesmo,45.6500,9.3000","viadana,44.9333,10.5167",
+"livraga,45.2000,9.5500","calolziocorte,45.8000,9.4333","brandizzo,45.1667,7.8500",
+"casteggio,45.0167,9.1333","zanica,45.6167,9.6667",
+"boffalora sopra ticino,45.4833,8.8500","costa masnaga,45.7333,9.3000",
+"san martino in strada,45.2833,9.5167","grandate,45.7833,9.0667",
+"san francesco al campo,45.2000,7.6667","samolaco,46.2500,9.3833",
+"induno olona,45.8500,8.8833","codogno,45.1667,9.7000","bormio,46.4667,10.3667",
+"montecrestese,46.1667,8.3000","mappano,45.1500,7.6667","biassono,45.6167,9.2667",
+"canegrate,45.5667,8.9167","trivolzio,45.2500,9.0000","missaglia,45.7167,9.3333",
+"usmate velate,45.6333,9.3500","bussero,45.5167,9.3500","collegno,45.0833,7.5667",
+"gorla maggiore,45.6667,8.8833","mazzano,45.5333,10.3833",
+"borgaro torinese,45.1500,7.6500","orsenigo,45.8167,9.1500",
+"cura carpignano,45.2167,9.1500","odolo,45.6000,10.4167",
+"rivolta dadda,45.4833,9.5167","jerago con orago,45.6833,8.8167",
+"san martino siccomario,45.1667,9.1500","telgate,45.6333,9.8500","assago,45.4000,9.1333",
+"prato sesia,45.6500,8.3500","varazze,44.3583,8.5833","pero,45.5000,9.0833",
+"lavena ponte tresa,45.9667,8.8500","cornaredo,45.4833,9.0333",
+"cigliano,45.3000,8.0167","vermezzo,45.3833,9.0000",
+"sedriano,45.4833,8.9667","castello di annone,44.8833,8.3333",
+"verolavecchia,45.3167,10.1167","susa,45.1333,7.0500",
+"cairo montenotte,44.4000,8.2667","balangero,45.2667,7.5833",
+"nuvolento,45.5333,10.4000","gerenzano,45.6333,9.0000",
+"montagna in valtellina,46.1667,9.9167","montanaso lombardo,45.3000,9.5167",
+"piancogno,45.9667,10.3000","ghedi,45.4000,10.2833","chignolo po,45.1333,9.5500",
+"gardone val trompia,45.6833,10.1833","bariano,45.5500,9.7833",
+"talamona,46.1500,9.6167","sirone,45.7333,9.3333","torbole casaglia,45.5000,10.1833",
+"volta mantovana,45.3167,10.6500","narzole,44.5833,7.7833",
+"pecetto torinese,45.0000,7.7667","bernate ticino,45.5000,8.7833","varzi,44.8167,9.1833",
+"romagnano sesia,45.6333,8.3667","civate,45.8333,9.3500","albairate,45.4167,8.9333",
+"bianzone,46.2667,9.9500","san giorgio canavese,45.3333,7.8000",
+"almenno san bartolomeo,45.7333,9.5500","stezzano,45.6500,9.6667",
+"sermide,45.0000,11.3000","verano brianza,45.6167,9.2333",
+"cividate camuno,45.9667,10.3000","carnate,45.6333,9.3833","sovere,45.8333,9.9833",
+"san pellegrino terme,45.8333,9.6667","montello,45.6500,9.8500",
+"inveruno,45.5167,8.8500","carpenedolo,45.3667,10.4333",
+"rodengo saiano,45.5833,10.0833","solbiate olona,45.6333,8.8333",
+"robassomero,45.2167,7.5833","torre pellice,44.8167,7.2167",
+"monticello dalba,44.7333,7.9833","finale ligure,44.1667,8.3333",
+"guidizzolo,45.3167,10.5833","truccazzano,45.4833,9.4167","lavagna,44.3000,9.3500",
+"landriano,45.3167,9.2333","cuorgne,45.3833,7.6500","pantigliate,45.4333,9.3333",
+"uboldo,45.6167,9.0167","bernareggio,45.6333,9.3500","magnago,45.5667,8.8000",
+"valenza,45.0167,8.6500","alzate brianza,45.7667,9.1833","baranzate,45.5333,9.1167",
+"robbio,45.2833,8.5833","samarate,45.6333,8.7833",
+"berbenno di valtellina,46.2000,9.7833","cavour,44.7833,7.3667",
+"tavernerio,45.8000,9.1167","cardano al campo,45.6667,8.7333",
+"filago,45.6667,9.6000","mediglia,45.3833,9.3333","suno,45.6333,8.5500",
+"zibido san giacomo,45.3500,9.0833","cannobio,46.0667,8.7000","vergiate,45.7167,8.7000",
+"canale,44.7833,7.9833","azzate,45.8000,8.7500","mozzate,45.6833,8.9833",
+"bovisio masciago,45.6000,9.1500","rosta,45.0667,7.4500","ovada,44.6333,8.6333",
+"bernezzo,44.3833,7.5667","sabbioneta,44.9833,10.4833",
+"trescore balneario,45.6833,9.8500","gazzada schianno,45.8000,8.8000",
+"verbania trobaso,45.9167,8.5667","prata camportaccio,46.2333,9.4167",
+"arluno,45.5000,8.9333","dolzago,45.7833,9.3833","gavi,44.6833,8.8000",
+"taggia,43.8500,7.8500","dello,45.4500,10.1667","leno,45.3667,10.2167",
+"san gervasio bresciano,45.2333,10.2000","eupilio,45.8333,9.2500",
+"bisuschio,45.8833,8.8833","vaiano cremasco,45.3500,9.7167","olginate,45.8000,9.4167",
+"vestone,45.7167,10.4167","calcinate,45.6667,9.8000","casnigo,45.8167,9.8833",
+"savignone,44.5500,9.0000","rosate,45.3500,9.0500","poncarale,45.4833,10.2167",
+"crescentino,45.2000,8.1000","cambiano,44.9667,7.7833",
+"san giovanni bianco,45.8500,9.6667","zogno,45.7833,9.6833",
+"lacchiarella,45.3500,9.1333","vobarno,45.6333,10.4833","offlaga,45.3833,10.1167",
+"suisio,45.6833,9.5833","adro,45.6167,9.9667","frossasco,44.9167,7.3833",
+"pianezza,45.1000,7.5500","pinerolo,44.8833,7.3333","corbetta,45.4667,8.9167",
+"barlassina,45.6500,9.1333","serravalle scrivia,44.7333,8.8500",
+"strambino,45.3833,7.8833","castenedolo,45.4833,10.3167","sorisole,45.7500,9.7000",
+"pompiano,45.4333,10.0167","predosa,44.7667,8.6833","andora,43.9500,8.1333",
+"biandronno,45.8333,8.6833","bottanuco,45.7000,9.5500","molteno,45.7833,9.3333",
+"lonate pozzolo,45.6000,8.7500","varallo,45.8167,8.2667",
+"ardesio,45.9667,9.9500","gozzano,45.7500,8.4667","pandino,45.4000,9.5500",
+"artogne,45.9000,10.2500","cassago brianza,45.7167,9.2833",
+"brignano gera dadda,45.5333,9.6500","cherasco,44.7333,7.8500",
+"borgo san giacomo,45.4000,10.0167","pegognaga,44.9833,10.8333",
+"cadrezzate con osmate,45.8167,8.6333","centro valle intelvi,45.9833,9.0833",
+"brissago valtravaglia,46.0000,8.7167","san maurizio dopaglio,45.8000,8.4000",
+"lonato del garda,45.4667,10.5000","lonato,45.4667,10.5000",
+"avigliana,45.0833,7.3833","orio al serio,45.6667,9.7000","medolago,45.7000,9.5000",
+"lurate caccivio,45.7833,9.0333","fornovo san giovanni,45.5500,9.7833",
+"niardo,46.0000,10.2833","endine gaiano,45.8167,9.9833",
+"gazzaniga,45.8167,9.8000","polesine di pegognaga,44.9833,10.8333",
+"san germano vercellese,45.3667,8.2833","gozzolina,45.1167,10.8833",
+"unita produttiva,45.4654,9.1859","prosto,46.2833,9.7500",
+"vicomoscano,44.9833,10.4333","guarene,44.7333,8.0333","miano,45.1500,9.9667",
+"alessandria fraz san michele,44.9124,8.6151","ceto,46.0167,10.3667",
+"ospiate di bollate,45.5381,9.1147","genivolta,45.3167,9.8833",
+"longarone,46.2667,12.3000","brugnato,44.2333,9.7000","postalesio,46.1833,9.7333",
+"case lidora,45.2000,9.1000","fara olivana con sola,45.5000,9.7667",
+"prezzate,45.6667,9.8167","alme,45.7500,9.6167","molino dei torti,44.9333,8.8667",
+"grazie di curtatone,45.1333,10.7167","motta,45.2667,9.0500",
+"ubiale clanezzo,45.7833,9.5667","porlezza,46.0333,9.1333",
+"monticelli brusati,45.6000,10.0167","treiso,44.6833,8.1167",
+"terrazzano di rho,45.5267,9.0408","ticengo,45.3000,9.8167",
+"lanzo torinese,45.2667,7.4667","noviligure,44.7603,8.7936",
+"mornico al serio,45.6000,9.8500","isso,45.5667,9.8167","entratico,45.6833,9.8833",
+"brivio,45.7500,9.4500","songavazzo,45.9167,9.9500",
+"pozzolo formigaro,44.8167,8.8167","sesta godano,44.3000,9.6333",
+"montiglio monferrato,45.0500,8.1000","casone,45.1333,10.7167",
+"zelo surrigone,45.3833,9.0167","cadegliano viconago,45.9167,8.8500",
+"tavazzano con villavesco,45.3000,9.5000","senna comasco,45.7833,9.0500",
+"senna camasco,44.9333,8.4667","piamborno,45.9667,10.3000","vicolungo,45.4833,8.5000",
+"cremosano,45.3667,9.6833","cureggio,45.6667,8.4667","verrua savoia,45.1667,8.1167",
+"borgaretto di beinasco,45.0167,7.5833","banchette,45.4333,7.8667",
+"ceranova,45.2500,9.1000","cusago,45.4500,9.0333",
+"zingonia verdellino,45.6167,9.6000","casalzuigno,45.9333,8.7333",
+"frabosa sottana,44.2833,7.7833","bodio lomnago,45.8167,8.7167",
+"mandolossa,45.5833,10.1667","gallaratre,45.6578,8.7906",
+"gavardo brescia,45.5833,10.4333","valdaro,45.1333,10.8167",
+"calvatone,45.1000,10.4167","trezzo sulladda,45.5833,9.5333",
+"concorezzo,45.5833,9.3333","bricherasio,44.8333,7.2833","boves,44.3333,7.5500",
+"argegno,45.9333,9.1333","borgaretto,45.0167,7.5833","raffa,45.5167,10.5333",
+"rescaldina,45.6167,8.9500","giaglione,45.1333,6.9833",
+"torrazza coste,45.0000,9.1167","grantola,45.9500,8.7500",
+"vaprio dagogna,45.6833,8.5500","albissola marina,44.3289,8.5078",
+"brusnengo,45.5833,8.2500","madignano,45.3667,9.7167",
+"cisano bergamasco,45.7833,9.4833","lozza,45.8167,8.8000",
+"bassano bresciano,45.3167,10.2167","carpeneto,44.6833,8.6167",
+"fizzonasco,45.3500,9.1000","villanuova sul clisi,45.5833,10.4000",
+"castiraga vidardo,45.2833,9.5500","verbania fraz trobaso,45.9167,8.5667",
+"vellezzo bellini,45.2167,9.0833","arcene,45.6500,9.6167",
+"campospinoso,45.1000,9.2167","zibido san giacomo frazione badile,45.3500,9.0833",
+"20099,45.3583,9.3236","22090,45.7833,9.0500",
+"monta,44.7167,7.9833","beinette,44.3833,7.6333","sonico,46.1500,10.3500",
+"rivanazzano terme,44.9167,9.0000","bulgarograsso,45.7833,9.0500",
+"cambiago,45.5500,9.4000","cava manara,45.1500,9.1333",
+"albizzate,45.7500,8.8167","osio sopra,45.6833,9.6000","coazze,45.0333,7.3167",
+"cervere,44.6333,7.6667","marmirolo,45.2167,10.7500",
+"alzano lombardo,45.7333,9.7333","bulciago,45.7500,9.3167",
+"fara gera dadda,45.5500,9.5167","san giorgio bigarello,45.1500,10.9167",
+"madonna dolmo,44.3500,7.5500","madonna dellolmo,44.3500,7.5500",
+"mesanzana,45.9667,8.7333","orzivecchi,45.4167,10.0000",
+"cominetti,45.4654,9.1859","palazzolo sulloglio,45.5833,9.8833",
+"zona industriale di calcinato,45.4500,10.4167","hella,45.4654,9.1859",
+"localita produttiva mandolossa,45.5833,10.1667","isano bergamasco,45.7833,9.4833",
+"turate,45.6833,9.0333","carbonate,45.7333,9.0000","renate,45.7167,9.2167",
+"vado ligure,44.2833,8.4333","flero,45.4833,10.2000",
+"spinetta marengo,44.8833,8.6667","ispra,45.8333,8.6000",
+"rovasenda,45.5500,8.2333","mede,45.1000,8.7167","luni,44.0833,10.0167",
+"molinetto di mazzano,45.5333,10.3833","zona artigianale d3,45.4654,9.1859",
+"localita oriolo,45.4654,9.1859","margattino,45.4654,9.1859",
+"piano di valeriano bottagna,44.1000,9.8500","cisano bergamasco,45.7833,9.4833",
+"cernusco sul naviglio,45.5167,9.3333","cernuscosulnaviglio,45.5167,9.3333",
+"parma,44.8015,10.3279",
+"bologna,44.4949,11.3426",
+"modena,45.1372,10.9242",
+"reggio emilia,44.6989,10.6297",
+"reggio nell emilia,44.6989,10.6297",
+"massa,44.0355,10.1401",
+"carrara,44.0795,10.0986",
+"trento,46.0748,11.1217",
+"vicenza,45.5455,11.5354",
+"padova,45.4064,11.8768",
+"treviso,45.6669,12.2432",
+"udine,46.0637,13.2354",
+"livorno,43.5485,10.3106",
+"siena,43.3186,11.3307",
+"perugia,43.1121,12.3888",
+"ancona,43.6158,13.5189",
+"forli,44.2227,12.0407",
+"rimini,44.0678,12.5695",
+"ravenna,44.4184,12.2035",
+"cesena,44.1396,12.2463"
+];
+raw.forEach(function(l){var p=l.split(',');if(p.length===3)CITIES[p[0].trim()]=[parseFloat(p[1]),parseFloat(p[2])];});
+})();
+
+function normalizeCity(c){
+  return (c||'').toLowerCase().trim()
+    .replace(/ã¹/g,'u').replace(/ã²/g,'o').replace(/ã /g,'a')
+    .replace(/ã¨/g,'e').replace(/ã¬/g,'i').replace(/ã©/g,'e')
+    .replace(/[àáâã]/g,'a').replace(/[èéêë]/g,'e')
+    .replace(/[ìíîï]/g,'i').replace(/[òóôõö]/g,'o')
+    .replace(/[ùúûü]/g,'u').replace(/[''`]/g,' ')
+    .replace(/-/g,' ').replace(/\s+/g,' ').trim();
+}
+
+function getCityCoords(city){
+  if(!city) return null;
+  var k=normalizeCity(city);
+  if(CITIES[k]) return {lat:CITIES[k][0],lng:CITIES[k][1]};
+  var keys=Object.keys(CITIES),w=k.split(' ')[0];
+  for(var i=0;i<keys.length;i++)
+    if(keys[i].indexOf(w)===0&&Math.abs(keys[i].length-k.length)<5)
+      return {lat:CITIES[keys[i]][0],lng:CITIES[keys[i]][1]};
+  return null;
+}
+
+async function geocodeCitiesBatch(list){
+  var prompt='Sei un geocoder. Lista di città italiane. Rispondi SOLO con JSON valido, niente markdown. Formato: {"nome": [lat,lng]}. Città:\n'+list.join('\n');
+  try{
+    var r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:4000,messages:[{role:'user',content:prompt}]})});
+    var d=await r.json();
+    var t=(d.content&&d.content[0]&&d.content[0].text)||'';
+    t=t.replace(/```json|```/g,'').trim();
+    var obj=JSON.parse(t);
+    Object.keys(obj).forEach(function(c){var v=obj[c];if(Array.isArray(v)&&v.length===2){var k=normalizeCity(c);CITIES[k]=[parseFloat(v[0]),parseFloat(v[1])];}});
+  }catch(e){}
+}
+
+var map,markerLayer,markers=[],activeTypes=new Set(),activeRatings=new Set();
+var TC={'Customer':'#1eb854','Customer GA':'#1eb854','Customer Prospect':'#f5c400','Ex Customer':'#9e9e9e','New':'#1a5cb8','New Prospect':'#f5c400','Prospect':'#f5c400','Cliente':'#1eb854','Lead':'#f5c400','Partner':'#1a5cb8','Competitor':'#9c27b0','default':'#888'};
+var RI={'Hot':{c:'#e53935',s:14},'Warm':{c:'#e6851a',s:12},'Cold':{c:'#4a90d9',s:10},'Important':{c:'#e53935',s:14},'Medium':{c:'#e6851a',s:12},'Not important':{c:'#4a90d9',s:10},'default':{c:'#aaa',s:10}};
+function tc(t){return TC[t]||TC.default;}
+function ri(r){return RI[r]||RI.default;}
+
+// Rimuovi zoom controls, aggiunge seleziona/deseleziona tipo
+function initMap(){
+  if(map) return;
+  map=L.map('map',{zoomControl:false}).setView([45.4,9.2],7);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(map);
+  markerLayer=L.layerGroup().addTo(map);
+}
+
+function makeIcon(d){
+  var col=tc(d.Customer_Type__c),r=ri(d.Rating),s=r.s;
+  var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+(s*2)+'" height="'+(s*2)+'" viewBox="0 0 '+(s*2)+' '+(s*2)+'">'
+    +'<circle cx="'+s+'" cy="'+s+'" r="'+(s-2)+'" fill="'+col+'" stroke="white" stroke-width="2"/>'
+    +'<circle cx="'+s+'" cy="'+s+'" r="'+Math.floor(s/3)+'" fill="white" opacity=".9"/>'
+    +'</svg>';
+  return L.divIcon({html:svg,className:'',iconSize:[s*2,s*2],iconAnchor:[s,s],popupAnchor:[0,-s]});
+}
+
+function buildPopup(d){
+  var col=tc(d.Customer_Type__c);
+  var nav='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent((d.BillingStreet||'')+' '+(d.BillingCity||'')+' Italy');
+  return '<div class="popup-title">'+d.Name+'</div>'
+    +'<div class="popup-row"><span class="popup-label">Città</span><span>'+(d.BillingCity||'—')+'</span></div>'
+    +'<div class="popup-row"><span class="popup-label">Tipo</span><span class="popup-badge" style="background:'+col+'22;color:'+col+';border:1px solid '+col+'44">'+(d.Customer_Type__c||'—')+'</span></div>'
+    +'<div class="popup-row"><span class="popup-label">Rating</span><span>'+(d.Rating||'—')+'</span></div>'
+    +'<div class="popup-row"><span class="popup-label">Azienda</span><span>'+(d.Company_type__c||'—')+'</span></div>'
+    +'<div class="popup-row"><span class="popup-label">Brand</span><span>'+(d.Official_brand__c||'—')+'</span></div>'
+    +'<div class="popup-row"><span class="popup-label">Provider</span><span>'+(d.Website_Provider__c||'—')+'</span></div>'
+    +'<div class="popup-row"><span class="popup-label">Prodotti</span><span style="max-width:160px;word-break:break-word">'+(d.Active_Products_List__c||'—')+'</span></div>'
+    +'<a class="popup-btn" href="'+nav+'" target="_blank">🗺 Naviga con Google Maps</a>';
+}
+
+function buildFilters(dealers){
+  var types=[...new Set(dealers.map(function(d){return d.Customer_Type__c;}).filter(Boolean))].sort();
+  var ratings=[...new Set(dealers.map(function(d){return d.Rating;}).filter(Boolean))].sort();
+  activeTypes=new Set(types);activeRatings=new Set(ratings);
+  var tf=document.getElementById('type-filters');tf.innerHTML='';
+  types.forEach(function(t){
+    var p=document.createElement('span');p.className='pill';p.textContent=t;
+    p.style.cssText='background:'+tc(t)+'22;border-color:'+tc(t)+';color:'+tc(t);
+    p.onclick=function(){if(activeTypes.has(t)){if(activeTypes.size>1){activeTypes.delete(t);p.classList.add('off');}}else{activeTypes.add(t);p.classList.remove('off');}filterMarkers();};
+    tf.appendChild(p);
+  });
+  var rf=document.getElementById('rating-filters');rf.innerHTML='';
+  ratings.forEach(function(r){
+    var info=ri(r);var p=document.createElement('span');p.className='pill';p.textContent=r;
+    p.style.cssText='background:'+info.c+'22;border-color:'+info.c+';color:'+info.c;
+    p.onclick=function(){if(activeRatings.has(r)){if(activeRatings.size>1){activeRatings.delete(r);p.classList.add('off');}}else{activeRatings.add(r);p.classList.remove('off');}filterMarkers();};
+    rf.appendChild(p);
+  });
+}
+
+function filterMarkers(){
+  var q=document.getElementById('search').value.toLowerCase().trim();
+  markerLayer.clearLayers();
+  markers.forEach(function(o){
+    var d=o.dealer;
+    if((!d.Customer_Type__c||activeTypes.has(d.Customer_Type__c))&&(!d.Rating||activeRatings.has(d.Rating))&&(!q||d.Name.toLowerCase().includes(q)))
+      markerLayer.addLayer(o.marker);
+  });
+}
+
+function placeMarker(d,coords){
+  var jlat=(Math.random()-0.5)*0.025,jlng=(Math.random()-0.5)*0.025;
+  var m=L.marker([coords.lat+jlat,coords.lng+jlng],{icon:makeIcon(d)});
+  m.bindPopup(buildPopup(d),{maxWidth:260});
+  markers.push({marker:m,dealer:d});
+  if((!d.Customer_Type__c||activeTypes.has(d.Customer_Type__c))&&(!d.Rating||activeRatings.has(d.Rating)))
+    markerLayer.addLayer(m);
+}
+
+var _missedCities=[];
+function showMissBar(missed){
+  _missedCities=missed;
+  var mb=document.getElementById('miss-bar');
+  document.getElementById('miss-text').textContent='⚠ '+missed.length+' dealer non posizionati: '+missed.slice(0,5).join(', ')+(missed.length>5?'…':'');
+  mb.style.display='flex';
+  clearTimeout(mb._timer);
+  mb._timer=setTimeout(function(){mb.style.display='none';},10000);
+}
+function downloadErrors(){
+  var blob=new Blob([_missedCities.join('\n')],{type:'text/plain'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='dealer_non_posizionati.txt';
+  a.click();
+}
+function selAllTypes(){
+  activeTypes=new Set([...document.getElementById('type-filters').querySelectorAll('.pill')].map(function(p){var v=p.textContent.trim();activeTypes.add(v);p.classList.remove('off');return v;}));
+  filterMarkers();
+}
+function selNoneTypes(){
+  document.getElementById('type-filters').querySelectorAll('.pill').forEach(function(p){activeTypes.delete(p.textContent.trim());p.classList.add('off');});
+  filterMarkers();
+}
+
+async function processCSVText(csvText){
+  markers=[];activeTypes=new Set();activeRatings=new Set();
+  if(markerLayer) markerLayer.clearLayers();
+  document.getElementById('type-filters').innerHTML='';
+  document.getElementById('rating-filters').innerHTML='';
+  document.getElementById('miss-bar').style.display='none';
+  document.getElementById('status').textContent='Elaborazione…';
+  Papa.parse(csvText,{header:true,skipEmptyLines:true,complete:async function(res){
+    var dealers=res.data.filter(function(d){return d.Name&&d.BillingCity;});
+    buildFilters(dealers);
+    var toGeocode=[];
+    dealers.forEach(function(d){var c=getCityCoords(d.BillingCity);if(c)placeMarker(d,c);else toGeocode.push(d);});
+    document.getElementById('status').textContent=markers.length+' dealer';
+    if(markers.length>0){var g=L.featureGroup(markers.map(function(o){return o.marker;}));map.fitBounds(g.getBounds().pad(.1));}
+    var stillMissed=[];
+    if(toGeocode.length>0){
+      var uniq=[...new Set(toGeocode.map(function(d){return d.BillingCity;}))];
+      for(var i=0;i<uniq.length;i+=80){await geocodeCitiesBatch(uniq.slice(i,i+80));await sleep(200);}
+      toGeocode.forEach(function(d){var c=getCityCoords(d.BillingCity);if(c)placeMarker(d,c);else stillMissed.push(d.BillingCity);});
+      filterMarkers();
+      document.getElementById('status').textContent=markers.length+' dealer';
+      if(markers.length>0){var g2=L.featureGroup(markers.map(function(o){return o.marker;}));map.fitBounds(g2.getBounds().pad(.1));}
+    }
+    var mb=document.getElementById('miss-bar');
+    if(stillMissed.length>0){var uniqM=[...new Set(stillMissed)];mb.style.display='block';mb.textContent='⚠ '+stillMissed.length+' dealer non posizionati: '+uniqM.join(', ');}
+    else mb.style.display='none';
+  }});
+}
+
+document.getElementById('csv-input').addEventListener('change',function(e){
+  if(!e.target.files[0]) return;
+  var reader=new FileReader();
+  reader.onload=async function(ev){var text=ev.target.result;dbSave(text);await processCSVText(text);toast('✅ CSV caricato');};
+  reader.readAsText(e.target.files[0],'UTF-8');
+  e.target.value='';
+});
+
+window.clearCache=async function(){
+  var btn=document.getElementById('clear-btn');btn.textContent='⏳';btn.disabled=true;
+  try{await dbClear();if(markerLayer)markerLayer.clearLayers();markers=[];document.getElementById('type-filters').innerHTML='';document.getElementById('rating-filters').innerHTML='';document.getElementById('miss-bar').style.display='none';document.getElementById('status').textContent='Cache svuotata';toast('✅ Cache svuotata');}
+  catch(ex){toast('⚠ Errore: '+ex.message);}
+  btn.textContent='🗑 Svuota cache';btn.disabled=false;
+};
+
+window.locateMe=function(){
+  if(!navigator.geolocation){alert('Geolocalizzazione non supportata');return;}
+  navigator.geolocation.getCurrentPosition(function(pos){
+    map.setView([pos.coords.latitude,pos.coords.longitude],11);
+    L.circleMarker([pos.coords.latitude,pos.coords.longitude],{radius:8,color:'#1a5cb8',fillColor:'#4a90d9',fillOpacity:1,weight:3}).addTo(map).bindPopup('📍 Sei qui').openPopup();
+  },function(){alert('Impossibile rilevare la posizione');});
+};
+
+var DRIVE_ACCOUNT='https://docs.google.com/spreadsheets/d/18vIfwCnBM9PWgDL8_vk5SxvSRsbXC7w8Ouu4G90greo/export?format=csv&gid=1412554961';
+
+window.addEventListener('DOMContentLoaded',async function(){
+  initMap();
+  document.getElementById('status').textContent='🔄 Caricamento da Google Drive…';
+  try{
+    var r=await fetch(DRIVE_ACCOUNT);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    var text=await r.text();
+    dbSave(text);
+    toast('✅ Dati aggiornati da Google Drive');
+    await processCSVText(text);
+  }catch(e){
+    // fallback cache
+    var saved=await dbLoad();
+    if(saved){
+      toast('Drive non raggiungibile — uso dati salvati',3000);
+      await processCSVText(saved);
+    } else {
+      document.getElementById('status').textContent='⚠ Nessun dato. Carica CSV manualmente.';
+    }
+  }
+});
+
+// ===== ON MY WAY =====
+var routeLayer = null;
+var omwMarkers = [];
+var omwDealers = [];
+
+function latLng(city) {
+  var c = getCityCoords(city);
+  if (c) return {lat: c.lat, lng: c.lng};
+  return null;
+}
+
+// Distanza punto-segmento in km (haversine approssimata)
+function haversine(lat1, lng1, lat2, lng2) {
+  var R = 6371;
+  var dLat = (lat2 - lat1) * Math.PI / 180;
+  var dLng = (lng2 - lng1) * Math.PI / 180;
+  var a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+    Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function pointToSegmentDist(px, py, ax, ay, bx, by) {
+  var dx = bx - ax, dy = by - ay;
+  if (dx === 0 && dy === 0) return haversine(px, py, ax, ay);
+  var t = ((px - ax)*dx + (py - ay)*dy) / (dx*dx + dy*dy);
+  t = Math.max(0, Math.min(1, t));
+  var nx = ax + t*dx, ny = ay + t*dy;
+  return haversine(px, py, nx, ny);
+}
+
+// Calcola distanza minima da un punto a tutti i segmenti della polyline
+function distFromRoute(lat, lng, routePoints) {
+  var minDist = Infinity;
+  for (var i = 0; i < routePoints.length - 1; i++) {
+    var d = pointToSegmentDist(lat, lng,
+      routePoints[i].lat, routePoints[i].lng,
+      routePoints[i+1].lat, routePoints[i+1].lng);
+    if (d < minDist) minDist = d;
+  }
+  return minDist;
+}
+
+function clearRoute() {
+  if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
+  omwMarkers.forEach(function(m) { map.removeLayer(m); });
+  omwMarkers = [];
+  omwDealers = [];
+  document.getElementById('omw-result-panel').style.display = 'none';
+  document.getElementById('omw-clear').style.display = 'none';
+  document.getElementById('omw-export').style.display = 'none';
+  document.getElementById('omw-panel-list').innerHTML = '';
+  filterMarkers();
+}
+
+async function runOnMyWay() {
+  var partenzaRaw = document.getElementById('omw-partenza').value.trim();
+  var arrivoRaw = document.getElementById('omw-arrivo').value.trim();
+  var kmRange = parseInt(document.getElementById('omw-km').value);
+
+  if (!partenzaRaw || !arrivoRaw) { toast('⚠ Inserisci partenza e arrivo'); return; }
+
+  var partenzaNorm = normalizeCity(partenzaRaw);
+  var arrivoNorm = normalizeCity(arrivoRaw);
+
+  var pCoords = latLng(partenzaRaw);
+  var aCoords = latLng(arrivoRaw);
+
+  // se non trovato, prova geocode AI
+  if (!pCoords || !aCoords) {
+    toast('🔄 Geolocalizzazione comuni…');
+    var toGeo = [];
+    if (!pCoords) toGeo.push(partenzaRaw);
+    if (!aCoords) toGeo.push(arrivoRaw);
+    await geocodeCitiesBatch(toGeo);
+    if (!pCoords) pCoords = latLng(partenzaRaw);
+    if (!aCoords) aCoords = latLng(arrivoRaw);
+  }
+
+  if (!pCoords) { toast('⚠ Comune di partenza non trovato: ' + partenzaRaw); return; }
+  if (!aCoords) { toast('⚠ Comune di arrivo non trovato: ' + arrivoRaw); return; }
+
+  clearRoute();
+  toast('🔄 Calcolo percorso…');
+
+  // Usa OSRM (routing gratuito, no API key)
+  var viaRaw = document.getElementById('omw-via').value.trim();
+  var vCoords = null;
+  if (viaRaw) {
+    // prova prima come comune
+    vCoords = latLng(viaRaw);
+    if (!vCoords) {
+      // prova come nome concessionaria nei dati caricati
+      var viaLow = viaRaw.toLowerCase();
+      markers.forEach(function(o) {
+        if (!vCoords && o.dealer.Name.toLowerCase().includes(viaLow)) {
+          var ll = o.marker.getLatLng();
+          vCoords = {lat: ll.lat, lng: ll.lng};
+        }
+      });
+    }
+    if (!vCoords) {
+      // geocode via AI
+      await geocodeCitiesBatch([viaRaw]);
+      vCoords = latLng(viaRaw);
+    }
+    if (!vCoords) { toast('⚠ Waypoint "' + viaRaw + '" non trovato — uso percorso diretto'); }
+  }
+
+  var waypointStr = vCoords ? (';' + vCoords.lng + ',' + vCoords.lat) : '';
+  var url = 'https://router.project-osrm.org/route/v1/driving/'
+    + pCoords.lng + ',' + pCoords.lat
+    + waypointStr + ';'
+    + aCoords.lng + ',' + aCoords.lat
+    + '?overview=full&geometries=geojson';
+
+  var routePoints = [];
+  try {
+    var resp = await fetch(url);
+    var data = await resp.json();
+    if (data.routes && data.routes.length > 0) {
+      var coords = data.routes[0].geometry.coordinates;
+      routePoints = coords.map(function(c) { return {lat: c[1], lng: c[0]}; });
+      var latlngs = routePoints.map(function(p) { return [p.lat, p.lng]; });
+      routeLayer = L.polyline(latlngs, {color: '#e53935', weight: 5, opacity: 0.8}).addTo(map);
+      map.fitBounds(routeLayer.getBounds().pad(0.1));
+    } else {
+      throw new Error('no route');
+    }
+  } catch(e) {
+    // fallback: linea retta
+    routePoints = [pCoords, aCoords];
+    routeLayer = L.polyline([[pCoords.lat, pCoords.lng],[aCoords.lat, aCoords.lng]],
+      {color:'#e53935',weight:5,opacity:.8,dashArray:'10,8'}).addTo(map);
+    map.fitBounds(routeLayer.getBounds().pad(0.1));
+    toast('⚠ OSRM non raggiunto — uso linea retta', 3000);
+  }
+
+  // Filtro marker attivi (rispetta filtri tipo+rating+search)
+  var visibleDealers = [];
+  var q = document.getElementById('search').value.toLowerCase().trim();
+  markers.forEach(function(o) {
+    var d = o.dealer;
+    if ((!d.Customer_Type__c || activeTypes.has(d.Customer_Type__c))
+      && (!d.Rating || activeRatings.has(d.Rating))
+      && (!q || d.Name.toLowerCase().includes(q))) {
+      visibleDealers.push(o);
+    }
+  });
+
+  // Calcola distanza dal percorso per ogni dealer
+  omwDealers = [];
+  visibleDealers.forEach(function(o) {
+    var latlng = o.marker.getLatLng();
+    var dist = distFromRoute(latlng.lat, latlng.lng, routePoints);
+    if (dist <= kmRange) {
+      omwDealers.push({o: o, dist: dist});
+    }
+  });
+
+  // Ordina per distanza dalla partenza (proiezione sul percorso)
+  omwDealers.sort(function(a, b) {
+    var dA = haversine(pCoords.lat, pCoords.lng, a.o.marker.getLatLng().lat, a.o.marker.getLatLng().lng);
+    var dB = haversine(pCoords.lat, pCoords.lng, b.o.marker.getLatLng().lat, b.o.marker.getLatLng().lng);
+    return dA - dB;
+  });
+
+  // Evidenzia i marker trovati
+  markerLayer.clearLayers();
+  var normalSet = new Set(omwDealers.map(function(x){return x.o;}));
+  markers.forEach(function(o) {
+    if (normalSet.has(o)) {
+      // marker evidenziato (bordo giallo, più grande)
+      var d = o.dealer;
+      var col = tc(d.Customer_Type__c), r = ri(d.Rating), s = r.s + 4;
+      var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+(s*2)+'" height="'+(s*2)+'" viewBox="0 0 '+(s*2)+' '+(s*2)+'">'
+        +'<circle cx="'+s+'" cy="'+s+'" r="'+(s-2)+'" fill="'+col+'" stroke="#ffe600" stroke-width="3"/>'
+        +'<circle cx="'+s+'" cy="'+s+'" r="'+Math.floor(s/3)+'" fill="white" opacity=".9"/>'
+        +'</svg>';
+      var icon = L.divIcon({html:svg,className:'',iconSize:[s*2,s*2],iconAnchor:[s,s],popupAnchor:[0,-s]});
+      o.marker.setIcon(icon);
+      markerLayer.addLayer(o.marker);
+    } else {
+      // marker dimmed
+      var d2 = o.dealer;
+      var col2 = tc(d2.Customer_Type__c), r2 = ri(d2.Rating), s2 = r2.s;
+      var svg2 = '<svg xmlns="http://www.w3.org/2000/svg" width="'+(s2*2)+'" height="'+(s2*2)+'" viewBox="0 0 '+(s2*2)+' '+(s2*2)+'">'
+        +'<circle cx="'+s2+'" cy="'+s2+'" r="'+(s2-2)+'" fill="'+col2+'" stroke="white" stroke-width="2" opacity=".25"/>'
+        +'<circle cx="'+s2+'" cy="'+s2+'" r="'+Math.floor(s2/3)+'" fill="white" opacity=".15"/>'
+        +'</svg>';
+      var icon2 = L.divIcon({html:svg2,className:'',iconSize:[s2*2,s2*2],iconAnchor:[s2,s2],popupAnchor:[0,-s2]});
+      o.marker.setIcon(icon2);
+      markerLayer.addLayer(o.marker);
+    }
+  });
+
+  // Pannello laterale
+  var panel = document.getElementById('omw-result-panel');
+  var list = document.getElementById('omw-panel-list');
+  document.getElementById('omw-panel-title').textContent =
+    omwDealers.length + ' dealer entro ' + kmRange + ' km dal percorso';
+  list.innerHTML = '';
+
+  if (omwDealers.length === 0) {
+    list.innerHTML = '<div style="padding:16px;color:#888;font-size:13px;text-align:center">Nessun dealer trovato<br>nel range selezionato</div>';
+  } else {
+    omwDealers.forEach(function(item, idx) {
+      var d = item.o.dealer;
+      var col = tc(d.Customer_Type__c);
+      var el = document.createElement('div');
+      el.className = 'omw-item';
+      el.innerHTML = '<div class="omw-item-name">' + (idx+1) + '. ' + d.Name + '</div>'
+        + '<div class="omw-item-meta" style="color:'+col+';font-weight:600">'+(d.Customer_Type__c||'—')+'</div>'
+        + '<div class="omw-item-meta">📍 ' + (d.BillingCity||'—') + ' · ' + (d.Rating||'—') + '</div>'
+        + '<div class="omw-item-meta" style="color:#555">' + (d.Active_Products_List__c||'—') + '</div>'
+        + '<div class="omw-item-dist">~' + item.dist.toFixed(1) + ' km dalla strada</div>';
+      el.onclick = (function(o){ return function(){ map.setView(o.marker.getLatLng(), 13); o.marker.openPopup(); }; })(item.o);
+      list.appendChild(el);
+    });
+  }
+
+  panel.style.display = 'flex';
+  document.getElementById('omw-clear').style.display = 'inline-block';
+  if (omwDealers.length > 0) document.getElementById('omw-export').style.display = 'inline-block';
+  toast('✅ ' + omwDealers.length + ' dealer trovati lungo il percorso');
+}
+
+function exportTXT() {
+  var partenza = document.getElementById('omw-partenza').value.trim();
+  var arrivo = document.getElementById('omw-arrivo').value.trim();
+  var km = document.getElementById('omw-km').value;
+  var lines = ['DEALER LUNGO IL PERCORSO: ' + partenza.toUpperCase() + ' → ' + arrivo.toUpperCase()];
+  lines.push('Range: ± ' + km + ' km | Data: ' + new Date().toLocaleDateString('it-IT'));
+  lines.push('Totale: ' + omwDealers.length + ' dealer');
+  lines.push('='.repeat(50));
+  omwDealers.forEach(function(item, idx) {
+    var d = item.o.dealer;
+    lines.push('');
+    lines.push((idx+1) + '. ' + d.Name);
+    lines.push('   Città: ' + (d.BillingCity||'—'));
+    lines.push('   Tipo: ' + (d.Customer_Type__c||'—') + ' | Rating: ' + (d.Rating||'—'));
+    if (d.Phone) lines.push('   Tel: ' + d.Phone);
+    lines.push('   Prodotti: ' + (d.Active_Products_List__c||'—'));
+    lines.push('   Dist. dalla strada: ~' + item.dist.toFixed(1) + ' km');
+  });
+  var blob = new Blob([lines.join('\n')], {type:'text/plain;charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'percorso_' + partenza.replace(/\s+/g,'_') + '_' + arrivo.replace(/\s+/g,'_') + '.txt';
+  a.click();
+}
+
+// ===== AI SEARCH =====
+var aiSearchOpen = false;
+
+function toggleAiSearch() {
+  aiSearchOpen = !aiSearchOpen;
+  var panel = document.getElementById('ai-search-panel');
+  panel.style.display = aiSearchOpen ? 'flex' : 'none';
+  document.getElementById('ai-search-results').innerHTML = '';
+  document.getElementById('ai-search-status').textContent = '';
+}
+
+function parseQuery(q) {
+  var filters = { hasProd:[], notProd:[], type:null, rating:null, city:null, province:null };
+
+  var PRODS = ['webspark ultra','webspark classic','webspark','leadspark','callspark',
+               'stockspark','reportspark','fidspark','predictspark','adspark',
+               'agentspark','seospark','cdp','datastudio'];
+
+  var qLow = q.toLowerCase();
+  var notKws = ['senza ','non ','privi di ','che non hanno ','ma non '];
+
+  PRODS.forEach(function(p) {
+    var idx = qLow.indexOf(p.toLowerCase());
+    if (idx < 0) return;
+    var before = qLow.substring(0, idx);
+    var isNot = false;
+    notKws.forEach(function(kw) { if (before.lastIndexOf(kw) >= 0) isNot = true; });
+    if (isNot) { filters.notProd.push(p); }
+    else { filters.hasProd.push(p); }
+  });
+
+  var TYPES = ['customer','prospect','new','ex','ex-cliente','multimarche','ufficiale'];
+  TYPES.forEach(function(t) {
+    if (q2.indexOf(t) >= 0) filters.type = t;
+  });
+
+  var RATINGS = ['hot','warm','cold'];
+  RATINGS.forEach(function(r) {
+    if (q2.indexOf(r) >= 0) filters.rating = r;
+  });
+
+  // città: cerca parole dopo "a " o "in " o "di " che abbiano > 3 char
+  var cityMatch = q2.match(/(?:a|in|di)\s+([a-zà-ü]{3,})/i);
+  if (cityMatch) filters.city = cityMatch[1];
+
+  // province abbreviate (es. BG, MI, TO)
+  var provMatch = q.match(/([A-Z]{2})/);
+  if (provMatch) filters.province = provMatch[1].toLowerCase();
+
+  return filters;
+}
+
+function matchDealer(d, f) {
+  var prods = (d.Active_Products_List__c || '').toLowerCase();
+  var type  = (d.Customer_Type__c || '').toLowerCase();
+  var rating = (d.Rating || '').toLowerCase();
+  var city  = (d.BillingCity || '').toLowerCase();
+  var prov  = (d.BillingState || '').toLowerCase();
+
+  // Fuzzy: "webspark" matches "webspark revolution", "webspark ultra", etc.
+  // We check if the product field CONTAINS the search term as a substring
+  function hasProduct(prodField, term) {
+    return prodField.indexOf(term.toLowerCase()) >= 0;
+  }
+
+  for (var i=0; i<f.hasProd.length; i++) {
+    if (!hasProduct(prods, f.hasProd[i])) return false;
+  }
+  for (var j=0; j<f.notProd.length; j++) {
+    if (hasProduct(prods, f.notProd[j])) return false;
+  }
+  if (f.type) {
+    var typeMap = {
+      'customer': 'customer', 'prospect': 'prospect', 'new': 'prospect',
+      'ex': 'ex', 'ex-cliente': 'ex', 'multimarche': 'multimarche', 'ufficiale': 'ufficiale'
+    };
+    var mapped = typeMap[f.type] || f.type;
+    if (type.indexOf(mapped) < 0) return false;
+  }
+  if (f.rating && rating.indexOf(f.rating) < 0) return false;
+  if (f.city && city.indexOf(f.city) < 0) return false;
+  if (f.province && prov.indexOf(f.province) < 0) return false;
+  return true;
+}
+
+function buildMatchReason(d, f) {
+  var parts = [];
+  if (f.hasProd.length) parts.push('Ha: ' + f.hasProd.join(', '));
+  if (f.notProd.length) parts.push('Senza: ' + f.notProd.join(', '));
+  if (f.type) parts.push('Tipo: ' + (d.Customer_Type__c || f.type));
+  if (f.rating) parts.push('Rating: ' + f.rating);
+  if (f.city) parts.push('Città: ' + (d.BillingCity || f.city));
+  return parts.join(' · ') || 'Corrisponde alla ricerca';
+}
+
+function runAiSearch() {
+  var query = document.getElementById('ai-search-input').value.trim();
+  if (!query) return;
+  if (!markers || markers.length === 0) {
+    document.getElementById('ai-search-status').textContent = '⚠ Nessun dato caricato';
+    return;
+  }
+
+  document.getElementById('ai-search-status').textContent = 'Ricerca in corso…';
+  document.getElementById('ai-search-results').innerHTML = '';
+
+  var f = parseQuery(query);
+  var results = [];
+
+  markers.forEach(function(o) {
+    var d = o.dealer;
+    if (matchDealer(d, f)) {
+      results.push({
+        name: d.Name,
+        city: d.BillingCity || '',
+        type: d.Customer_Type__c || '',
+        rating: d.Rating || '',
+        products: d.Active_Products_List__c || '',
+        matchReason: buildMatchReason(d, f),
+        _marker: o
+      });
+    }
+  });
+
+  document.getElementById('ai-search-status').textContent = results.length + ' risultati';
+  renderAiResults(results);
+  highlightAiResults(results);
+}
+
+function renderAiResults(results) {
+  var container = document.getElementById('ai-search-results');
+  container.innerHTML = '';
+  if (results.length === 0) {
+    container.innerHTML = '<div style="padding:16px;color:#888;font-size:13px;text-align:center">Nessun dealer trovato<br>per questa ricerca</div>';
+    return;
+  }
+  results.forEach(function(r) {
+    // find matching marker
+    var matchedMarker = null;
+    markers.forEach(function(o) {
+      if (!matchedMarker && (o.dealer.Id === r.id || o.dealer.Name === r.name)) {
+        matchedMarker = o;
+      }
+    });
+    var col = matchedMarker ? tc(matchedMarker.dealer.Customer_Type__c) : '#888';
+    var el = document.createElement('div');
+    el.className = 'ai-item';
+    el.innerHTML = '<div class="ai-item-name">' + r.name + '</div>'
+      + '<div class="ai-item-meta"><span class="ai-item-badge" style="background:' + col + ';color:#fff">' + (r.type||'—') + '</span>'
+      + (r.city ? '📍 ' + r.city : '') + ' · ' + (r.rating||'—') + '</div>'
+      + '<div class="ai-item-meta" style="margin-top:3px;color:#555">' + (r.products||'—') + '</div>'
+      + '<div class="ai-item-meta" style="margin-top:4px;background:#f3e5f5;border-radius:4px;padding:3px 6px;color:#6a1b9a;font-style:italic">' + (r.matchReason||'') + '</div>';
+    if (matchedMarker) {
+      el.onclick = (function(o){ return function(){
+        map.setView(o.marker.getLatLng(), 13);
+        o.marker.openPopup();
+      }; })(matchedMarker);
+    }
+    container.appendChild(el);
+  });
+}
+
+function highlightAiResults(results) {
+  var matchIds = new Set(results.map(function(r){ return r.name; }));
+  markerLayer.clearLayers();
+  markers.forEach(function(o) {
+    var d = o.dealer;
+    var isMatch = matchIds.has(d.Name);
+    var col = tc(d.Customer_Type__c), r = ri(d.Rating), s = r.s;
+    if (isMatch) s = s + 4;
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+(s*2)+'" height="'+(s*2)+'" viewBox="0 0 '+(s*2)+' '+(s*2)+'">'
+      +'<circle cx="'+s+'" cy="'+s+'" r="'+(s-2)+'" fill="'+col+'" stroke="'+(isMatch?'#ce93d8':'white')+'" stroke-width="'+(isMatch?3:2)+'" opacity="'+(isMatch?1:.25)+'"/>'
+      +'<circle cx="'+s+'" cy="'+s+'" r="'+Math.floor(s/3)+'" fill="white" opacity="'+(isMatch?.9:.15)+'"/>'
+      +'</svg>';
+    var icon = L.divIcon({html:svg,className:'',iconSize:[s*2,s*2],iconAnchor:[s,s],popupAnchor:[0,-s]});
+    o.marker.setIcon(icon);
+    markerLayer.addLayer(o.marker);
+  });
+}
+// ===== END AI SEARCH =====
+// ===== END ON MY WAY =====
+</script>
+</body>
+</html>
