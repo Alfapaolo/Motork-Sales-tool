@@ -669,8 +669,18 @@ function createDrafts(){
         messages:[{role:'user',content:'Crea una bozza Gmail. TO:'+to+(cc.length?' CC:'+cc.join(','):'')+' OGGETTO:'+sub+' CORPO:'+bodyFilled+' Rispondi solo OK.'}],
         mcp_servers:[{type:'url',url:'https://gmailmcp.googleapis.com/mcp/v1',name:'gmail'}]
       })
-    }).then(function(){ok++;btn.textContent=ok+'/'+total;setTimeout(function(){next(i+1);},50);})
-    .catch(function(){setTimeout(function(){next(i+1);},50);});
+    }).then(function(r){
+      if(!r.ok) return r.text().then(function(t){throw new Error('HTTP '+r.status+': '+t.substring(0,120));});
+      return r.json();
+    }).then(function(d){
+      if(d.error) throw new Error(d.error.message||JSON.stringify(d.error));
+      ok++;btn.textContent=ok+'/'+total;
+      setTimeout(function(){next(i+1);},50);
+    }).catch(function(err){
+      console.error('Bozza error:',err);
+      toast('Errore bozza: '+err.message);
+      setTimeout(function(){next(i+1);},50);
+    });
   }
   next(0);
 }
