@@ -618,24 +618,14 @@ function createDrafts(){
   if(!body.trim()){toast('Scrivi un messaggio prima');return;}
   var btn=document.getElementById('btn-drafts');
   // Se ci sono aziende con stato modale, filtra solo quelle con TO impostato
-  var hasModal=TXT_STATE.companies.length>0;
-  if(hasModal){
-    // Usa direttamente TXT_STATE, non filtrare cos (evita problemi di match nomi)
-    // Verifica che almeno una azienda abbia destinatari
-    var hasAny=TXT_STATE.companies.some(function(s){return s.toEmail||(s.ccEmails&&s.ccEmails.length>0);});
-    if(!hasAny){toast('Imposta almeno un destinatario nella modale');return;}
-  }
-
-  // Se NON vengo dalla modale e ci sono tante aziende, chiedo conferma
-  if(!hasModal&&cos.length>5&&!confirm('Stai per creare '+cos.length+' bozze Gmail. Procedere?')){return;}
+  if(cos.length>5&&!confirm('Stai per creare '+cos.length+' bozze Gmail. Procedere?')){return;}
   btn.textContent='Creo...';btn.disabled=true;
-  var total=hasModal?TXT_STATE.companies.length:cos.length;
+  var total=cos.length;
   var ok=0;
-  // Se dalla modale, itera TXT_STATE direttamente; altrimenti itera cos (lista principale)
-  var queue=hasModal?TXT_STATE.companies.map(function(s){
-    var c=COMPANIES.find(function(c){return norm(c.name)===norm(s.name)||fuzzy(c.name,s.name);})||{name:s.name,contacts:s.contacts,dsm:s.dsm||[]};
-    return {c:c,txState:s};
-  }):cos.map(function(c){return {c:c,txState:null};});
+  var queue=cos.map(function(c){
+    var txState=TXT_STATE.companies.find(function(s){return norm(s.name)===norm(c.name)||fuzzy(s.name,c.name);});
+    return {c:c,txState:txState||null};
+  });
 
   function next(i){
     if(i>=queue.length){btn.textContent='Crea bozze Gmail';btn.disabled=false;toast(ok+' bozze create');return;}
@@ -1145,15 +1135,13 @@ function usaSelezione(){
     }
   });
 
-  // Seleziona SOLO le aziende della modale nella lista principale
-  SELECTED.clear();
-  TXT_STATE.companies.forEach(function(state){
-    var match=COMPANIES.find(function(c){return norm(c.name)===norm(state.name);});
-    if(match) SELECTED.add(match.name);
-  });
+  // Filtra la lista principale mostrando SOLO le aziende della modale
+  var modalNames=TXT_STATE.companies.map(function(s){return norm(s.name);});
+  FILTERED=COMPANIES.filter(function(c){return modalNames.indexOf(norm(c.name))!==-1;});
+  SELECTED=new Set(FILTERED.map(function(c){return c.name;}));
   renderList();updSel();
   document.getElementById('txt-modal').style.display='none';
-  toast(TXT_STATE.companies.length+' aziend'+(TXT_STATE.companies.length===1?'a':'e')+' selezionat'+(TXT_STATE.companies.length===1?'a':'e')+' — scrivi il testo e crea le bozze!');
+  toast(TXT_STATE.companies.length+' aziend'+(TXT_STATE.companies.length===1?'a':'e')+' — scrivi il testo e crea le bozze!');
 }
 
 function pickDsmFromDir(sel){
