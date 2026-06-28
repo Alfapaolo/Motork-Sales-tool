@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SparK Outreach</title>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:system-ui,sans-serif;background:#f5f5f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
@@ -81,9 +82,10 @@ textarea{height:90px;resize:vertical;line-height:1.5}
     <span id="ai-search-status"></span>
   </div>
   <div style="position:relative;overflow:hidden;display:inline-block;cursor:pointer">
-    <button class="btn" style="background:#f90032;color:#fff;border-color:#f90032;white-space:nowrap">&#128196; Carica TXT</button>
-    <input type="file" id="btn-load-txt" accept=".txt,text/plain" style="position:absolute;left:0;top:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:100px">
+    <button class="btn" style="background:#f90032;color:#fff;border-color:#f90032;white-space:nowrap">&#128196; Carica DOCX</button>
+    <input type="file" id="btn-load-txt" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="position:absolute;left:0;top:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:100px">
   </div>
+  <button class="btn" id="btn-followup" style="background:#ff6f00;color:#fff;border-color:#ff6f00;white-space:nowrap">&#128172; Follow Up</button>
   <div><button class="btn rd" id="btn-cache">&#128465; Cache</button></div>
 </div>
 
@@ -154,7 +156,7 @@ textarea{height:90px;resize:vertical;line-height:1.5}
           <option value="newprod">Nuovo prodotto</option>
           <option value="news">Aggiornamento MotorK</option>
         </select>
-        <button class="btn" id="ai-btn" style="white-space:nowrap;color:#9c27b0;border-color:#9c27b0">&#10024; AI</button>
+
         <button class="btn" id="btn-test" style="white-space:nowrap;color:#e65100;border-color:#e65100">&#128236; Test</button>
       </div>
       <div class="mrow">
@@ -250,6 +252,24 @@ textarea{height:90px;resize:vertical;line-height:1.5}
 </div>
 <div id="toast"></div>
 
+<!-- MODALE FOLLOW UP -->
+<div id="fu-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10001">
+  <div id="fu-modal-inner" style="background:#fff;border-radius:10px;width:420px;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.3)">
+    <div style="background:#ff6f00;color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:11px;opacity:.7">MotorK SparK Outreach</div>
+        <div style="font-weight:700;font-size:15px">&#128172; Follow Up</div>
+      </div>
+      <button id="fu-modal-close" style="background:rgba(255,255,255,.15);border:none;border-radius:6px;color:#fff;padding:5px 11px;cursor:pointer;font-size:14px">&#10005;</button>
+    </div>
+    <div style="padding:18px">
+      <div style="font-size:12px;color:#555;margin-bottom:8px">Scrivi il nome dell'azienda:</div>
+      <input id="fu-search-input" type="text" placeholder="Es: Autoghinzani, Gozzini, 478..." style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none">
+      <div id="fu-suggestions" style="margin-top:6px;max-height:220px;overflow-y:auto"></div>
+    </div>
+  </div>
+</div>
+
 <!-- MODALE CARICA TXT -->
 <div id="txt-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;overflow-y:auto;padding:20px">
   <div style="background:#fff;border-radius:10px;max-width:780px;margin:0 auto;padding:0;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.25)">
@@ -265,8 +285,9 @@ textarea{height:90px;resize:vertical;line-height:1.5}
     </div>
     <div id="txt-modal-footer" style="padding:12px 16px;border-top:1px solid #eee;display:flex;gap:8px;align-items:center;justify-content:flex-end">
       <span id="txt-modal-status" style="font-size:11px;color:#888;flex:1"></span>
-      <button id="txt-modal-gen" style="background:#9c27b0;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer">&#10024; Genera testo AI</button>
-      <button id="txt-modal-apply" style="background:#1a5cb8;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;display:none">&#10003; Applica e seleziona</button>
+      <button id="txt-modal-usa" style="background:#1a5cb8;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer">&#10003; Usa selezione</button>
+
+
     </div>
   </div>
 </div>
@@ -373,7 +394,19 @@ function merge(){
   var co={};
   DATA.account.forEach(function(a){
     if(!a.Name) return;
-    co[norm(a.Name)]={name:a.Name,type:a.Customer_Type__c||'',rating:a.Rating||'',region:nr(a.Region_Area__c||''),province:(a.BillingState||'').toUpperCase(),products:a.Active_Products_List__c||'',mappedProds:mapProds(a.Active_Products_List__c||''),contacts:[]};
+    var dsmRaw=(a.DSM||'').trim();
+    var dsmContacts=[];
+    if(dsmRaw&&dsmRaw.toLowerCase()!=='no dsm'&&dsmRaw.toLowerCase()!=='nessuno'&&dsmRaw!=='-'&&dsmRaw!==''){
+      // Costruisce email da "Nome Cognome" → nome.cognome@motork.io
+      var parts=dsmRaw.toLowerCase().replace(/[àáâãäå]/g,'a').replace(/[èéêë]/g,'e')
+        .replace(/[ìíîï]/g,'i').replace(/[òóôõö]/g,'o').replace(/[ùúûü]/g,'u')
+        .replace(/[^a-z0-9 ]/g,'').trim().split(/\s+/);
+      if(parts.length>=2){
+        var dsmEmail=parts[0]+'.'+parts[parts.length-1]+'@motork.io';
+        dsmContacts.push({name:dsmRaw,first:parts[0],email:dsmEmail,phone:'',role:'DSM',src:'dsm'});
+      }
+    }
+    co[norm(a.Name)]={name:a.Name,type:a.Customer_Type__c||'',rating:a.Rating||'',region:nr(a.Region_Area__c||''),province:(a.BillingState||'').toUpperCase(),products:a.Active_Products_List__c||'',mappedProds:mapProds(a.Active_Products_List__c||''),contacts:[],dsm:dsmContacts};
   });
   DATA.contact.forEach(function(c){
     var an=c['Account.Name']||c.Account||'';if(!an) return;
@@ -398,7 +431,10 @@ function merge(){
       else{if(!co[k].province&&pv)co[k].province=pv.toUpperCase();if(!co[k].region&&reg)co[k].region=nr(reg);}
       var ex=co[k].contacts.find(function(x){return x.email&&x.email===email;});
       if(ex){if(phone&&!ex.phone)ex.phone=phone;if(role&&!ex.role)ex.role=role;}
-      else co[k].contacts.push({name:(fn+' '+ln).trim(),first:fn,email:email,phone:phone,role:role,src:'db'});
+      else {
+        var contact={name:(fn+' '+ln).trim(),first:fn,email:email,phone:phone,role:role,src:'db'};
+        co[k].contacts.push(contact);
+      }
     });
   }
   COMPANIES=Object.values(co).filter(function(c){return c.contacts.length>0;});
@@ -471,47 +507,19 @@ function syncPills(){
 }
 
 function aiSearch(){
-  var query=document.getElementById('ai-search').value.trim();
+  var query=document.getElementById('ai-search').value.trim().toLowerCase();
   if(!query) return;
   var status=document.getElementById('ai-search-status');
-  status.textContent='Ricerca...';
-  var prodList=Object.entries(PROD_LABELS).map(function(e){return e[0]+':'+e[1];}).join(', ');
-  var prompt='Sei un assistente che filtra un database di concessionarie auto italiane.\n'
-    +'Prodotti disponibili (sigla:nome): '+prodList+'\n'
-    +'Tipi cliente: Customer, Customer GA, Customer Prospect, New, New Prospect, Ex Customer\n'
-    +'Query: "'+query+'"\n\n'
-    +'Rispondi SOLO con JSON valido, niente markdown:\n'
-    +'{"types":[],"regions":[],"provinces":[],"has_products":[],"not_products":[],"contact_filter":"any","explanation":""}';
-  fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:400,messages:[{role:'user',content:prompt}]})
-  }).then(function(r){return r.json();}).then(function(d){
-    var t=(d.content&&d.content[0]&&d.content[0].text)||'';
-    t=t.replace(/```json|```/g,'').trim();
-    var f=JSON.parse(t);
-    if(f.types&&f.types.length) ACT.type=new Set(f.types);
-    if(f.regions&&f.regions.length) ACT.region=new Set(f.regions);
-    if(f.provinces&&f.provinces.length) ACT.province=new Set(f.provinces);
-    if(f.contact_filter) ACT.contact=new Set([f.contact_filter]);
-    var hasP=f.has_products||[],notP=f.not_products||[];
-    FILTERED=COMPANIES.filter(function(c){
-      if(ACT.type.size&&!ACT.type.has(c.type)) return false;
-      if(ACT.region.size&&!ACT.region.has(c.region)) return false;
-      if(ACT.province.size&&!ACT.province.has(c.province)) return false;
-      if(hasP.length&&!hasP.every(function(p){return c.mappedProds.indexOf(p)!==-1;})) return false;
-      if(notP.length&&notP.some(function(p){return c.mappedProds.indexOf(p)!==-1;})) return false;
-      if(ACT.contact.has('email')&&!c.contacts.some(function(x){return x.email;})) return false;
-      if(ACT.contact.has('phone')&&!c.contacts.some(function(x){return x.phone&&x.phone!=='-';})) return false;
-      return true;
-    });
-    SELECTED=new Set(FILTERED.map(function(c){return c.name;}));
-    renderList();updSel();syncPills();
-    status.textContent=FILTERED.length+' aziende'+(f.explanation?' - '+f.explanation:'');
-    setTimeout(function(){status.textContent='';},7000);
-  }).catch(function(){
-    status.textContent='Errore';
-    setTimeout(function(){status.textContent='';},3000);
+  // Ricerca locale senza AI: filtra per nome azienda, tipo, prodotto, provincia
+  var terms=query.split(/\s+/);
+  FILTERED=COMPANIES.filter(function(c){
+    var haystack=(c.name+' '+c.type+' '+c.province+' '+c.region+' '+c.products).toLowerCase();
+    return terms.every(function(t){return haystack.indexOf(t)!==-1;});
   });
+  SELECTED=new Set(FILTERED.map(function(c){return c.name;}));
+  renderList();updSel();syncPills();
+  status.textContent=FILTERED.length+' aziende';
+  setTimeout(function(){status.textContent='';},5000);
 }
 
 var _showContacts=true;
@@ -577,42 +585,9 @@ var TPLS={
 };
 function applyTpl(){var v=document.getElementById('tpl-sel').value;if(!v)return;document.getElementById('msg-sub').value=TPLS[v].s;document.getElementById('msg-body').value=TPLS[v].b;_linkMap=[];}
 
-function sendTestMail(){
-  var sub=document.getElementById('msg-sub').value||'(nessun oggetto)';
-  var body=document.getElementById('msg-body').value||'';
-  if(!body.trim()){toast('Scrivi un messaggio prima');return;}
-  var btn=document.getElementById('btn-test');
-  btn.textContent='Invio...';btn.disabled=true;
-  var bodyFilled=bodyWithLinks(body.replace(/{NOME}/g,'Paolo'))+FIRMA.replace(/\n/g,'<br>');
-  fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:200,
-      messages:[{role:'user',content:'Crea una bozza Gmail HTML. TO:paolo.pesenti@motork.io OGGETTO:[TEST] '+sub+' CORPO HTML:'+bodyFilled+' Rispondi solo OK.'}],
-      mcp_servers:[{type:'url',url:'https://gmailmcp.googleapis.com/mcp/v1',name:'gmail'}]
-    })
-  }).then(function(){
-    toast('Bozza test creata in Gmail con link cliccabili!');
-  }).catch(function(){
-    toast('Errore - funziona solo da Netlify');
-  }).finally(function(){
-    btn.textContent='&#128236; Test';btn.disabled=false;
-  });
-}
+function sendTestMail(){toast('Test mail: funziona solo da Netlify');}
 
-function genAI(){
-  var p=window.prompt('Descrivi cosa vuoi comunicare:');if(!p)return;
-  var btn=document.getElementById('ai-btn');btn.textContent='...';
-  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:'Sei Paolo Pesenti, Senior Dealer Coach di MotorK. Scrivi una email professionale in italiano per dealer auto. '+p+' Rispondi SOLO con JSON: {"s":"oggetto","b":"corpo"}. Usa {NOME} come placeholder. Firma: "Paolo Pesenti\nMotorK | Senior Dealer Coach"'}]})})
-  .then(function(r){return r.json();}).then(function(d){
-    var t=(d.content&&d.content[0]&&d.content[0].text)||'';
-    t=t.replace(/```json|```/g,'').trim();var obj=JSON.parse(t);
-    document.getElementById('msg-sub').value=obj.s||'';
-    document.getElementById('msg-body').value=obj.b||'';
-    _linkMap=[];
-    toast('Messaggio generato!');
-  }).catch(function(){toast('Errore AI');});
-  btn.textContent='AI';
-}
+
 
 function createDrafts(){
   var cos=getSel();if(!cos.length){toast('Nessuna azienda selezionata');return;}
@@ -724,20 +699,120 @@ var PROD_BENEFITS={
   'VIDEO':'video vettura generati in pochi secondi, contenuti social sempre pronti'
 };
 
-function loadTxt(text){
-  var lines=text.split('\n').map(function(l){return l.trim();}).filter(Boolean);
-  if(!lines.length){toast('File TXT vuoto');return;}
-  var found=[],notFound=[];
-  lines.forEach(function(line){
-    var match=null;
-    var lnorm=norm(line);
-    if(COMPANIES.length){
-      match=COMPANIES.find(function(c){return fuzzy(c.name,line);});
+// ============================================================
+// FOLLOW UP – RICERCA AZIENDA PER NOME
+// ============================================================
+function openFollowUp(){
+  if(!COMPANIES.length){toast('Carica prima i file Account e Contatti');return;}
+  document.getElementById('fu-search-input').value='';
+  document.getElementById('fu-suggestions').innerHTML='';
+  document.getElementById('fu-modal').style.display='flex';
+  setTimeout(function(){document.getElementById('fu-search-input').focus();},100);
+}
+
+function fuSearch(query){
+  var el=document.getElementById('fu-suggestions');
+  if(!query||query.length<2){el.innerHTML='';return;}
+  var q=norm(query);
+  // Score: exact > starts with > contains > fuzzy char match
+  var results=COMPANIES.map(function(c){
+    var cn=norm(c.name);
+    var score=0;
+    if(cn===q) score=100;
+    else if(cn.startsWith(q)) score=80;
+    else if(cn.indexOf(q)!==-1) score=60;
+    else {
+      // partial word match
+      var words=q.split(/\s+/);
+      var matched=words.filter(function(w){return cn.indexOf(w)!==-1;});
+      score=matched.length/words.length*40;
     }
-    if(match) found.push({input:line,company:match});
-    else notFound.push(line);
+    return {company:c,score:score};
+  }).filter(function(r){return r.score>0;})
+    .sort(function(a,b){return b.score-a.score;})
+    .slice(0,8);
+
+  if(!results.length){
+    el.innerHTML='<div style="color:#aaa;font-size:12px;padding:8px">Nessuna corrispondenza trovata</div>';
+    return;
+  }
+  el.innerHTML='';
+  results.forEach(function(r){
+    var c=r.company;
+    var col=tc(c.type);
+    var div=document.createElement('div');
+    div.style.cssText='padding:8px 10px;border:1px solid #eee;border-radius:6px;margin-bottom:4px;cursor:pointer;display:flex;align-items:center;gap:8px';
+    div.innerHTML='<span style="font-size:13px;font-weight:600;flex:1">'+c.name+'</span>'
+      +'<span style="font-size:10px;padding:1px 6px;border-radius:4px;background:'+col+'22;color:'+col+'">'+c.type+'</span>'
+      +'<span style="font-size:11px;color:#aaa">'+c.province+'</span>';
+    div.onmouseover=function(){this.style.background='#f5f5f0';};
+    div.onmouseout=function(){this.style.background='';};
+    div.onclick=(function(company){
+      return function(){
+        document.getElementById('fu-modal').style.display='none';
+        setTimeout(function(){
+          renderTxtModal([{input:company.name,company:company}],[]);
+        },80);
+      };
+    })(c);
+    el.appendChild(div);
   });
-  renderTxtModal(found,notFound);
+}
+
+function loadTxt(text){
+  // Estrae nomi azienda dal formato DOCX dealer map:
+  // "1. Autoghinzani Srl, Calusco d'Adda · Customer Prospect · ..."
+  var lines=text.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+  if(!lines.length){toast('File DOCX vuoto');return;}
+
+  // Parole/pattern che indicano righe da ignorare (intestazioni, label, brief prodotti)
+  var NOISE=[
+    /^DEALER VISIBILI/i,/^DEALER LUNGO/i,/^28\//,/^\d{1,2}\/\d{1,2}\/\d{4}/,
+    /^PRODOTTI ATTIVI/i,/^OPPORTUNIT/i,/^UPSELL/i,/^Important/i,
+    /^WS /i,/^WebSparK/i,/^LeadSparK/i,/^StockSparK/i,/^CallSparK/i,
+    /^FidSparK/i,/^SeoSparK/i,/^PredictSparK/i,/^AdSparK/i,/^AgentSparK/i,
+    /^CDP/i,/^WhatsApp/i,/^LS /i,/^SSK/i,
+    /—/,/\.{3}/,/^Customer/i,/^New/i,/^Ex /i,/^Prospect/i,
+    /^[A-Z ]{6,}$/,  // righe tutto maiuscolo (intestazioni)
+    /km dalla strada/i,/^\d+ dealer/i
+  ];
+
+  var names=[];
+  lines.forEach(function(line){
+    // Salta righe rumore
+    if(NOISE.some(function(r){return r.test(line);})) return;
+    // Formato DOCX mappa: "N. Nome Azienda, Città · ..."
+    var m=line.match(/^(\d+)\.\s+(.+?)(?:,\s*.+)?(?:\s*[·•].+)?$/);
+    if(m){
+      var name=m[2].trim();
+      // ulteriore pulizia: taglia da · o • in poi
+      name=name.split(/[·•]/)[0].trim();
+      // taglia da virgola+città (parola maiuscola) in poi
+      name=name.replace(/,\s*[A-Za-zÀ-ÿ].+$/,'').trim();
+      if(name&&name.length>2) names.push(name);
+    }
+  });
+
+  // Deduplicazione
+  names=names.filter(function(n,i){return names.indexOf(n)===i;});
+
+  if(!names.length){toast('Nessun nome azienda trovato nel DOCX');return;}
+
+  // Solo nomi che matchano nel DB vanno in found; gli altri vengono silenziosamente ignorati
+  // (sono testo del documento, non aziende mancanti)
+  var found=[];
+  names.forEach(function(name){
+    var match=COMPANIES.length?COMPANIES.find(function(c){return fuzzy(c.name,name);}):null;
+    if(match) found.push({input:name,company:match});
+    // nomi non trovati: ignora silenziosamente (non sono aziende reali del DB)
+  });
+
+  if(!found.length){
+    document.getElementById('txt-modal-body').innerHTML=
+      '<div style="color:#888;text-align:center;padding:30px">Nessuna azienda del DOCX trovata nel database.<br><span style="font-size:11px">Assicurati di aver caricato i file Account e Contatti.</span></div>';
+    return;
+  }
+  renderTxtModal(found,[]);
 }
 
 function renderTxtModal(found,notFound){
@@ -761,19 +836,21 @@ function renderTxtModal(found,notFound){
     return {
       name:c.name,
       contacts:c.contacts,
+      dsm:c.dsm||[],
       products:c.mappedProds,
       notActive:notActive,
-      // default: primo contatto con email in A, tutti gli altri in CC — l'utente decide liberamente
-      toEmail: (function(){var first=c.contacts.find(function(x){return x.email;});return first?first.email:'';})(),
+      // default: tutti in CC, nessuno in A — l'utente sceglie
+      toEmail: '',
       ccEmails: [],
       excluded: [],
       proposedProds: []
     };
   });
-  // Init CC: tutti tranne chi è in A
+  // Init CC: contatti dealer tutti in CC, DSM deselezionato di default (utente sceglie)
   TXT_STATE.companies.forEach(function(state){
     var all=state.contacts.filter(function(x){return x.email;});
-    state.ccEmails=all.filter(function(x){return x.email!==state.toEmail;}).map(function(x){return x.email;});
+    state.ccEmails=all.map(function(x){return x.email;});
+    // DSM: NON aggiunto di default, checkbox deselezionata
   });
 
   html+='<div id="txt-companies-wrap">';
@@ -789,7 +866,10 @@ function renderTxtModal(found,notFound){
 
     // CONTATTI
     html+='<div style="padding:10px 14px">';
-    html+='<div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Contatti</div>';
+    html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+    html+='<div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;flex:1">Contatti</div>';
+    html+='<button onclick="excludeAll('+idx+')" style="font-size:10px;padding:2px 8px;border:1px solid #e53935;border-radius:4px;background:#fff;color:#e53935;cursor:pointer">✕ Escludi tutti</button>';
+    html+='</div>';
     if(!state.contacts.filter(function(x){return x.email;}).length){
       html+='<div style="color:#aaa;font-size:11px">Nessun contatto con email</div>';
     } else {
@@ -799,12 +879,30 @@ function renderTxtModal(found,notFound){
         html+='<span style="min-width:160px;font-weight:500">'+ct.name+(ct.role?' <span style="font-size:9px;background:#fff3e0;color:#e65100;border-radius:3px;padding:1px 4px">'+ct.role+'</span>':'')+'</span>';
         html+='<span style="color:#666;flex:1">'+ct.email+'</span>';
         html+='<select id="role_'+cid+'" data-idx="'+idx+'" data-email="'+ct.email+'" onchange="updateContact(this)" title="Scegli liberamente chi mettere in A, CC o escludere" style="font-size:11px;padding:2px 6px;border:1px solid #ddd;border-radius:4px;width:90px">';
-        var sel=state.toEmail===ct.email?'A':(state.excluded.indexOf(ct.email)!==-1?'Escludi':'CC');
+        var sel=state.toEmail===ct.email&&ct.email!==''?'A':(state.excluded.indexOf(ct.email)!==-1?'Escludi':'CC');
         ['A','CC','Escludi'].forEach(function(opt){html+='<option'+(sel===opt?' selected':'')+'>'+opt+'</option>';});
         html+='</select></div>';
       });
     }
     html+='</div>';
+
+    // DSM MOTORK
+    if(state.dsm&&state.dsm.length){
+      html+='<div style="padding:0 14px 10px;border-top:1px solid #f0f0e8">';
+      html+='<div style="font-size:10px;font-weight:700;color:#1a5cb8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">&#127970; DSM MotorK</div>';
+      state.dsm.forEach(function(dsm,di){
+        var dsmId='dsm_'+idx+'_'+di;
+        var dsmChkId='dsmchk_'+idx+'_'+di;
+        var isInCC=state.ccEmails.indexOf(dsm.email)!==-1;
+        html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:12px;background:#f0f4ff;border-radius:5px;padding:5px 8px">';
+        html+='<input type="checkbox" id="'+dsmChkId+'" data-idx="'+idx+'" data-di="'+di+'" '+(isInCC?'checked':'')+' onchange="toggleDsmCC(this)" style="width:14px;height:14px;cursor:pointer">';
+        html+='<label for="'+dsmChkId+'" style="font-weight:600;min-width:110px;cursor:pointer">'+dsm.name+'</label>';
+        html+='<input id="'+dsmId+'" type="text" value="'+dsm.email+'" data-idx="'+idx+'" data-di="'+di+'" onchange="updateDsmEmail(this)" style="flex:1;font-size:11px;padding:2px 6px;border:1px solid #c5d5f5;border-radius:4px;color:#1a5cb8">';
+        html+='<span style="font-size:10px;'+(isInCC?'background:#1a5cb8;color:#fff':'background:#eee;color:#999')+';border-radius:3px;padding:1px 6px;white-space:nowrap" id="dsmtag_'+idx+'_'+di+'">'+(isInCC?'CC':'—')+'</span>';
+        html+='</div>';
+      });
+      html+='</div>';
+    }
 
     // PRODOTTI DA PROPORRE
     html+='<div style="padding:0 14px 12px">';
@@ -865,6 +963,130 @@ function updateContact(sel){
   }
 }
 
+function excludeAll(idx){
+  var state=TXT_STATE.companies[idx];
+  if(!state) return;
+  state.toEmail='';
+  state.ccEmails=[];
+  state.excluded=state.contacts.filter(function(x){return x.email;}).map(function(x){return x.email;});
+  // update selects
+  var card=document.querySelector('.txt-co-card[data-idx="'+idx+'"]');
+  if(card) card.querySelectorAll('select[data-idx="'+idx+'"]').forEach(function(s){s.value='Escludi';});
+}
+
+function usaSelezione(){
+  // Raccoglie tutte le aziende con almeno un contatto A o CC
+  var parts=[];
+  var toEmail='',ccEmails=[];
+
+  TXT_STATE.companies.forEach(function(state){
+    // Destinatari
+    if(state.toEmail&&toEmail==='') toEmail=state.toEmail;
+    state.ccEmails.forEach(function(e){if(ccEmails.indexOf(e)===-1) ccEmails.push(e);});
+    state.dsm.forEach(function(d){if(d.email&&ccEmails.indexOf(d.email)===-1) ccEmails.push(d.email);});
+
+    // Costruisce riga prodotti per questa azienda
+    if(state.proposedProds.length){
+      var names=state.proposedProds.map(function(p){return PROD_LABELS[p]||p;});
+      parts.push(state.name+': '+names.join(', '));
+    }
+  });
+
+  // Oggetto
+  var nAz=TXT_STATE.companies.length;
+  var sub=nAz===1
+    ? 'A seguito della nostra visita, '+TXT_STATE.companies[0].name
+    : 'A seguito delle nostre visite';
+  document.getElementById('msg-sub').value=sub;
+
+  // Corpo base
+  var nome='{NOME}';
+  var body='Ciao '+nome+',\n\n';
+  body+='a seguito della mia recente visita volevo condividere alcune idee che potrebbero fare al caso tuo.\n\n';
+
+  if(parts.length){
+    body+='In base a quello che già utilizzi, ti propongo:\n\n';
+    parts.forEach(function(p){body+='• '+p+'\n';});
+    body+='\n';
+  }
+
+  // Link demo per i prodotti selezionati
+  var allProds=[];
+  TXT_STATE.companies.forEach(function(state){
+    state.proposedProds.forEach(function(p){if(allProds.indexOf(p)===-1) allProds.push(p);});
+  });
+  if(allProds.length){
+    body+='Trovi qui i link per approfondire:\n';
+    allProds.forEach(function(p){
+      var label=PROD_LABELS[p]||p;
+      body+='• '+label+'\n';
+    });
+    body+='\n';
+  }
+
+  body+='Fammi sapere se ti va di sentirci per un approfondimento.\n\nA presto,';
+
+  document.getElementById('msg-body').value=body;
+
+  // Aggiorna _linkMap con i link demo dei prodotti selezionati
+  _linkMap=[];
+  allProds.forEach(function(p){
+    var demoLink=PROD_DEMO_LINKS[p];
+    if(demoLink){
+      var label=PROD_LABELS[p]||p;
+      // estrai url dal tag <a href="...">
+      var m=demoLink.match(/href="([^"]+)"/);
+      if(m) _linkMap.push({label:label,url:m[1]});
+    }
+  });
+
+  // Sostituisci i nomi prodotto nel body con i link
+  var bodyEl=document.getElementById('msg-body');
+  allProds.forEach(function(p){
+    var label=PROD_LABELS[p]||p;
+    var m2=(PROD_DEMO_LINKS[p]||'').match(/href="([^"]+)"/);
+    if(m2){
+      bodyEl.value=bodyEl.value.replace(
+        new RegExp('(• )'+label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'),
+        '$1'+label+' → '+m2[1]
+      );
+    }
+  });
+
+  document.getElementById('txt-modal').style.display='none';
+  toast('Oggetto e testo pronti, completali e crea le bozze!');
+}
+
+function toggleDsmCC(chk){
+  var idx=parseInt(chk.dataset.idx);
+  var di=parseInt(chk.dataset.di);
+  var state=TXT_STATE.companies[idx];
+  if(!state||!state.dsm[di]) return;
+  var email=state.dsm[di].email;
+  var tag=document.getElementById('dsmtag_'+idx+'_'+di);
+  if(chk.checked){
+    if(state.ccEmails.indexOf(email)===-1) state.ccEmails.push(email);
+    if(tag){tag.textContent='CC';tag.style.background='#1a5cb8';tag.style.color='#fff';}
+  } else {
+    state.ccEmails=state.ccEmails.filter(function(e){return e!==email;});
+    if(tag){tag.textContent='—';tag.style.background='#eee';tag.style.color='#999';}
+  }
+}
+
+function updateDsmEmail(input){
+  var idx=parseInt(input.dataset.idx);
+  var di=parseInt(input.dataset.di);
+  var newEmail=input.value.trim();
+  var state=TXT_STATE.companies[idx];
+  if(!state||!state.dsm[di]) return;
+  var oldEmail=state.dsm[di].email;
+  state.dsm[di].email=newEmail;
+  // aggiorna ccEmails
+  var pos=state.ccEmails.indexOf(oldEmail);
+  if(pos!==-1) state.ccEmails[pos]=newEmail;
+  else if(newEmail&&state.ccEmails.indexOf(newEmail)===-1) state.ccEmails.push(newEmail);
+}
+
 function updateProd(chk){
   var idx=parseInt(chk.dataset.idx);
   var p=chk.dataset.prod;
@@ -873,76 +1095,7 @@ function updateProd(chk){
   else state.proposedProds=state.proposedProds.filter(function(x){return x!==p;});
 }
 
-function genTxtAI(){
-  var btn=document.getElementById('txt-modal-gen');
-  var notes=document.getElementById('txt-visit-notes')?document.getElementById('txt-visit-notes').value:'';
-  btn.textContent='Genero...';btn.disabled=true;
-  var statusEl=document.getElementById('txt-modal-status');
-  statusEl.textContent='';
 
-  var tasks=TXT_STATE.companies.filter(function(s){return s.proposedProds.length>0||true;});
-  // Build prompt: one company per block
-  var companiesInfo=TXT_STATE.companies.map(function(s){
-    var activeNames=s.products.map(function(p){return PROD_LABELS[p]||p;});
-    var proposedNames=s.proposedProds.length?s.proposedProds.map(function(p){return PROD_LABELS[p]||p;}):['da definire'];
-    var toName=s.contacts.find(function(x){return x.email===s.toEmail;})||(s.contacts[0]||{});
-    return 'Azienda: '+s.name+'\nDestinatario principale: '+(toName.first||toName.name||'il titolare')+'\nProdotti attivi: '+(activeNames.length?activeNames.join(', '):'nessuno')+'\nProdotti da proporre: '+proposedNames.join(', ');
-  }).join('\n\n');
-
-  var prompt='Sei Paolo Pesenti, Senior Dealer Coach di MotorK. Hai appena visitato questi dealer.\n\n'+
-    companiesInfo+'\n\n'+
-    (notes?'Note dalla visita: '+notes+'\n\n':'')+
-    'Scrivi UNA email in italiano per destinatario, tono colloquiale e amichevole (non formale, non "Gentile", ma ciao o buongiorno nome), in stile post-visita. '+
-    'Riferisci che hai discusso insieme, e proponi i prodotti indicati come soluzione naturale e vantaggiosa dato quello che già hanno. '+
-    'Usa virgole al posto dei trattini. Niente emoji. Usa {NOME} come placeholder del nome. '+
-    'Per ogni azienda, cita brevemente il vantaggio concreto di ogni prodotto proposto (risparmio tempo, più lead, meno sprechi). '+
-    'Rispondi SOLO con JSON array: [{"azienda":"nome","oggetto":"...","corpo":"..."}]. Corpo in testo piano con newline \\n.';
-
-  fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:3000,
-      messages:[{role:'user',content:prompt}]})
-  }).then(function(r){return r.json();}).then(function(d){
-    var t=(d.content&&d.content[0]&&d.content[0].text)||'[]';
-    t=t.replace(/```json|```/g,'').trim();
-    var arr;
-    try{arr=JSON.parse(t);}catch(e){arr=[];}
-    TXT_STATE.generated=arr;
-    // Show generated in modal
-    var genHtml='<div style="margin-top:12px"><div style="font-size:13px;font-weight:700;color:#1a5cb8;margin-bottom:10px">&#10024; Testi generati</div>';
-    arr.forEach(function(item,i){
-      var state=TXT_STATE.companies.find(function(s){return norm(s.name)===norm(item.azienda);});
-      // inject demo links
-      var corpo=item.corpo;
-      if(state&&state.proposedProds.length){
-        var linksHtml='\n\nLink utili:\n'+state.proposedProds.filter(function(p){return PROD_DEMO_LINKS[p];}).map(function(p){return '• '+PROD_DEMO_LINKS[p];}).join('\n');
-        corpo+=linksHtml;
-      }
-      genHtml+='<div style="border:1px solid #e0e0d8;border-radius:7px;margin-bottom:10px;overflow:hidden">';
-      genHtml+='<div style="background:#f5f5f0;padding:8px 12px;font-weight:600;font-size:13px">'+item.azienda+'</div>';
-      genHtml+='<div style="padding:10px 12px">';
-      genHtml+='<div style="font-size:10px;color:#888;margin-bottom:2px">OGGETTO</div>';
-      genHtml+='<div style="font-size:12px;font-weight:600;background:#f0f4ff;padding:5px 8px;border-radius:4px;margin-bottom:8px" id="gen-sub-'+i+'">'+item.oggetto+'</div>';
-      genHtml+='<div style="font-size:10px;color:#888;margin-bottom:2px">TESTO</div>';
-      genHtml+='<textarea id="gen-body-'+i+'" data-azienda="'+item.azienda+'" style="width:100%;height:140px;font-size:12px;border:1px solid #ddd;border-radius:4px;padding:6px;resize:vertical">'+corpo+'</textarea>';
-      genHtml+='<div style="margin-top:5px;display:flex;gap:6px">';
-      genHtml+='<button onclick="applyOneTxt('+i+')" style="font-size:11px;padding:3px 10px;border:1px solid #1a5cb8;border-radius:4px;background:#fff;color:#1a5cb8;cursor:pointer">Usa questo oggetto+testo</button>';
-      genHtml+='</div>';
-      genHtml+='</div></div>';
-    });
-    genHtml+='</div>';
-    var existing=document.getElementById('txt-gen-output');
-    if(existing) existing.remove();
-    var div=document.createElement('div');div.id='txt-gen-output';div.innerHTML=genHtml;
-    document.getElementById('txt-modal-body').appendChild(div);
-    document.getElementById('txt-modal-apply').style.display='inline-block';
-    statusEl.textContent=arr.length+' testi generati';
-    btn.textContent='&#10024; Rigenera';btn.disabled=false;
-  }).catch(function(err){
-    statusEl.textContent='Errore generazione AI';
-    btn.textContent='&#10024; Genera testo AI';btn.disabled=false;
-  });
-}
 
 function applyOneTxt(i){
   var subEl=document.getElementById('gen-sub-'+i);
@@ -972,27 +1125,46 @@ window.addEventListener('DOMContentLoaded',function(){
   document.getElementById('btn-drafts').addEventListener('click',createDrafts);
   document.getElementById('btn-wa').addEventListener('click',startWA);
   document.getElementById('btn-wa-next').addEventListener('click',nextWA);
-  document.getElementById('ai-btn').addEventListener('click',genAI);
+
   document.getElementById('btn-sel-all').addEventListener('click',selAll);
   document.getElementById('btn-sel-none').addEventListener('click',selNone);
   document.getElementById('btn-toggle-contacts').addEventListener('click',toggleContacts);
   document.getElementById('btn-cache').addEventListener('click',clearCache);
   // TXT modal
+  document.getElementById('btn-followup').addEventListener('click',openFollowUp);
+  document.getElementById('fu-modal-close').addEventListener('click',function(){document.getElementById('fu-modal').style.display='none';});
+  document.getElementById('fu-modal').addEventListener('click',function(e){
+    if(e.target===document.getElementById('fu-modal')) document.getElementById('fu-modal').style.display='none';
+  });
+  document.getElementById('fu-modal-inner').addEventListener('click',function(e){e.stopPropagation();});
+  document.getElementById('fu-search-input').addEventListener('input',function(){fuSearch(this.value.trim());});
+  document.getElementById('fu-search-input').addEventListener('keydown',function(e){
+    if(e.key==='Enter'){
+      var first=document.getElementById('fu-suggestions').querySelector('div[style*="cursor:pointer"]');
+      if(first) first.click();
+    }
+  });
   document.getElementById('btn-load-txt').addEventListener('change',function(e){
     var f=e.target.files&&e.target.files[0];if(!f)return;
     var fr=new FileReader();
     fr.onload=function(ev){
-      document.getElementById('txt-modal-loading').style.display='block';
-      document.getElementById('txt-modal-body').innerHTML='<div style="text-align:center;padding:30px;color:#888">&#128196; Analisi aziende in corso...</div>';
+      document.getElementById('txt-modal-body').innerHTML='<div style="text-align:center;padding:30px;color:#888">&#128196; Lettura DOCX in corso...</div>';
       document.getElementById('txt-modal').style.display='block';
-      setTimeout(function(){loadTxt(ev.target.result);},100);
+      mammoth.extractRawText({arrayBuffer: ev.target.result})
+        .then(function(result){
+          setTimeout(function(){loadTxt(result.value);},100);
+        })
+        .catch(function(){
+          document.getElementById('txt-modal-body').innerHTML='<div style="color:#c62828;padding:20px;text-align:center">Errore lettura DOCX. Assicurati che il file sia un .docx valido.</div>';
+        });
     };
-    fr.readAsText(f,'UTF-8');
+    fr.readAsArrayBuffer(f);
     e.target.value='';
   });
   document.getElementById('txt-modal-close').addEventListener('click',function(){document.getElementById('txt-modal').style.display='none';});
-  document.getElementById('txt-modal-gen').addEventListener('click',genTxtAI);
-  document.getElementById('txt-modal-apply').addEventListener('click',applyAllTxt);
+  document.getElementById('txt-modal-usa').addEventListener('click',usaSelezione);
+
+
   document.getElementById('txt-modal').addEventListener('click',function(e){if(e.target===document.getElementById('txt-modal'))document.getElementById('txt-modal').style.display='none';});
   document.getElementById('tpl-sel').addEventListener('change',applyTpl);
   document.getElementById('btn-test').addEventListener('click',sendTestMail);
