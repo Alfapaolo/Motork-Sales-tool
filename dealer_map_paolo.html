@@ -9,10 +9,11 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css"/>
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@9.0.2/build/index.umd.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:system-ui,sans-serif;background:#f5f5f0;height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
-#toolbar{background:#fff;border-bottom:1px solid #e0e0d8;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;z-index:1000;flex-shrink:0}
+#toolbar{background:#fff;border-bottom:1px solid #e0e0d8;padding:6px 10px;display:flex;flex-wrap:nowrap;gap:4px;align-items:center;z-index:1000;flex-shrink:0;overflow-x:auto}
 #bottom-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid #1a5cb8;padding:8px 10px;display:flex;gap:6px;align-items:center;z-index:2000;flex-shrink:0;flex-wrap:wrap}
 #map{flex:1;min-height:0;margin-bottom:70px}
 #omw-partenza,#omw-arrivo,#omw-via{border:1px solid #ccc;border-radius:6px;padding:5px 8px;font-size:13px;width:120px;outline:none}
@@ -37,6 +38,7 @@ body{font-family:system-ui,sans-serif;background:#f5f5f0;height:100vh;height:100
 .ai-item-badge{display:inline-block;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;margin-right:4px}
 #ai-search-toggle{background:#7b1fa2;color:#fff;border:none;border-radius:6px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
 #map.ai-open{margin-left:300px}
+
 #omw-partenza:focus,#omw-arrivo:focus{border-color:#1a5cb8}
 #omw-km{border:1px solid #ccc;border-radius:6px;padding:5px 8px;font-size:13px;background:#fff;outline:none;cursor:pointer}
 #omw-go{background:#1a5cb8;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
@@ -54,11 +56,11 @@ body{font-family:system-ui,sans-serif;background:#f5f5f0;height:100vh;height:100
 .omw-item-meta{font-size:11px;color:#666}
 .omw-item-dist{font-size:11px;color:#1a5cb8;font-weight:600;margin-top:3px}
 input[type=text]{border:1px solid #ddd;border-radius:6px;padding:5px 10px;font-size:13px;width:150px;outline:none}
-.btn{border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;white-space:nowrap;font-weight:500;transition:opacity .15s,transform .1s}
+.btn{border:none;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;white-space:nowrap;font-weight:500;transition:opacity .15s,transform .1s}
 .btn:active{transform:scale(.96)}
 .btn-blue{background:#1a5cb8;color:#fff}
 .btn-red{background:#e53935;color:#fff}
-.tb-label{font-size:10px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.tb-label{font-size:9px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
 .divider{width:1px;height:22px;background:#e0e0d8;flex-shrink:0}
 .pill{border-radius:20px;padding:3px 9px;font-size:11px;font-weight:600;cursor:pointer;border:2px solid transparent;display:inline-block;transition:opacity .15s;user-select:none}
 .pill:active{transform:scale(.95)}
@@ -81,7 +83,6 @@ input[type=text]{border:1px solid #ddd;border-radius:6px;padding:5px 10px;font-s
   <span id="status">Carica un CSV per iniziare</span>
   <div class="divider"></div>
   <input type="text" id="search" placeholder="Cerca dealer…" oninput="filterMarkers()">
-  <button class="btn" style="background:#f5f5f0;padding:5px 8px;font-size:16px;line-height:1" onclick="locateMe()" title="Vicino a me">📍</button>
   <button id="ai-search-toggle" onclick="toggleAiSearch()" title="Ricerca AI">🤖 AI Search</button>
   <div class="divider"></div>
   <span class="tb-label">Tipo</span>
@@ -90,7 +91,7 @@ input[type=text]{border:1px solid #ddd;border-radius:6px;padding:5px 10px;font-s
   <div id="type-filters" style="display:flex;gap:3px;flex-wrap:wrap"></div>
   <div class="divider"></div>
   <span class="tb-label">Rating</span>
-  <div id="rating-filters" style="display:flex;gap:3px;flex-wrap:wrap"></div>
+  <div id="rating-filters" style="display:flex;gap:3px;flex-wrap:nowrap"></div>
 </div>
 <div id="miss-bar" style="display:none"><span id="miss-text"></span><button onclick="downloadErrors()" style="font-size:10px;padding:2px 7px;border:1px solid #856404;border-radius:4px;background:#fff;color:#856404;cursor:pointer;white-space:nowrap">⬇ Scarica errori</button></div>
 <div id="map"></div>
@@ -107,7 +108,11 @@ input[type=text]{border:1px solid #ddd;border-radius:6px;padding:5px 10px;font-s
   </select>
   <button id="omw-go" onclick="runOnMyWay()">🔍 Cerca</button>
   <button id="omw-clear" onclick="clearRoute()">✕ Pulisci</button>
-  <button id="omw-export" onclick="exportTXT()">⬇ TXT</button>
+  <button id="omw-export" onclick="exportDOCX()" title="DOCX dealer lungo il percorso">⬇ DOCX rotta</button>
+  <button class="btn" style="background:#1a5cb8;color:#fff;padding:5px 10px;font-size:12px;font-weight:700" onclick="exportDOCXVisible()" title="DOCX dealer visibili sulla mappa">⬇ DOCX mappa</button>
+  <button class="btn" style="background:#f5f5f0;padding:5px 8px;font-size:16px;line-height:1" onclick="locateMe()" title="Vicino a me">📍</button>
+  <button class="btn" style="background:#f5f5f0;padding:5px 8px;font-size:13px;font-weight:700" onclick="zoomToVisible()" title="Zoom sui dealer visibili">⛶ Zoom</button>
+  <span style="margin-left:auto;font-size:13px;font-weight:700;color:#1a5cb8;white-space:nowrap" id="visible-count-bar">0</span>
 </div>
 
 <!-- RESULT PANEL -->
@@ -547,14 +552,14 @@ function buildFilters(dealers){
   types.forEach(function(t){
     var p=document.createElement('span');p.className='pill';p.textContent=t;
     p.style.cssText='background:'+tc(t)+'22;border-color:'+tc(t)+';color:'+tc(t);
-    p.onclick=function(){if(activeTypes.has(t)){if(activeTypes.size>1){activeTypes.delete(t);p.classList.add('off');}}else{activeTypes.add(t);p.classList.remove('off');}filterMarkers();};
+    p.onclick=function(){if(activeTypes.has(t)){activeTypes.delete(t);p.classList.add('off');}else{activeTypes.add(t);p.classList.remove('off');}filterMarkers();};
     tf.appendChild(p);
   });
   var rf=document.getElementById('rating-filters');rf.innerHTML='';
   ratings.forEach(function(r){
     var info=ri(r);var p=document.createElement('span');p.className='pill';p.textContent=r;
     p.style.cssText='background:'+info.c+'22;border-color:'+info.c+';color:'+info.c;
-    p.onclick=function(){if(activeRatings.has(r)){if(activeRatings.size>1){activeRatings.delete(r);p.classList.add('off');}}else{activeRatings.add(r);p.classList.remove('off');}filterMarkers();};
+    p.onclick=function(){if(activeRatings.has(r)){activeRatings.delete(r);p.classList.add('off');}else{activeRatings.add(r);p.classList.remove('off');}filterMarkers();};
     rf.appendChild(p);
   });
 }
@@ -562,11 +567,107 @@ function buildFilters(dealers){
 function filterMarkers(){
   var q=document.getElementById('search').value.toLowerCase().trim();
   markerLayer.clearLayers();
+  var visible=0;
+  // Se c'è una rotta attiva, ricalcola i dealer nel range rispettando i filtri correnti
+  if(routeLayer && omwDealers.length > 0){
+    refreshOmwWithFilters(q);
+    return;
+  }
   markers.forEach(function(o){
     var d=o.dealer;
-    if((!d.Customer_Type__c||activeTypes.has(d.Customer_Type__c))&&(!d.Rating||activeRatings.has(d.Rating))&&(!q||d.Name.toLowerCase().includes(q)))
+    if((!d.Customer_Type__c||activeTypes.has(d.Customer_Type__c))&&(!d.Rating||activeRatings.has(d.Rating))&&(!q||d.Name.toLowerCase().includes(q))){
       markerLayer.addLayer(o.marker);
+      visible++;
+    }
   });
+  updateVisibleCount(visible);
+}
+
+function refreshOmwWithFilters(q){
+  if(!routeLayer) return;
+  var kmRange=parseInt(document.getElementById('omw-km').value);
+  // Rileggo i punti della polyline
+  var routePoints=[];
+  routeLayer.getLatLngs().forEach(function(ll){
+    if(Array.isArray(ll)) ll.forEach(function(p){routePoints.push({lat:p.lat,lng:p.lng});});
+    else routePoints.push({lat:ll.lat,lng:ll.lng});
+  });
+  if(!q) q='';
+  // Ricalcola omwDealers con filtri correnti
+  omwDealers=[];
+  markers.forEach(function(o){
+    var d=o.dealer;
+    if((!d.Customer_Type__c||activeTypes.has(d.Customer_Type__c))&&
+       (!d.Rating||activeRatings.has(d.Rating))&&
+       (!q||d.Name.toLowerCase().includes(q))){
+      var latlng=o.marker.getLatLng();
+      var dist=distFromRoute(latlng.lat,latlng.lng,routePoints);
+      if(dist<=kmRange) omwDealers.push({o:o,dist:dist});
+    }
+  });
+  // Ri-evidenzia
+  var normalSet=new Set(omwDealers.map(function(x){return x.o;}));
+  markers.forEach(function(o){
+    var d=o.dealer;
+    if((!d.Customer_Type__c||activeTypes.has(d.Customer_Type__c))&&
+       (!d.Rating||activeRatings.has(d.Rating))&&
+       (!q||d.Name.toLowerCase().includes(q))){
+      var col=tc(d.Customer_Type__c),r=ri(d.Rating),s=r.s;
+      var isMatch=normalSet.has(o);
+      if(isMatch) s=s+4;
+      var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+(s*2)+'" height="'+(s*2)+'" viewBox="0 0 '+(s*2)+' '+(s*2)+'">'
+        +'<circle cx="'+s+'" cy="'+s+'" r="'+(s-2)+'" fill="'+col+'" stroke="'+(isMatch?'#ffe600':'white')+'" stroke-width="'+(isMatch?3:2)+'" opacity="'+(isMatch?1:.25)+'"/>'
+        +'<circle cx="'+s+'" cy="'+s+'" r="'+Math.floor(s/3)+'" fill="white" opacity="'+(isMatch?.9:.15)+'"/>'
+        +'</svg>';
+      var icon=L.divIcon({html:svg,className:'',iconSize:[s*2,s*2],iconAnchor:[s,s],popupAnchor:[0,-s]});
+      o.marker.setIcon(icon);
+      markerLayer.addLayer(o.marker);
+    }
+  });
+  // Aggiorna pannello
+  document.getElementById('omw-panel-title').textContent=omwDealers.length+' dealer entro '+kmRange+' km dal percorso';
+  var list=document.getElementById('omw-panel-list');
+  list.innerHTML='';
+  if(omwDealers.length===0){
+    list.innerHTML='<div style="padding:16px;color:#888;font-size:13px;text-align:center">Nessun dealer trovato</div>';
+  } else {
+    omwDealers.forEach(function(item,idx){
+      var d=item.o.dealer;
+      var col=tc(d.Customer_Type__c);
+      var el=document.createElement('div');
+      el.className='omw-item';
+      el.innerHTML='<div class="omw-item-name">'+(idx+1)+'. '+d.Name+'</div>'
+        +'<div class="omw-item-meta" style="color:'+col+';font-weight:600">'+(d.Customer_Type__c||'—')+'</div>'
+        +'<div class="omw-item-meta">📍 '+(d.BillingCity||'—')+' · '+(d.Rating||'—')+'</div>'
+        +'<div class="omw-item-meta" style="color:#555">'+(d.Active_Products_List__c||'—')+'</div>'
+        +'<div class="omw-item-dist">~'+item.dist.toFixed(1)+' km dalla strada</div>';
+      el.onclick=(function(o){return function(){map.setView(o.marker.getLatLng(),13);o.marker.openPopup();};})(item.o);
+      list.appendChild(el);
+    });
+  }
+  if(omwDealers.length>0) document.getElementById('omw-export').style.display='inline-block';
+  else document.getElementById('omw-export').style.display='none';
+  updateVisibleCount(markerLayer.getLayers().length);
+}
+
+function updateVisibleCount(visible){
+  var el=document.getElementById('visible-count-bar');
+  if(!el) return;
+  el.textContent=visible;
+}
+
+function zoomToVisible(){
+  var latlngs=[];
+  markerLayer.eachLayer(function(m){if(m.getLatLng)latlngs.push(m.getLatLng());});
+  if(latlngs.length===0){toast('Nessun dealer visibile');return;}
+  if(latlngs.length===1){map.setView(latlngs[0],13);return;}
+  var bounds=L.latLngBounds(latlngs);
+  map.fitBounds(bounds,{padding:[0,0],maxZoom:18});
+  // Forza zoom massimo possibile sui bounds reali
+  setTimeout(function(){
+    var z=map.getBoundsZoom(bounds,false);
+    map.setView(bounds.getCenter(),z);
+  },50);
 }
 
 function placeMarker(d,coords){
@@ -616,6 +717,7 @@ async function processCSVText(csvText){
     var toGeocode=[];
     dealers.forEach(function(d){var c=getCityCoords(d.BillingCity);if(c)placeMarker(d,c);else toGeocode.push(d);});
     document.getElementById('status').textContent=markers.length+' dealer';
+    updateVisibleCount(markers.length);
     if(markers.length>0){var g=L.featureGroup(markers.map(function(o){return o.marker;}));map.fitBounds(g.getBounds().pad(.1));}
     var stillMissed=[];
     if(toGeocode.length>0){
@@ -624,6 +726,7 @@ async function processCSVText(csvText){
       toGeocode.forEach(function(d){var c=getCityCoords(d.BillingCity);if(c)placeMarker(d,c);else stillMissed.push(d.BillingCity);});
       filterMarkers();
       document.getElementById('status').textContent=markers.length+' dealer';
+      updateVisibleCount(markers.length);
       if(markers.length>0){var g2=L.featureGroup(markers.map(function(o){return o.marker;}));map.fitBounds(g2.getBounds().pad(.1));}
     }
     var mb=document.getElementById('miss-bar');
@@ -905,212 +1008,203 @@ async function runOnMyWay() {
   toast('✅ ' + omwDealers.length + ' dealer trovati lungo il percorso');
 }
 
-function exportTXT() {
-  var partenza = document.getElementById('omw-partenza').value.trim();
-  var arrivo = document.getElementById('omw-arrivo').value.trim();
-  var km = document.getElementById('omw-km').value;
-  var lines = ['DEALER LUNGO IL PERCORSO: ' + partenza.toUpperCase() + ' → ' + arrivo.toUpperCase()];
-  lines.push('Range: ± ' + km + ' km | Data: ' + new Date().toLocaleDateString('it-IT'));
-  lines.push('Totale: ' + omwDealers.length + ' dealer');
-  lines.push('='.repeat(50));
-  omwDealers.forEach(function(item, idx) {
-    var d = item.o.dealer;
-    lines.push('');
-    lines.push((idx+1) + '. ' + d.Name);
-    lines.push('   Città: ' + (d.BillingCity||'—'));
-    lines.push('   Tipo: ' + (d.Customer_Type__c||'—') + ' | Rating: ' + (d.Rating||'—'));
-    if (d.Phone) lines.push('   Tel: ' + d.Phone);
-    lines.push('   Prodotti: ' + (d.Active_Products_List__c||'—'));
-    lines.push('   Dist. dalla strada: ~' + item.dist.toFixed(1) + ' km');
-  });
-  var blob = new Blob([lines.join('\n')], {type:'text/plain;charset=utf-8'});
-  var a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'percorso_' + partenza.replace(/\s+/g,'_') + '_' + arrivo.replace(/\s+/g,'_') + '.txt';
-  a.click();
-}
+function exportDOCX(customList, customTitle, customFilename) {
+  if (!window.docx) { toast('⚠ Libreria DOCX non caricata, riprova'); return; }
 
-// ===== AI SEARCH =====
-var aiSearchOpen = false;
+  var dealerList = customList || omwDealers;
+  if (!dealerList || dealerList.length === 0) { toast('⚠ Nessun dealer da esportare'); return; }
 
-function toggleAiSearch() {
-  aiSearchOpen = !aiSearchOpen;
-  var panel = document.getElementById('ai-search-panel');
-  panel.style.display = aiSearchOpen ? 'flex' : 'none';
-  document.getElementById('ai-search-results').innerHTML = '';
-  document.getElementById('ai-search-status').textContent = '';
-}
+  var partenza = customTitle || (document.getElementById('omw-partenza').value.trim() + ' → ' + document.getElementById('omw-arrivo').value.trim());
+  var km       = document.getElementById('omw-km').value;
+  var today    = new Date().toLocaleDateString('it-IT');
+  var filename = customFilename || ('percorso_' + document.getElementById('omw-partenza').value.trim().replace(/\s+/g,'_') + '.docx');
 
-function parseQuery(q) {
-  var filters = { hasProd:[], notProd:[], type:null, rating:null, city:null, province:null };
+  var EXCLUDE = ['iubenda','accessibility','add-on','facebook feed','xml feed',
+    'livespark','sellspark','carspark','keyloop','cloudflare','ai creative studio',
+    'trainspark','training','onboarding','gestionale'];
 
-  var PRODS = ['webspark ultra','webspark classic','webspark','leadspark','callspark',
-               'stockspark','reportspark','fidspark','predictspark','adspark',
-               'agentspark','seospark','cdp','datastudio'];
+  var UPSELL = [
+    {needs:'webspark',  miss:'leadspark',   label:'LeadSparK',          brief:' — Cattura ogni lead dal sito in un unico CRM.'},
+    {needs:'webspark',  miss:'seospark',    label:'SeoSparK',           brief:' — Più traffico organico, meno dipendenza dai portali.'},
+    {needs:'leadspark', miss:'callspark',   label:'CallSparK',          brief:' — Nessuna telefonata/lead persa, analisi AI di ogni chiamata.'},
+    {needs:'leadspark', miss:'whatsapp',    label:'WhatsApp Business',  brief:' — Gestisci lead via WhatsApp dal CRM.'},
+    {needs:'leadspark', miss:'agentspark',  label:'AgentSparK',         brief:' — AI H24 che risponde ai lead anche fuori orario.'},
+    {needs:'leadspark', miss:'predictspark',label:'PredictSparK',       brief:' — Intercetta clienti in scadenza per upsell aftersales.'},
+    {needs:'leadspark', miss:'fidspark',    label:'FidSparK',           brief:' — Gestione recensioni e reputazione integrata nel CRM.'},
+    {needs:'stockspark',miss:'bgremoval',   label:'Rimozione Sfondo',   brief:' — Foto auto professionali in automatico.'},
+    {needs:'stockspark',miss:'aivideo',     label:'AI Video',           brief:' — Video auto generati da AI in secondi.'},
+    {needs:'stockspark',miss:'stockapp',    label:'StockSparK App',     brief:' — Fotografa e pubblica le auto dal piazzale in 2 minuti.'},
+    {needs:'stockspark',miss:'adspark',     label:'AdSparK',            brief:' — Campagne Meta/Google sincronizzate con lo stock reale.'},
+    {needs:'webspark_no_stock',miss:'stockspark',label:'StockSparK',    brief:' — Pubblica lo stock su tutti i portali automaticamente.'},
+    {needs:'adspark',   miss:'predictspark',label:'PredictSparK',       brief:' — Campagne predittive sull\'aftersales sui clienti giusti.'},
+    {needs:'cdp',       miss:'callspark',   label:'CallSparK',          brief:' — Profilo cliente completo prima di rispondere al telefono.'},
+    {needs:'cdp',       miss:'agentspark',  label:'AgentSparK',         brief:' — Agente AI personalizzato sui dati CDP H24.'},
+  ];
 
-  var qLow = q.toLowerCase();
-  var notKws = ['senza ','non ','privi di ','che non hanno ','ma non '];
+  var MACRO = {
+    webspark:   ['webspark','ws revolution','ws - advanced','ws - premium','ws - core'],
+    webspark_no_stock: ['webspark service','webspark rent','ws - service','ws - rent','webspark revolution - service','webspark revolution - rent','webspark revolution - mobility'],
+    leadspark:  ['leadspark','ls - premium','ls - professional','ls - lead manager'],
+    stockspark: ['stockspark'],
+    callspark:  ['callspark'],
+    agentspark: ['agentspark'],
+    fidspark:   ['fidspark'],
+    predictspark:['predictspark'],
+    seospark:   ['seospark'],
+    adspark:    ['adspark','campaign budget'],
+    cdp:        ['cdp','full platform'],
+    whatsapp:   ['whatsapp'],
+    bgremoval:  ['background removal'],
+    aivideo:    ['ai video','ai videos'],
+    stockapp:   ['stockspark app'],
+  };
 
-  PRODS.forEach(function(p) {
-    var idx = qLow.indexOf(p.toLowerCase());
-    if (idx < 0) return;
-    var before = qLow.substring(0, idx);
-    var isNot = false;
-    notKws.forEach(function(kw) { if (before.lastIndexOf(kw) >= 0) isNot = true; });
-    if (isNot) { filters.notProd.push(p); }
-    else { filters.hasProd.push(p); }
-  });
-
-  var TYPES = ['customer','prospect','new','ex','ex-cliente','multimarche','ufficiale'];
-  TYPES.forEach(function(t) {
-    if (q2.indexOf(t) >= 0) filters.type = t;
-  });
-
-  var RATINGS = ['hot','warm','cold'];
-  RATINGS.forEach(function(r) {
-    if (q2.indexOf(r) >= 0) filters.rating = r;
-  });
-
-  // città: cerca parole dopo "a " o "in " o "di " che abbiano > 3 char
-  var cityMatch = q2.match(/(?:a|in|di)\s+([a-zà-ü]{3,})/i);
-  if (cityMatch) filters.city = cityMatch[1];
-
-  // province abbreviate (es. BG, MI, TO)
-  var provMatch = q.match(/([A-Z]{2})/);
-  if (provMatch) filters.province = provMatch[1].toLowerCase();
-
-  return filters;
-}
-
-function matchDealer(d, f) {
-  var prods = (d.Active_Products_List__c || '').toLowerCase();
-  var type  = (d.Customer_Type__c || '').toLowerCase();
-  var rating = (d.Rating || '').toLowerCase();
-  var city  = (d.BillingCity || '').toLowerCase();
-  var prov  = (d.BillingState || '').toLowerCase();
-
-  // Fuzzy: "webspark" matches "webspark revolution", "webspark ultra", etc.
-  // We check if the product field CONTAINS the search term as a substring
-  function hasProduct(prodField, term) {
-    return prodField.indexOf(term.toLowerCase()) >= 0;
+  function hasMacro(prods, key) {
+    var p = prods.toLowerCase();
+    return MACRO[key] && MACRO[key].some(function(kw){ return p.indexOf(kw) >= 0; });
   }
 
-  for (var i=0; i<f.hasProd.length; i++) {
-    if (!hasProduct(prods, f.hasProd[i])) return false;
-  }
-  for (var j=0; j<f.notProd.length; j++) {
-    if (hasProduct(prods, f.notProd[j])) return false;
-  }
-  if (f.type) {
-    var typeMap = {
-      'customer': 'customer', 'prospect': 'prospect', 'new': 'prospect',
-      'ex': 'ex', 'ex-cliente': 'ex', 'multimarche': 'multimarche', 'ufficiale': 'ufficiale'
-    };
-    var mapped = typeMap[f.type] || f.type;
-    if (type.indexOf(mapped) < 0) return false;
-  }
-  if (f.rating && rating.indexOf(f.rating) < 0) return false;
-  if (f.city && city.indexOf(f.city) < 0) return false;
-  if (f.province && prov.indexOf(f.province) < 0) return false;
-  return true;
-}
-
-function buildMatchReason(d, f) {
-  var parts = [];
-  if (f.hasProd.length) parts.push('Ha: ' + f.hasProd.join(', '));
-  if (f.notProd.length) parts.push('Senza: ' + f.notProd.join(', '));
-  if (f.type) parts.push('Tipo: ' + (d.Customer_Type__c || f.type));
-  if (f.rating) parts.push('Rating: ' + f.rating);
-  if (f.city) parts.push('Città: ' + (d.BillingCity || f.city));
-  return parts.join(' · ') || 'Corrisponde alla ricerca';
-}
-
-function runAiSearch() {
-  var query = document.getElementById('ai-search-input').value.trim();
-  if (!query) return;
-  if (!markers || markers.length === 0) {
-    document.getElementById('ai-search-status').textContent = '⚠ Nessun dato caricato';
-    return;
+  function getActive(prods) {
+    if (!prods || prods === '—') return [];
+    return prods.split(';').map(function(s){ return s.trim(); }).filter(function(s){
+      var sl = s.toLowerCase();
+      return !EXCLUDE.some(function(ex){ return sl.indexOf(ex) >= 0; }) && s.length > 2;
+    });
   }
 
-  document.getElementById('ai-search-status').textContent = 'Ricerca in corso…';
-  document.getElementById('ai-search-results').innerHTML = '';
-
-  var f = parseQuery(query);
-  var results = [];
-
-  markers.forEach(function(o) {
-    var d = o.dealer;
-    if (matchDealer(d, f)) {
-      results.push({
-        name: d.Name,
-        city: d.BillingCity || '',
-        type: d.Customer_Type__c || '',
-        rating: d.Rating || '',
-        products: d.Active_Products_List__c || '',
-        matchReason: buildMatchReason(d, f),
-        _marker: o
-      });
-    }
-  });
-
-  document.getElementById('ai-search-status').textContent = results.length + ' risultati';
-  renderAiResults(results);
-  highlightAiResults(results);
-}
-
-function renderAiResults(results) {
-  var container = document.getElementById('ai-search-results');
-  container.innerHTML = '';
-  if (results.length === 0) {
-    container.innerHTML = '<div style="padding:16px;color:#888;font-size:13px;text-align:center">Nessun dealer trovato<br>per questa ricerca</div>';
-    return;
-  }
-  results.forEach(function(r) {
-    // find matching marker
-    var matchedMarker = null;
-    markers.forEach(function(o) {
-      if (!matchedMarker && (o.dealer.Id === r.id || o.dealer.Name === r.name)) {
-        matchedMarker = o;
+  function getOpps(prods) {
+    var seen = {}, result = [];
+    UPSELL.forEach(function(r){
+      if (hasMacro(prods, r.needs) && !hasMacro(prods, r.miss) && !seen[r.label]) {
+        seen[r.label] = true;
+        result.push(r);
       }
     });
-    var col = matchedMarker ? tc(matchedMarker.dealer.Customer_Type__c) : '#888';
-    var el = document.createElement('div');
-    el.className = 'ai-item';
-    el.innerHTML = '<div class="ai-item-name">' + r.name + '</div>'
-      + '<div class="ai-item-meta"><span class="ai-item-badge" style="background:' + col + ';color:#fff">' + (r.type||'—') + '</span>'
-      + (r.city ? '📍 ' + r.city : '') + ' · ' + (r.rating||'—') + '</div>'
-      + '<div class="ai-item-meta" style="margin-top:3px;color:#555">' + (r.products||'—') + '</div>'
-      + '<div class="ai-item-meta" style="margin-top:4px;background:#f3e5f5;border-radius:4px;padding:3px 6px;color:#6a1b9a;font-style:italic">' + (r.matchReason||'') + '</div>';
-    if (matchedMarker) {
-      el.onclick = (function(o){ return function(){
-        map.setView(o.marker.getLatLng(), 13);
-        o.marker.openPopup();
-      }; })(matchedMarker);
+    return result;
+  }
+
+  var D = window.docx;
+  var BorderStyle = D.BorderStyle, WidthType = D.WidthType, ShadingType = D.ShadingType;
+  var border = {style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC'};
+  var borders = {top:border,bottom:border,left:border,right:border};
+  var cm = {top:80,bottom:80,left:120,right:120};
+
+  function p(runs, opts) {
+    return new D.Paragraph(Object.assign({children: Array.isArray(runs)?runs:[runs]}, opts||{}));
+  }
+  function tr(txt, opts) {
+    return new D.TextRun(Object.assign({text:txt, font:'Arial'}, opts||{}));
+  }
+  function cell(children, w, fill) {
+    return new D.TableCell({borders:borders, width:{size:w,type:WidthType.DXA}, margins:cm,
+      shading: fill ? {fill:fill,type:ShadingType.CLEAR} : undefined,
+      children: Array.isArray(children)?children:[children]});
+  }
+
+  var allBlocks = [];
+
+  // Header
+  allBlocks.push(p(tr(partenza.toUpperCase(), {bold:true,size:36,color:'1A5CB8'}), {spacing:{before:0,after:120}}));
+  allBlocks.push(p(tr(today + (customList ? ('  ·  ' + dealerList.length + ' dealer') : ('  ·  Range: ±' + km + ' km  ·  ' + dealerList.length + ' dealer')), {size:20,color:'666666'}), {spacing:{before:0,after:200}}));
+  allBlocks.push(p([], {spacing:{before:0,after:300}, border:{bottom:{style:BorderStyle.SINGLE,size:6,color:'1A5CB8',space:1}}}));
+
+  dealerList.forEach(function(item, idx) {
+    var d    = item.o.dealer;
+    var prods = d.Active_Products_List__c || '—';
+    var active = getActive(prods);
+    var opps   = getOpps(prods);
+    var hasMkt = prods.toLowerCase().indexOf('campaign budget') >= 0;
+    var isLast = idx === dealerList.length - 1;
+
+    allBlocks.push(p(tr((idx+1) + '. ' + (d.Name||'—'), {bold:true,size:26,color:'1A5CB8'}), {spacing:{before:280,after:60}}));
+    allBlocks.push(p([
+      tr((d.BillingCity||'—') + '  ·  ' + (d.Customer_Type__c||'—') + '  ·  ' + (d.Rating||'—'), {size:18,color:'666666'}),
+      item.dist != null ? tr('  ·  ~' + item.dist.toFixed(1) + ' km dalla strada', {size:18,color:'999999'}) : tr('', {size:18})
+    ], {spacing:{before:0,after:hasMkt?60:80}}));
+
+    if (hasMkt) {
+      allBlocks.push(p(tr('Fa marketing con MotorK (Campaign Budget attivo)', {size:18,bold:true,color:'388E3C'}), {spacing:{before:0,after:80}}));
     }
-    container.appendChild(el);
+
+    var leftItems  = active.length ? active : ['Nessun prodotto SparK attivo'];
+    var maxRows    = Math.max(leftItems.length, opps.length||1);
+    var rows = [];
+
+    rows.push(new D.TableRow({children:[
+      cell(p(tr('PRODOTTI ATTIVI', {bold:true,size:18,color:'1A5CB8'})), 4400, 'D6E4F7'),
+      cell(p(tr('OPPORTUNITÀ UPSELL', {bold:true,size:18,color:'E65100'})), 4600, 'FFF3E0')
+    ]}));
+
+    for (var i=0; i<maxRows; i++) {
+      var lText = leftItems[i] || '';
+      var rOpp  = opps[i] || null;
+      rows.push(new D.TableRow({children:[
+        cell(p(tr(lText, {size:18})), 4400),
+        cell(rOpp
+          ? p([tr(rOpp.label, {bold:true,size:18,color:'E65100'}), tr(rOpp.brief, {size:18})])
+          : p(tr(opps.length===0?'Nessuna opportunità rilevata':'', {size:18,color:'999999'})), 4600)
+      ]}));
+    }
+
+    allBlocks.push(new D.Table({width:{size:9000,type:WidthType.DXA}, columnWidths:[4400,4600], rows:rows}));
+    if (!isLast) {
+      allBlocks.push(p([], {spacing:{before:160,after:0}, border:{bottom:{style:BorderStyle.SINGLE,size:3,color:'EEEEEE',space:1}}}));
+    }
   });
+
+  var doc = new D.Document({
+    styles:{default:{document:{run:{font:'Arial',size:22}}}},
+    sections:[{
+      properties:{page:{size:{width:11906,height:16838},margin:{top:800,right:800,bottom:800,left:800}}},
+      children:allBlocks
+    }]
+  });
+
+  D.Packer.toBlob(doc).then(function(blob){
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    toast('✅ DOCX scaricato (' + dealerList.length + ' dealer)');
+  }).catch(function(e){ toast('⚠ Errore DOCX: ' + e.message); });
 }
 
-function highlightAiResults(results) {
-  var matchIds = new Set(results.map(function(r){ return r.name; }));
-  markerLayer.clearLayers();
-  markers.forEach(function(o) {
+function exportDOCXVisible() {
+  if (!window.docx) { toast('⚠ Libreria DOCX non caricata'); return; }
+  var q = document.getElementById('search').value.toLowerCase().trim();
+  var visibleList = [];
+  markers.forEach(function(o){
     var d = o.dealer;
-    var isMatch = matchIds.has(d.Name);
-    var col = tc(d.Customer_Type__c), r = ri(d.Rating), s = r.s;
-    if (isMatch) s = s + 4;
-    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+(s*2)+'" height="'+(s*2)+'" viewBox="0 0 '+(s*2)+' '+(s*2)+'">'
-      +'<circle cx="'+s+'" cy="'+s+'" r="'+(s-2)+'" fill="'+col+'" stroke="'+(isMatch?'#ce93d8':'white')+'" stroke-width="'+(isMatch?3:2)+'" opacity="'+(isMatch?1:.25)+'"/>'
-      +'<circle cx="'+s+'" cy="'+s+'" r="'+Math.floor(s/3)+'" fill="white" opacity="'+(isMatch?.9:.15)+'"/>'
-      +'</svg>';
-    var icon = L.divIcon({html:svg,className:'',iconSize:[s*2,s*2],iconAnchor:[s,s],popupAnchor:[0,-s]});
-    o.marker.setIcon(icon);
-    markerLayer.addLayer(o.marker);
+    if((!d.Customer_Type__c || activeTypes.has(d.Customer_Type__c)) &&
+       (!d.Rating || activeRatings.has(d.Rating)) &&
+       (!q || d.Name.toLowerCase().includes(q))){
+      visibleList.push({o: o, dist: null});
+    }
   });
+  if (visibleList.length === 0) { toast('⚠ Nessun dealer visibile'); return; }
+
+  // Pannello laterale
+  var panel = document.getElementById('omw-result-panel');
+  var list  = document.getElementById('omw-panel-list');
+  document.getElementById('omw-panel-title').textContent = visibleList.length + ' dealer visibili sulla mappa';
+  list.innerHTML = '';
+  visibleList.forEach(function(item, idx){
+    var d = item.o.dealer;
+    var col = tc(d.Customer_Type__c);
+    var el = document.createElement('div');
+    el.className = 'omw-item';
+    el.innerHTML = '<div class="omw-item-name">' + (idx+1) + '. ' + d.Name + '</div>'
+      + '<div class="omw-item-meta" style="color:'+col+';font-weight:600">' + (d.Customer_Type__c||'—') + '</div>'
+      + '<div class="omw-item-meta">📍 ' + (d.BillingCity||'—') + ' · ' + (d.Rating||'—') + '</div>'
+      + '<div class="omw-item-meta" style="color:#555">' + (d.Active_Products_List__c||'—') + '</div>';
+    el.onclick = (function(o){ return function(){ map.setView(o.marker.getLatLng(),13); o.marker.openPopup(); }; })(item.o);
+    list.appendChild(el);
+  });
+  panel.style.display = 'flex';
+
+  // DOCX
+  exportDOCX(visibleList, 'Dealer visibili sulla mappa', 'dealer_mappa_visibili.docx');
 }
-// ===== END AI SEARCH =====
-// ===== END ON MY WAY =====
 </script>
 </body>
 </html>
