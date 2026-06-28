@@ -80,6 +80,10 @@ textarea{height:90px;resize:vertical;line-height:1.5}
     <button id="ai-search-btn">Cerca</button>
     <span id="ai-search-status"></span>
   </div>
+  <div style="position:relative;overflow:hidden;display:inline-block;cursor:pointer">
+    <button class="btn" style="background:#f90032;color:#fff;border-color:#f90032;white-space:nowrap">&#128196; Carica TXT</button>
+    <input type="file" id="btn-load-txt" accept=".txt,text/plain" style="position:absolute;left:0;top:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:100px">
+  </div>
   <div><button class="btn rd" id="btn-cache">&#128465; Cache</button></div>
 </div>
 
@@ -245,6 +249,27 @@ textarea{height:90px;resize:vertical;line-height:1.5}
   </div>
 </div>
 <div id="toast"></div>
+
+<!-- MODALE CARICA TXT -->
+<div id="txt-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;overflow-y:auto;padding:20px">
+  <div style="background:#fff;border-radius:10px;max-width:780px;margin:0 auto;padding:0;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.25)">
+    <div style="background:#1a5cb8;color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:11px;opacity:.7">MotorK SparK Outreach</div>
+        <div style="font-weight:700;font-size:15px">&#128196; Genera email post-visita</div>
+      </div>
+      <button id="txt-modal-close" style="background:rgba(255,255,255,.15);border:none;border-radius:6px;color:#fff;padding:5px 11px;cursor:pointer;font-size:14px">&#10005;</button>
+    </div>
+    <div id="txt-modal-body" style="padding:16px">
+      <div id="txt-modal-loading" style="text-align:center;padding:30px;color:#888">Analisi aziende in corso...</div>
+    </div>
+    <div id="txt-modal-footer" style="padding:12px 16px;border-top:1px solid #eee;display:flex;gap:8px;align-items:center;justify-content:flex-end">
+      <span id="txt-modal-status" style="font-size:11px;color:#888;flex:1"></span>
+      <button id="txt-modal-gen" style="background:#9c27b0;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer">&#10024; Genera testo AI</button>
+      <button id="txt-modal-apply" style="background:#1a5cb8;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;display:none">&#10003; Applica e seleziona</button>
+    </div>
+  </div>
+</div>
 
 <script>
 var PROD_MAP={
@@ -658,6 +683,290 @@ function clearCache(){
   });
 }
 
+// ============================================================
+// CARICA TXT – MODALE POST-VISITA
+// ============================================================
+var TXT_STATE={companies:[],generated:null};
+
+var PROD_DEMO_LINKS={
+  'WS':'<a href="https://webspark-revolution-it.getwebspark.com/">Demo WebSparK</a>',
+  'REV':'<a href="https://webspark-revolution-it.getwebspark.com/">Demo WebSparK Revolution</a>',
+  'SSK':'<a href="https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing">Presentazione StockSparK</a>',
+  'LS':'<a href="https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present">Presentazione LeadSparK</a>',
+  'LSR':'<a href="https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present">Presentazione LeadSparK Revolution</a>',
+  'CSK':'<a href="https://docs.google.com/presentation/d/185utUR8TkIl8lUsW3DkpNNW8RDtiVBHUIB_ghK8A2hk/present">Presentazione CallSparK</a>',
+  'PSK':'<a href="https://docs.google.com/presentation/d/1LqHmmVMst3zOtl-KggSmUg0NWGezzIBG9qtFQ78RfqY/present">Presentazione PredictSparK</a>',
+  'FSK':'<a href="https://docs.google.com/presentation/d/1tKwQ8I8RfuCLswVCublwRyTGEnwUCwqAmaMzWxID7Is/present">Presentazione FidSparK</a>',
+  'SEO':'<a href="https://docs.google.com/presentation/d/1dj2zvXwHZLN9OkFHTjeJRXoZtXFjHFF5KCg7u6NLR2g/present">Presentazione SeoSparK</a>',
+  'MKTG':'<a href="https://docs.google.com/presentation/d/1fQ6g4F2XHEdEYb2RsL7eAcI_n26x2xWXL0RO1ctsD2w/present">Presentazione AdSparK</a>',
+  'AGEN':'<a href="https://motork-io.zoom.us/rec/component-page?accessLevel=meeting&hasValidToken=false&clusterId=us02&action=play&filePlayId=&componentName=recording-register&meetingId=H65yJ0A4QncHNvjtVoY7wtYfQzm6cbZuFhsXOWGdvHWHJ7PMcit0qK4v-KSdQFSr.0N0fqQNmIOSQd9fj">Webinar AgentSparK</a>',
+  'CDP':'<a href="https://motork-io.zoom.us/rec/component-page?accessLevel=meeting&hasValidToken=false&clusterId=us02&action=play&filePlayId=&componentName=recording-register&meetingId=9lFnDDTJkKz3zm7isGQmH4OFdkbmPg_iOuiB-aARgGwksY0-8Z9Rb4ObcUUamCBD.-4-O_An63Ih26-E5">Webinar CDP</a>',
+  'WAPP':'<a href="https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present">Presentazione WhatsApp Business</a>',
+  'BGR':'<a href="https://webspark-revolution-it.getwebspark.com/background-removal/">Esempi Background Removal</a>',
+  'VIDEO':'<a href="https://webspark-revolution-it.getwebspark.com/video-ai/">Esempi AI Video</a>'
+};
+
+var PROD_BENEFITS={
+  'WS':'sito professionale sempre aggiornato, più lead qualificati e presenza digitale forte',
+  'REV':'sito di nuova generazione con AI integrata, massima autonomia operativa senza tecnici',
+  'SSK':'stock sempre aggiornato e pubblicato automaticamente su tutti i portali, risparmio di ore di lavoro',
+  'LS':'tutti i lead in un unico posto, nessun contatto perso, preventivi veloci e reportistica chiara',
+  'LSR':'CRM evoluto con AI, campagne predittive e marketing automation inclusi',
+  'CSK':'ogni lead viene chiamato subito dall\'AI, tasso di appuntamento in forte aumento',
+  'PSK':'campagne AI sul tuo database clienti, riattivi chi non viene da mesi senza sforzo',
+  'FSK':'più recensioni positive in automatico, reputazione web gestita senza pensarci',
+  'SEO':'più traffico organico dal tuo sito, meno dipendenza dai portali a pagamento',
+  'MKTG':'campagne Google e Meta ottimizzate con AI, costo per lead più basso',
+  'AGEN':'agente AI che gestisce lead e appuntamenti H24, anche la domenica sera',
+  'CDP':'tutti i dati dei tuoi clienti unificati, campagne mirate su chi è veramente pronto a comprare',
+  'WAPP':'comunicazione diretta su WhatsApp, tasso di apertura altissimo',
+  'BGR':'foto stock sempre professionali con sfondo coordinato in automatico',
+  'VIDEO':'video vettura generati in pochi secondi, contenuti social sempre pronti'
+};
+
+function loadTxt(text){
+  var lines=text.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+  if(!lines.length){toast('File TXT vuoto');return;}
+  var found=[],notFound=[];
+  lines.forEach(function(line){
+    var match=null;
+    var lnorm=norm(line);
+    if(COMPANIES.length){
+      match=COMPANIES.find(function(c){return fuzzy(c.name,line);});
+    }
+    if(match) found.push({input:line,company:match});
+    else notFound.push(line);
+  });
+  renderTxtModal(found,notFound);
+}
+
+function renderTxtModal(found,notFound){
+  var allProds=Object.keys(PROD_LABELS);
+  var bodyEl=document.getElementById('txt-modal-body');
+  var html='';
+
+  if(notFound.length){
+    html+='<div style="background:#fff3e0;border:1px solid #ffe082;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:#e65100">'+
+      '<strong>Aziende non trovate nel database</strong> (verifica la scrittura):<br>'+notFound.join(', ')+'</div>';
+  }
+  if(!found.length){
+    bodyEl.innerHTML=html+'<p style="color:#888;text-align:center;padding:20px">Nessuna azienda trovata. Carica prima i file Account e Contatti.</p>';
+    return;
+  }
+
+  // Store state
+  TXT_STATE.companies=found.map(function(f){
+    var c=f.company;
+    var notActive=allProds.filter(function(p){return !c.mappedProds.includes(p);});
+    return {
+      name:c.name,
+      contacts:c.contacts,
+      products:c.mappedProds,
+      notActive:notActive,
+      // default: primo contatto con email in A, tutti gli altri in CC — l'utente decide liberamente
+      toEmail: (function(){var first=c.contacts.find(function(x){return x.email;});return first?first.email:'';})(),
+      ccEmails: [],
+      excluded: [],
+      proposedProds: []
+    };
+  });
+  // Init CC: tutti tranne chi è in A
+  TXT_STATE.companies.forEach(function(state){
+    var all=state.contacts.filter(function(x){return x.email;});
+    state.ccEmails=all.filter(function(x){return x.email!==state.toEmail;}).map(function(x){return x.email;});
+  });
+
+  html+='<div id="txt-companies-wrap">';
+  TXT_STATE.companies.forEach(function(state,idx){
+    var c=found[idx].company;
+    var hasProd=state.products.length?state.products.map(function(p){return '<span style="background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;margin-right:2px">'+(PROD_LABELS[p]||p)+'</span>';}).join(''):'<span style="color:#aaa;font-size:11px">nessun prodotto attivo</span>';
+
+    html+='<div class="txt-co-card" data-idx="'+idx+'" style="border:1px solid #e0e0d8;border-radius:8px;margin-bottom:14px;overflow:hidden">';
+    html+='<div style="background:#f5f5f0;padding:10px 14px;display:flex;align-items:center;gap:8px">';
+    html+='<span style="font-size:14px;font-weight:700;flex:1">'+state.name+'</span>';
+    html+='<span style="font-size:10px;color:#888">Prodotti attivi: </span>'+hasProd;
+    html+='</div>';
+
+    // CONTATTI
+    html+='<div style="padding:10px 14px">';
+    html+='<div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Contatti</div>';
+    if(!state.contacts.filter(function(x){return x.email;}).length){
+      html+='<div style="color:#aaa;font-size:11px">Nessun contatto con email</div>';
+    } else {
+      state.contacts.filter(function(x){return x.email;}).forEach(function(ct){
+        var cid='co'+idx+'_'+ct.email.replace(/[@.]/g,'_');
+        html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:12px">';
+        html+='<span style="min-width:160px;font-weight:500">'+ct.name+(ct.role?' <span style="font-size:9px;background:#fff3e0;color:#e65100;border-radius:3px;padding:1px 4px">'+ct.role+'</span>':'')+'</span>';
+        html+='<span style="color:#666;flex:1">'+ct.email+'</span>';
+        html+='<select id="role_'+cid+'" data-idx="'+idx+'" data-email="'+ct.email+'" onchange="updateContact(this)" title="Scegli liberamente chi mettere in A, CC o escludere" style="font-size:11px;padding:2px 6px;border:1px solid #ddd;border-radius:4px;width:90px">';
+        var sel=state.toEmail===ct.email?'A':(state.excluded.indexOf(ct.email)!==-1?'Escludi':'CC');
+        ['A','CC','Escludi'].forEach(function(opt){html+='<option'+(sel===opt?' selected':'')+'>'+opt+'</option>';});
+        html+='</select></div>';
+      });
+    }
+    html+='</div>';
+
+    // PRODOTTI DA PROPORRE
+    html+='<div style="padding:0 14px 12px">';
+    html+='<div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Prodotti da proporre (non ancora attivi)</div>';
+    var notActLabels=state.notActive.filter(function(p){return PROD_LABELS[p];});
+    if(!notActLabels.length){
+      html+='<div style="color:#aaa;font-size:11px">Ha già tutto il catalogo principale</div>';
+    } else {
+      html+='<div style="display:flex;flex-wrap:wrap;gap:4px">';
+      notActLabels.forEach(function(p){
+        var pid='prod_co'+idx+'_'+p;
+        html+='<label style="display:flex;align-items:center;gap:4px;cursor:pointer;background:#f0f4ff;border:1px solid #c5d5f5;border-radius:5px;padding:3px 8px;font-size:11px">';
+        html+='<input type="checkbox" id="'+pid+'" data-idx="'+idx+'" data-prod="'+p+'" onchange="updateProd(this)">';
+        html+=(PROD_LABELS[p]||p)+'</label>';
+      });
+      html+='</div>';
+    }
+    html+='</div>';
+    html+='</div>'; // end card
+  });
+  html+='</div>'; // end wrap
+
+  // Note field
+  html+='<div style="margin-top:8px">';
+  html+='<div style="font-size:11px;font-weight:600;color:#555;margin-bottom:4px">&#128221; Note per l\'AI (cosa è emerso in visita, contesto, ecc.)</div>';
+  html+='<textarea id="txt-visit-notes" style="width:100%;height:70px;border:1px solid #ddd;border-radius:6px;padding:7px;font-size:12px;resize:vertical" placeholder="Es: interesse a migliorare il CRM, lamentela sui portali, budget limitato, visitati con Camilla..."></textarea>';
+  html+='</div>';
+
+  bodyEl.innerHTML=html;
+  document.getElementById('txt-modal-apply').style.display='none';
+  document.getElementById('txt-modal').style.display='block';
+}
+
+function updateContact(sel){
+  var idx=parseInt(sel.dataset.idx);
+  var email=sel.dataset.email;
+  var val=sel.value;
+  var state=TXT_STATE.companies[idx];
+  if(val==='A'){
+    state.toEmail=email;
+    state.ccEmails=state.contacts.filter(function(x){return x.email&&x.email!==email&&state.excluded.indexOf(x.email)===-1;}).map(function(x){return x.email;});
+    state.excluded=state.excluded.filter(function(e){return e!==email;});
+    // update all selects for this company
+    var card=document.querySelector('.txt-co-card[data-idx="'+idx+'"]');
+    if(card) card.querySelectorAll('select[data-idx="'+idx+'"]').forEach(function(s){
+      if(s.dataset.email!==email) s.value=state.excluded.indexOf(s.dataset.email)!==-1?'Escludi':'CC';
+    });
+  } else if(val==='CC'){
+    if(state.toEmail===email){state.toEmail='';} // deselect TO
+    state.ccEmails=state.ccEmails.filter(function(e){return e!==email;});
+    if(state.ccEmails.indexOf(email)===-1) state.ccEmails.push(email);
+    state.excluded=state.excluded.filter(function(e){return e!==email;});
+  } else {
+    state.excluded=state.excluded.filter(function(e){return e!==email;});
+    state.excluded.push(email);
+    state.ccEmails=state.ccEmails.filter(function(e){return e!==email;});
+    if(state.toEmail===email) state.toEmail='';
+  }
+}
+
+function updateProd(chk){
+  var idx=parseInt(chk.dataset.idx);
+  var p=chk.dataset.prod;
+  var state=TXT_STATE.companies[idx];
+  if(chk.checked){if(state.proposedProds.indexOf(p)===-1) state.proposedProds.push(p);}
+  else state.proposedProds=state.proposedProds.filter(function(x){return x!==p;});
+}
+
+function genTxtAI(){
+  var btn=document.getElementById('txt-modal-gen');
+  var notes=document.getElementById('txt-visit-notes')?document.getElementById('txt-visit-notes').value:'';
+  btn.textContent='Genero...';btn.disabled=true;
+  var statusEl=document.getElementById('txt-modal-status');
+  statusEl.textContent='';
+
+  var tasks=TXT_STATE.companies.filter(function(s){return s.proposedProds.length>0||true;});
+  // Build prompt: one company per block
+  var companiesInfo=TXT_STATE.companies.map(function(s){
+    var activeNames=s.products.map(function(p){return PROD_LABELS[p]||p;});
+    var proposedNames=s.proposedProds.length?s.proposedProds.map(function(p){return PROD_LABELS[p]||p;}):['da definire'];
+    var toName=s.contacts.find(function(x){return x.email===s.toEmail;})||(s.contacts[0]||{});
+    return 'Azienda: '+s.name+'\nDestinatario principale: '+(toName.first||toName.name||'il titolare')+'\nProdotti attivi: '+(activeNames.length?activeNames.join(', '):'nessuno')+'\nProdotti da proporre: '+proposedNames.join(', ');
+  }).join('\n\n');
+
+  var prompt='Sei Paolo Pesenti, Senior Dealer Coach di MotorK. Hai appena visitato questi dealer.\n\n'+
+    companiesInfo+'\n\n'+
+    (notes?'Note dalla visita: '+notes+'\n\n':'')+
+    'Scrivi UNA email in italiano per destinatario, tono colloquiale e amichevole (non formale, non "Gentile", ma ciao o buongiorno nome), in stile post-visita. '+
+    'Riferisci che hai discusso insieme, e proponi i prodotti indicati come soluzione naturale e vantaggiosa dato quello che già hanno. '+
+    'Usa virgole al posto dei trattini. Niente emoji. Usa {NOME} come placeholder del nome. '+
+    'Per ogni azienda, cita brevemente il vantaggio concreto di ogni prodotto proposto (risparmio tempo, più lead, meno sprechi). '+
+    'Rispondi SOLO con JSON array: [{"azienda":"nome","oggetto":"...","corpo":"..."}]. Corpo in testo piano con newline \\n.';
+
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:3000,
+      messages:[{role:'user',content:prompt}]})
+  }).then(function(r){return r.json();}).then(function(d){
+    var t=(d.content&&d.content[0]&&d.content[0].text)||'[]';
+    t=t.replace(/```json|```/g,'').trim();
+    var arr;
+    try{arr=JSON.parse(t);}catch(e){arr=[];}
+    TXT_STATE.generated=arr;
+    // Show generated in modal
+    var genHtml='<div style="margin-top:12px"><div style="font-size:13px;font-weight:700;color:#1a5cb8;margin-bottom:10px">&#10024; Testi generati</div>';
+    arr.forEach(function(item,i){
+      var state=TXT_STATE.companies.find(function(s){return norm(s.name)===norm(item.azienda);});
+      // inject demo links
+      var corpo=item.corpo;
+      if(state&&state.proposedProds.length){
+        var linksHtml='\n\nLink utili:\n'+state.proposedProds.filter(function(p){return PROD_DEMO_LINKS[p];}).map(function(p){return '• '+PROD_DEMO_LINKS[p];}).join('\n');
+        corpo+=linksHtml;
+      }
+      genHtml+='<div style="border:1px solid #e0e0d8;border-radius:7px;margin-bottom:10px;overflow:hidden">';
+      genHtml+='<div style="background:#f5f5f0;padding:8px 12px;font-weight:600;font-size:13px">'+item.azienda+'</div>';
+      genHtml+='<div style="padding:10px 12px">';
+      genHtml+='<div style="font-size:10px;color:#888;margin-bottom:2px">OGGETTO</div>';
+      genHtml+='<div style="font-size:12px;font-weight:600;background:#f0f4ff;padding:5px 8px;border-radius:4px;margin-bottom:8px" id="gen-sub-'+i+'">'+item.oggetto+'</div>';
+      genHtml+='<div style="font-size:10px;color:#888;margin-bottom:2px">TESTO</div>';
+      genHtml+='<textarea id="gen-body-'+i+'" data-azienda="'+item.azienda+'" style="width:100%;height:140px;font-size:12px;border:1px solid #ddd;border-radius:4px;padding:6px;resize:vertical">'+corpo+'</textarea>';
+      genHtml+='<div style="margin-top:5px;display:flex;gap:6px">';
+      genHtml+='<button onclick="applyOneTxt('+i+')" style="font-size:11px;padding:3px 10px;border:1px solid #1a5cb8;border-radius:4px;background:#fff;color:#1a5cb8;cursor:pointer">Usa questo oggetto+testo</button>';
+      genHtml+='</div>';
+      genHtml+='</div></div>';
+    });
+    genHtml+='</div>';
+    var existing=document.getElementById('txt-gen-output');
+    if(existing) existing.remove();
+    var div=document.createElement('div');div.id='txt-gen-output';div.innerHTML=genHtml;
+    document.getElementById('txt-modal-body').appendChild(div);
+    document.getElementById('txt-modal-apply').style.display='inline-block';
+    statusEl.textContent=arr.length+' testi generati';
+    btn.textContent='&#10024; Rigenera';btn.disabled=false;
+  }).catch(function(err){
+    statusEl.textContent='Errore generazione AI';
+    btn.textContent='&#10024; Genera testo AI';btn.disabled=false;
+  });
+}
+
+function applyOneTxt(i){
+  var subEl=document.getElementById('gen-sub-'+i);
+  var bodyEl=document.getElementById('gen-body-'+i);
+  if(!subEl||!bodyEl) return;
+  document.getElementById('msg-sub').value=subEl.textContent;
+  document.getElementById('msg-body').value=bodyEl.value;
+  _linkMap=[];
+  // select the company
+  var azienda=(bodyEl.dataset.azienda||'').toLowerCase().trim();
+  var match=COMPANIES.find(function(c){return norm(c.name)===azienda||fuzzy(c.name,azienda);});
+  if(match){SELECTED.clear();SELECTED.add(match.name);applyFilters();}
+  document.getElementById('txt-modal').style.display='none';
+  toast('Oggetto e testo applicati!');
+}
+
+function applyAllTxt(){
+  // Apply first generated text
+  if(TXT_STATE.generated&&TXT_STATE.generated.length){
+    applyOneTxt(0);
+  }
+  document.getElementById('txt-modal').style.display='none';
+}
+
 window.addEventListener('DOMContentLoaded',function(){
   setupInputs();
   document.getElementById('btn-drafts').addEventListener('click',createDrafts);
@@ -668,6 +977,23 @@ window.addEventListener('DOMContentLoaded',function(){
   document.getElementById('btn-sel-none').addEventListener('click',selNone);
   document.getElementById('btn-toggle-contacts').addEventListener('click',toggleContacts);
   document.getElementById('btn-cache').addEventListener('click',clearCache);
+  // TXT modal
+  document.getElementById('btn-load-txt').addEventListener('change',function(e){
+    var f=e.target.files&&e.target.files[0];if(!f)return;
+    var fr=new FileReader();
+    fr.onload=function(ev){
+      document.getElementById('txt-modal-loading').style.display='block';
+      document.getElementById('txt-modal-body').innerHTML='<div style="text-align:center;padding:30px;color:#888">&#128196; Analisi aziende in corso...</div>';
+      document.getElementById('txt-modal').style.display='block';
+      setTimeout(function(){loadTxt(ev.target.result);},100);
+    };
+    fr.readAsText(f,'UTF-8');
+    e.target.value='';
+  });
+  document.getElementById('txt-modal-close').addEventListener('click',function(){document.getElementById('txt-modal').style.display='none';});
+  document.getElementById('txt-modal-gen').addEventListener('click',genTxtAI);
+  document.getElementById('txt-modal-apply').addEventListener('click',applyAllTxt);
+  document.getElementById('txt-modal').addEventListener('click',function(e){if(e.target===document.getElementById('txt-modal'))document.getElementById('txt-modal').style.display='none';});
   document.getElementById('tpl-sel').addEventListener('change',applyTpl);
   document.getElementById('btn-test').addEventListener('click',sendTestMail);
   document.getElementById('ai-search').addEventListener('keydown',function(e){if(e.key==='Enter')aiSearch();});

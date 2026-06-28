@@ -109,7 +109,7 @@ input[type=text]{border:1px solid #ddd;border-radius:6px;padding:5px 10px;font-s
   <button id="omw-go" onclick="runOnMyWay()">🔍 Cerca</button>
   <button id="omw-clear" onclick="clearRoute()">✕ Pulisci</button>
   <button id="omw-export" onclick="exportDOCX()" title="DOCX dealer lungo il percorso">⬇ DOCX rotta</button>
-  <button class="btn" style="background:#1a5cb8;color:#fff;padding:5px 10px;font-size:12px;font-weight:700" onclick="exportDOCXVisible()" title="DOCX dealer visibili sulla mappa">⬇ DOCX mappa</button>
+  <button class="btn" style="background:#1a5cb8;color:#fff;padding:5px 10px;font-size:12px;font-weight:700" onclick="mapPanelOpen ? downloadMapDOCX() : exportDOCXVisible()" title="Prima apertura: mostra pannello. Clic successivi: scarica DOCX">⬇ DOCX mappa</button>
   <button class="btn" style="background:#f5f5f0;padding:5px 8px;font-size:16px;line-height:1" onclick="locateMe()" title="Vicino a me">📍</button>
   <button class="btn" style="background:#f5f5f0;padding:5px 8px;font-size:13px;font-weight:700" onclick="zoomToVisible()" title="Zoom sui dealer visibili">⛶ Zoom</button>
   <span style="margin-left:auto;font-size:13px;font-weight:700;color:#1a5cb8;white-space:nowrap" id="visible-count-bar">0</span>
@@ -575,12 +575,14 @@ function filterMarkers(){
   }
   markers.forEach(function(o){
     var d=o.dealer;
-    if((!d.Customer_Type__c||activeTypes.has(d.Customer_Type__c))&&(!d.Rating||activeRatings.has(d.Rating))&&(!q||d.Name.toLowerCase().includes(q))){
+    if((q ? d.Name.toLowerCase().includes(q) : (activeTypes.size>0&&activeRatings.size>0&&activeTypes.has(d.Customer_Type__c)&&activeRatings.has(d.Rating)))){
       markerLayer.addLayer(o.marker);
       visible++;
     }
   });
   updateVisibleCount(visible);
+  // Se il pannello mappa è aperto, aggiorna la lista laterale
+  if(mapPanelOpen) refreshMapPanel();
 }
 
 function refreshOmwWithFilters(q){
@@ -650,6 +652,34 @@ function refreshOmwWithFilters(q){
   updateVisibleCount(markerLayer.getLayers().length);
 }
 
+function refreshMapPanel(){
+  var q=document.getElementById('search').value.toLowerCase().trim();
+  var visibleList=[];
+  markers.forEach(function(o){
+    var d=o.dealer;
+    if((!d.Customer_Type__c||activeTypes.has(d.Customer_Type__c))&&
+       (!d.Rating||activeRatings.has(d.Rating))&&
+       (!q||d.Name.toLowerCase().includes(q))){
+      visibleList.push({o:o,dist:null});
+    }
+  });
+  document.getElementById('omw-panel-title').textContent=visibleList.length+' dealer visibili sulla mappa';
+  var list=document.getElementById('omw-panel-list');
+  list.innerHTML='';
+  visibleList.forEach(function(item,idx){
+    var d=item.o.dealer;
+    var col=tc(d.Customer_Type__c);
+    var el=document.createElement('div');
+    el.className='omw-item';
+    el.innerHTML='<div class="omw-item-name">'+(idx+1)+'. '+d.Name+'</div>'
+      +'<div class="omw-item-meta" style="color:'+col+';font-weight:600">'+(d.Customer_Type__c||'—')+'</div>'
+      +'<div class="omw-item-meta">📍 '+(d.BillingCity||'—')+' · '+(d.Rating||'—')+'</div>'
+      +'<div class="omw-item-meta" style="color:#555">'+(d.Active_Products_List__c||'—')+'</div>';
+    el.onclick=(function(o){return function(){map.setView(o.marker.getLatLng(),13);o.marker.openPopup();};})(item.o);
+    list.appendChild(el);
+  });
+}
+
 function updateVisibleCount(visible){
   var el=document.getElementById('visible-count-bar');
   if(!el) return;
@@ -675,7 +705,7 @@ function placeMarker(d,coords){
   var m=L.marker([coords.lat+jlat,coords.lng+jlng],{icon:makeIcon(d)});
   m.bindPopup(buildPopup(d),{maxWidth:260});
   markers.push({marker:m,dealer:d});
-  if((!d.Customer_Type__c||activeTypes.has(d.Customer_Type__c))&&(!d.Rating||activeRatings.has(d.Rating)))
+  if(activeTypes.size>0&&activeRatings.size>0&&activeTypes.has(d.Customer_Type__c)&&activeRatings.has(d.Rating))
     markerLayer.addLayer(m);
 }
 
@@ -784,6 +814,7 @@ window.addEventListener('DOMContentLoaded',async function(){
 
 // ===== ON MY WAY =====
 var routeLayer = null;
+var mapPanelOpen = false;
 var omwMarkers = [];
 var omwDealers = [];
 
@@ -1171,6 +1202,25 @@ function exportDOCX(customList, customTitle, customFilename) {
 
 function exportDOCXVisible() {
   if (!window.docx) { toast('⚠ Libreria DOCX non caricata'); return; }
+  if (markers.length === 0) { toast('⚠ Nessun dato caricato'); return; }
+
+  // Apri pannello e attiva aggiornamento live
+  mapPanelOpen = true;
+  var panel = document.getElementById('omw-result-panel');
+  panel.style.display = 'flex';
+  refreshMapPanel();
+
+  // Aggiorna il bottone chiudi per resettare anche il flag
+  document.getElementById('omw-panel-close').onclick = function(){
+    panel.style.display = 'none';
+    mapPanelOpen = false;
+  };
+
+  toast('📋 Pannello aperto — filtra e poi clicca di nuovo per scaricare il DOCX');
+}
+
+function downloadMapDOCX() {
+  if (!window.docx) { toast('⚠ Libreria DOCX non caricata'); return; }
   var q = document.getElementById('search').value.toLowerCase().trim();
   var visibleList = [];
   markers.forEach(function(o){
@@ -1182,27 +1232,6 @@ function exportDOCXVisible() {
     }
   });
   if (visibleList.length === 0) { toast('⚠ Nessun dealer visibile'); return; }
-
-  // Pannello laterale
-  var panel = document.getElementById('omw-result-panel');
-  var list  = document.getElementById('omw-panel-list');
-  document.getElementById('omw-panel-title').textContent = visibleList.length + ' dealer visibili sulla mappa';
-  list.innerHTML = '';
-  visibleList.forEach(function(item, idx){
-    var d = item.o.dealer;
-    var col = tc(d.Customer_Type__c);
-    var el = document.createElement('div');
-    el.className = 'omw-item';
-    el.innerHTML = '<div class="omw-item-name">' + (idx+1) + '. ' + d.Name + '</div>'
-      + '<div class="omw-item-meta" style="color:'+col+';font-weight:600">' + (d.Customer_Type__c||'—') + '</div>'
-      + '<div class="omw-item-meta">📍 ' + (d.BillingCity||'—') + ' · ' + (d.Rating||'—') + '</div>'
-      + '<div class="omw-item-meta" style="color:#555">' + (d.Active_Products_List__c||'—') + '</div>';
-    el.onclick = (function(o){ return function(){ map.setView(o.marker.getLatLng(),13); o.marker.openPopup(); }; })(item.o);
-    list.appendChild(el);
-  });
-  panel.style.display = 'flex';
-
-  // DOCX
   exportDOCX(visibleList, 'Dealer visibili sulla mappa', 'dealer_mappa_visibili.docx');
 }
 </script>
