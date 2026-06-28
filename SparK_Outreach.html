@@ -333,6 +333,24 @@ function mapProds(str){
 
 var FIRMA="\n\n--\nPaolo Pesenti\nSenior Dealer Coach\nMobile Phone: +39 339 4581385\nEmail: paolo.pesenti@motork.io\n\nMotorK Italia SRL\nvia Ludovico d'Aragona 9, 20132 Milano";
 
+var DSM_DIRECTORY=[
+  {name:"Andrea Genova",email:"andrea.genova@motork.io"},
+  {name:"Andrea Parisi",email:"andrea.parisi@motork.io"},
+  {name:"Andrea Piana",email:"andrea.piana@motork.io"},
+  {name:"Dario Gambarè",email:"dario.gambare@motork.io"},
+  {name:"Elisabetta Palmiere",email:"elisabetta.palmiere@motork.io"},
+  {name:"Federica Bocchino",email:"federica.bocchino@motork.io"},
+  {name:"Francesco Crispi",email:"francesco.crispi@motork.io"},
+  {name:"Jacopo Zanini",email:"jacopo.zanini@motork.io"},
+  {name:"Jessica Campidell",email:"jessica.campidell@motork.io"},
+  {name:"Luca Golfrè Andreasi",email:"luca.golfre@motork.io"},
+  {name:"Matteo Provini",email:"matteo.provini@motork.io"},
+  {name:"Paola Padovani",email:"paola.padovani@motork.io"},
+  {name:"Sara Padovani",email:"sara.padovani@motork.io"},
+  {name:"Simona Mazza",email:"simona.mazza@motork.io"},
+  {name:"Valentina Cassano",email:"valentina.cassano@motork.io"},
+];
+
 var DATA={account:null,contact:null,database:null};
 var COMPANIES=[],FILTERED=[],SELECTED=new Set();
 var ACT={type:new Set(),region:new Set(),province:new Set(),products:new Set(),contact:new Set(['any'])};
@@ -634,7 +652,6 @@ function createDrafts(){
       var toContact=c.contacts.find(function(x){return x.email===to;});
       nome=toContact?(toContact.first||toContact.name.split(' ')[0]||''):(c.contacts[0]?c.contacts[0].first||c.contacts[0].name.split(' ')[0]:'');
       if(!to&&cc.length){to=cc.shift();}
-      alert('DEBUG: azienda='+c.name+' TO='+to+' CC='+cc.join(','));
       if(!to){next(i+1);return;}
     } else {
       var cts=c.contacts.filter(function(x){return x.email;});
@@ -893,11 +910,25 @@ function renderTxtModal(found,notFound){
       proposedProds: []
     };
   });
-  // Init CC: contatti dealer tutti in CC, DSM deselezionato di default (utente sceglie)
+  // Init CC: contatti dealer tutti in CC, DSM in CC se ha email
   TXT_STATE.companies.forEach(function(state){
     var all=state.contacts.filter(function(x){return x.email;});
     state.ccEmails=all.map(function(x){return x.email;});
-    // DSM: NON aggiunto di default, checkbox deselezionata
+    // DSM: se email mancante ma nome matcha directory, precompila
+    if(state.dsm&&state.dsm[0]&&!state.dsm[0].email&&state.dsm[0].name){
+      var raw=state.dsm[0].name.toLowerCase().trim();
+      var found=DSM_DIRECTORY.find(function(d){
+        var dn=d.name.toLowerCase();
+        return dn===raw||dn.indexOf(raw)!==-1||raw.indexOf(dn)!==-1||
+          dn.split(' ').some(function(w){return w===raw;})||
+          raw.split(' ').some(function(w){return dn.indexOf(w)!==-1&&w.length>3;});
+      });
+      if(found){state.dsm[0].email=found.email;state.dsm[0].name=found.name;}
+    }
+    // DSM: automaticamente in CC se c'è l'email
+    if(state.dsm&&state.dsm[0]&&state.dsm[0].email){
+      if(state.ccEmails.indexOf(state.dsm[0].email)===-1) state.ccEmails.push(state.dsm[0].email);
+    }
   });
 
   html+='<div id="txt-companies-wrap">';
@@ -934,22 +965,27 @@ function renderTxtModal(found,notFound){
     html+='</div>';
 
     // DSM MOTORK
-    if(state.dsm&&state.dsm.length){
-      html+='<div style="padding:0 14px 10px;border-top:1px solid #f0f0e8">';
-      html+='<div style="font-size:10px;font-weight:700;color:#1a5cb8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">&#127970; DSM MotorK</div>';
-      state.dsm.forEach(function(dsm,di){
-        var dsmId='dsm_'+idx+'_'+di;
-        var dsmChkId='dsmchk_'+idx+'_'+di;
-        var isInCC=state.ccEmails.indexOf(dsm.email)!==-1;
-        html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:12px;background:#f0f4ff;border-radius:5px;padding:5px 8px">';
-        html+='<input type="checkbox" id="'+dsmChkId+'" data-idx="'+idx+'" data-di="'+di+'" '+(isInCC?'checked':'')+' onchange="toggleDsmCC(this)" style="width:14px;height:14px;cursor:pointer">';
-        html+='<label for="'+dsmChkId+'" style="font-weight:600;min-width:110px;cursor:pointer">'+dsm.name+'</label>';
-        html+='<input id="'+dsmId+'" type="text" value="'+dsm.email+'" data-idx="'+idx+'" data-di="'+di+'" onchange="updateDsmEmail(this)" style="flex:1;font-size:11px;padding:2px 6px;border:1px solid #c5d5f5;border-radius:4px;color:#1a5cb8">';
-        html+='<span style="font-size:10px;'+(isInCC?'background:#1a5cb8;color:#fff':'background:#eee;color:#999')+';border-radius:3px;padding:1px 6px;white-space:nowrap" id="dsmtag_'+idx+'_'+di+'">'+(isInCC?'CC':'—')+'</span>';
-        html+='</div>';
-      });
-      html+='</div>';
-    }
+    html+='<div style="padding:0 14px 10px;border-top:1px solid #f0f0e8">';
+    html+='<div style="font-size:10px;font-weight:700;color:#1a5cb8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">&#127970; DSM MotorK</div>';
+    var dsm0=state.dsm&&state.dsm[0]?state.dsm[0]:{name:'',email:''};
+    var dsmId='dsm_'+idx+'_0';
+    html+='<div style="display:flex;align-items:center;gap:6px;font-size:12px;background:#f0f4ff;border-radius:5px;padding:6px 8px">';
+    html+='<select id="dsmsel_'+idx+'" data-idx="'+idx+'" onchange="pickDsmFromDir(this)" style="font-size:11px;padding:2px 4px;border:1px solid #c5d5f5;border-radius:4px;color:#333;min-width:120px">';
+    html+='<option value="">-- scegli DSM --</option>';
+    DSM_DIRECTORY.forEach(function(d){
+      var raw=(dsm0.name||'').toLowerCase().trim();
+      var dn=d.name.toLowerCase();
+      // match esatto, o cognome contenuto, o nome contenuto
+      var isMatch=raw&&(dn===raw||dn.indexOf(raw)!==-1||raw.indexOf(dn)!==-1||
+        dn.split(' ').some(function(w){return w===raw;})||
+        raw.split(' ').some(function(w){return dn.indexOf(w)!==-1&&w.length>3;}));
+      html+='<option value="'+d.email+'" '+(isMatch?'selected':'')+'>'+d.name+'</option>';
+    });
+    html+='</select>';
+    html+='<input id="'+dsmId+'" type="text" value="'+dsm0.email+'" data-idx="'+idx+'" data-di="0" onchange="updateDsmEmail(this)" placeholder="nessun DSM — lascia vuoto per non inviare" style="flex:1;font-size:11px;padding:2px 6px;border:1px solid #c5d5f5;border-radius:4px;color:#1a5cb8;min-width:0">';
+    html+='<span style="font-size:10px;'+(dsm0.email?'background:#1a5cb8;color:#fff':'background:#eee;color:#999')+';border-radius:3px;padding:1px 6px;white-space:nowrap;flex-shrink:0">'+(dsm0.email?'CC':'—')+'</span>';
+    html+='</div>';
+    html+='</div>';
 
     // PRODOTTI DA PROPORRE
     html+='<div style="padding:0 14px 12px">';
@@ -1110,22 +1146,24 @@ function usaSelezione(){
   toast(TXT_STATE.companies.length+' aziend'+(TXT_STATE.companies.length===1?'a':'e')+' selezionat'+(TXT_STATE.companies.length===1?'a':'e')+' — scrivi il testo e crea le bozze!');
 }
 
-function toggleDsmCC(chk){
-  var idx=parseInt(chk.dataset.idx);
-  var di=parseInt(chk.dataset.di);
+function pickDsmFromDir(sel){
+  var idx=parseInt(sel.dataset.idx);
+  var email=sel.value;
   var state=TXT_STATE.companies[idx];
-  if(!state||!state.dsm[di]) return;
-  var email=state.dsm[di].email;
-  var tag=document.getElementById('dsmtag_'+idx+'_'+di);
-  if(chk.checked){
-    if(!email){toast('Inserisci prima l\'email del DSM');chk.checked=false;return;}
-    if(state.ccEmails.indexOf(email)===-1) state.ccEmails.push(email);
-    if(tag){tag.textContent='CC';tag.style.background='#1a5cb8';tag.style.color='#fff';}
-  } else {
-    state.ccEmails=state.ccEmails.filter(function(e){return e!==email;});
-    if(tag){tag.textContent='—';tag.style.background='#eee';tag.style.color='#999';}
-  }
+  if(!state) return;
+  if(!state.dsm||!state.dsm.length) state.dsm=[{name:'',email:'',role:'DSM',src:'dsm'}];
+  var oldEmail=state.dsm[0].email;
+  var name=sel.options[sel.selectedIndex].text;
+  state.dsm[0].email=email;
+  state.dsm[0].name=name;
+  var inp=document.getElementById('dsm_'+idx+'_0');
+  if(inp) inp.value=email;
+  // Aggiorna CC: rimuovi vecchia, aggiungi nuova se presente
+  if(oldEmail) state.ccEmails=state.ccEmails.filter(function(e){return e!==oldEmail;});
+  if(email&&state.ccEmails.indexOf(email)===-1) state.ccEmails.push(email);
 }
+
+
 
 function updateDsmEmail(input){
   var idx=parseInt(input.dataset.idx);
@@ -1135,10 +1173,8 @@ function updateDsmEmail(input){
   if(!state||!state.dsm[di]) return;
   var oldEmail=state.dsm[di].email;
   state.dsm[di].email=newEmail;
-  // aggiorna ccEmails
-  var pos=state.ccEmails.indexOf(oldEmail);
-  if(pos!==-1) state.ccEmails[pos]=newEmail;
-  else if(newEmail&&state.ccEmails.indexOf(newEmail)===-1) state.ccEmails.push(newEmail);
+  if(oldEmail) state.ccEmails=state.ccEmails.filter(function(e){return e!==oldEmail;});
+  if(newEmail&&state.ccEmails.indexOf(newEmail)===-1) state.ccEmails.push(newEmail);
 }
 
 function updateProd(chk){
