@@ -747,13 +747,23 @@ function fuSearch(query){
       +'<span style="font-size:11px;color:#aaa">'+c.province+'</span>';
     div.onmouseover=function(){this.style.background='#f5f5f0';};
     div.onmouseout=function(){this.style.background='';};
-    div.onclick=(function(company){
-      return function(){
-        document.getElementById('fu-modal').style.display='none';
-        setTimeout(function(){
+    (function(company){
+      div.addEventListener('mousedown', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+      });
+      div.addEventListener('click', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('FU click su:', company.name, company);
+        try {
+          document.getElementById('fu-modal').style.display='none';
           renderTxtModal([{input:company.name,company:company}],[]);
-        },80);
-      };
+        } catch(err) {
+          console.error('renderTxtModal error:', err);
+          alert('Errore: '+err.message);
+        }
+      });
     })(c);
     el.appendChild(div);
   });
