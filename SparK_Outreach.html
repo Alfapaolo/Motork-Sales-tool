@@ -396,16 +396,20 @@ function merge(){
     if(!a.Name) return;
     var dsmRaw=(a.DSM||'').trim();
     var dsmContacts=[];
-    if(dsmRaw&&dsmRaw.toLowerCase()!=='no dsm'&&dsmRaw.toLowerCase()!=='nessuno'&&dsmRaw!=='-'&&dsmRaw!==''){
-      // Costruisce email da "Nome Cognome" → nome.cognome@motork.io
-      var parts=dsmRaw.toLowerCase().replace(/[àáâãäå]/g,'a').replace(/[èéêë]/g,'e')
+    var dsmEmpty=!dsmRaw||dsmRaw==='-'||/^no\s*dsm$/i.test(dsmRaw)||/^nessuno$/i.test(dsmRaw);
+    // Mostra sempre la riga DSM (anche vuota), così l'utente può inserire l'email a mano
+    var dsmEmail='';
+    if(!dsmEmpty){
+      var parts=dsmRaw.toLowerCase()
+        .replace(/[àáâãäå]/g,'a').replace(/[èéêë]/g,'e')
         .replace(/[ìíîï]/g,'i').replace(/[òóôõö]/g,'o').replace(/[ùúûü]/g,'u')
         .replace(/[^a-z0-9 ]/g,'').trim().split(/\s+/);
-      if(parts.length>=2){
-        var dsmEmail=parts[0]+'.'+parts[parts.length-1]+'@motork.io';
-        dsmContacts.push({name:dsmRaw,first:parts[0],email:dsmEmail,phone:'',role:'DSM',src:'dsm'});
-      }
+      dsmEmail=parts.length>=2
+        ? parts[0]+'.'+parts[parts.length-1]+'@motork.io'
+        : parts[0]+'@motork.io';
     }
+    // Sempre un record DSM (email può essere vuota se No DSM — utente decide)
+    dsmContacts.push({name:dsmRaw||'DSM',first:'',email:dsmEmail,phone:'',role:'DSM',src:'dsm'});
     co[norm(a.Name)]={name:a.Name,type:a.Customer_Type__c||'',rating:a.Rating||'',region:nr(a.Region_Area__c||''),province:(a.BillingState||'').toUpperCase(),products:a.Active_Products_List__c||'',mappedProds:mapProds(a.Active_Products_List__c||''),contacts:[],dsm:dsmContacts};
   });
   DATA.contact.forEach(function(c){
@@ -424,11 +428,11 @@ function merge(){
       if(fn==='XXX'||ln==='XXX') return;
       var email=(r['MAIL']||'').trim(),phone=(r['CELLULARE']||'').trim(),role=(r['RUOLO']||'').trim();
       var pv=(r['PV']||'').trim(),reg=(r['REG']||'').trim();
-      if(!email&&!phone) return;
       var k=norm(an);
       if(!co[k]){var ks=Object.keys(co);for(var i=0;i<ks.length;i++){if(fuzzy(an,ks[i])){k=ks[i];break;}}}
-      if(!co[k]) co[k]={name:an,type:'',rating:'',region:nr(reg),province:pv.toUpperCase(),products:'',mappedProds:[],contacts:[]};
+      if(!co[k]) co[k]={name:an,type:'',rating:'',region:nr(reg),province:pv.toUpperCase(),products:'',mappedProds:[],contacts:[],dsm:[]};
       else{if(!co[k].province&&pv)co[k].province=pv.toUpperCase();if(!co[k].region&&reg)co[k].region=nr(reg);}
+      if(!email&&!phone) return; // azienda creata, ma non aggiungiamo un contatto vuoto
       var ex=co[k].contacts.find(function(x){return x.email&&x.email===email;});
       if(ex){if(phone&&!ex.phone)ex.phone=phone;if(role&&!ex.role)ex.role=role;}
       else {
@@ -437,7 +441,7 @@ function merge(){
       }
     });
   }
-  COMPANIES=Object.values(co).filter(function(c){return c.contacts.length>0;});
+  COMPANIES=Object.values(co);
   buildFilters();applyFilters();
 }
 
@@ -491,7 +495,7 @@ function applyFilters(){
     if(ACT.type.size&&!ACT.type.has(c.type)) return false;
     if(ACT.region.size&&!ACT.region.has(c.region)) return false;
     if(ACT.province.size&&!ACT.province.has(c.province)) return false;
-    if(ACT.products.size&&!c.mappedProds.some(function(p){return ACT.products.has(p);})) return false;
+    if(ACT.products.size&&c.mappedProds.length>0&&!c.mappedProds.some(function(p){return ACT.products.has(p);})) return false;
     if(ACT.contact.has('email')&&!c.contacts.some(function(x){return x.email;})) return false;
     if(ACT.contact.has('phone')&&!c.contacts.some(function(x){return x.phone&&x.phone!=='-';})) return false;
     return true;
@@ -595,19 +599,52 @@ function createDrafts(){
   var body=document.getElementById('msg-body').value||'';
   if(!body.trim()){toast('Scrivi un messaggio prima');return;}
   var btn=document.getElementById('btn-drafts');
+  // Se ci sono aziende con stato modale, filtra solo quelle con TO impostato
+  var hasModal=TXT_STATE.companies.length>0;
+  if(hasModal){
+    // Usa direttamente TXT_STATE, non filtrare cos (evita problemi di match nomi)
+    // Verifica che almeno una azienda abbia destinatari
+    var hasAny=TXT_STATE.companies.some(function(s){return s.toEmail||(s.ccEmails&&s.ccEmails.length>0);});
+    if(!hasAny){toast('Imposta almeno un destinatario nella modale');return;}
+  }
+
+  // Se NON vengo dalla modale e ci sono tante aziende, chiedo conferma
+  if(!hasModal&&cos.length>5&&!confirm('Stai per creare '+cos.length+' bozze Gmail. Procedere?')){return;}
   btn.textContent='Creo...';btn.disabled=true;
-  var total=cos.filter(function(c){return c.contacts.some(function(x){return x.email;});}).length;
+  var total=hasModal?TXT_STATE.companies.length:cos.length;
   var ok=0;
+  // Se dalla modale, itera TXT_STATE direttamente; altrimenti itera cos (lista principale)
+  var queue=hasModal?TXT_STATE.companies.map(function(s){
+    var c=COMPANIES.find(function(c){return norm(c.name)===norm(s.name)||fuzzy(c.name,s.name);})||{name:s.name,contacts:s.contacts,dsm:s.dsm||[]};
+    return {c:c,txState:s};
+  }):cos.map(function(c){return {c:c,txState:null};});
+
   function next(i){
-    if(i>=cos.length){btn.textContent='Crea bozze Gmail';btn.disabled=false;toast(ok+' bozze create');return;}
-    var c=cos[i];
-    var cts=c.contacts.filter(function(x){return x.email;});
-    if(!cts.length){next(i+1);return;}
-    var tit=cts.find(function(x){return x.role&&x.role.toLowerCase().includes('titol');});
-    var main=tit||cts[0];
-    var to=main.email;
-    var cc=cts.filter(function(x){return x.email!==to;}).map(function(x){return x.email;});
-    var nome=main.first||main.name.split(' ')[0]||'';
+    if(i>=queue.length){btn.textContent='Crea bozze Gmail';btn.disabled=false;toast(ok+' bozze create');return;}
+    var item=queue[i];
+    var c=item.c;
+    var txState=item.txState||TXT_STATE.companies.find(function(s){return norm(s.name)===norm(c.name);});
+    var to,cc,nome;
+    if(txState){
+      to=txState.toEmail||'';
+      cc=txState.ccEmails.filter(function(e){return e&&e!==to;});
+      txState.dsm.forEach(function(d){
+        if(d.email&&cc.indexOf(d.email)===-1&&d.email!==to) cc.push(d.email);
+      });
+      var toContact=c.contacts.find(function(x){return x.email===to;});
+      nome=toContact?(toContact.first||toContact.name.split(' ')[0]||''):(c.contacts[0]?c.contacts[0].first||c.contacts[0].name.split(' ')[0]:'');
+      if(!to&&cc.length){to=cc.shift();}
+      alert('DEBUG: azienda='+c.name+' TO='+to+' CC='+cc.join(','));
+      if(!to){next(i+1);return;}
+    } else {
+      var cts=c.contacts.filter(function(x){return x.email;});
+      if(!cts.length){next(i+1);return;}
+      var tit=cts.find(function(x){return x.role&&x.role.toLowerCase().includes('titol');});
+      var main=tit||cts[0];
+      to=main.email;
+      cc=cts.filter(function(x){return x.email!==to;}).map(function(x){return x.email;});
+      nome=main.first||main.name.split(' ')[0]||'';
+    }
     var bodyFilled=bodyWithLinks(body.replace(/{NOME}/g,nome||c.name))+FIRMA.replace(/\n/g,'<br>');
     fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',headers:{'Content-Type':'application/json'},
@@ -615,8 +652,8 @@ function createDrafts(){
         messages:[{role:'user',content:'Crea una bozza Gmail. TO:'+to+(cc.length?' CC:'+cc.join(','):'')+' OGGETTO:'+sub+' CORPO:'+bodyFilled+' Rispondi solo OK.'}],
         mcp_servers:[{type:'url',url:'https://gmailmcp.googleapis.com/mcp/v1',name:'gmail'}]
       })
-    }).then(function(){ok++;btn.textContent=ok+'/'+total;setTimeout(function(){next(i+1);},300);})
-    .catch(function(){setTimeout(function(){next(i+1);},300);});
+    }).then(function(){ok++;btn.textContent=ok+'/'+total;setTimeout(function(){next(i+1);},50);})
+    .catch(function(){setTimeout(function(){next(i+1);},50);});
   }
   next(0);
 }
@@ -1062,8 +1099,15 @@ function usaSelezione(){
     }
   });
 
+  // Seleziona SOLO le aziende della modale nella lista principale
+  SELECTED.clear();
+  TXT_STATE.companies.forEach(function(state){
+    var match=COMPANIES.find(function(c){return norm(c.name)===norm(state.name);});
+    if(match) SELECTED.add(match.name);
+  });
+  renderList();updSel();
   document.getElementById('txt-modal').style.display='none';
-  toast('Oggetto e testo pronti, completali e crea le bozze!');
+  toast(TXT_STATE.companies.length+' aziend'+(TXT_STATE.companies.length===1?'a':'e')+' selezionat'+(TXT_STATE.companies.length===1?'a':'e')+' — scrivi il testo e crea le bozze!');
 }
 
 function toggleDsmCC(chk){
@@ -1074,6 +1118,7 @@ function toggleDsmCC(chk){
   var email=state.dsm[di].email;
   var tag=document.getElementById('dsmtag_'+idx+'_'+di);
   if(chk.checked){
+    if(!email){toast('Inserisci prima l\'email del DSM');chk.checked=false;return;}
     if(state.ccEmails.indexOf(email)===-1) state.ccEmails.push(email);
     if(tag){tag.textContent='CC';tag.style.background='#1a5cb8';tag.style.color='#fff';}
   } else {
