@@ -86,6 +86,7 @@ textarea{height:90px;resize:vertical;line-height:1.5}
     <input type="file" id="btn-load-txt" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="position:absolute;left:0;top:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:100px">
   </div>
   <button class="btn" id="btn-followup" style="background:#ff6f00;color:#fff;border-color:#ff6f00;white-space:nowrap">&#128172; Follow Up</button>
+  <button class="btn" id="btn-refresh-drive" style="background:#0f9d58;color:#fff;border-color:#0f9d58;white-space:nowrap">&#8635; Drive</button>
   <div><button class="btn rd" id="btn-cache">&#128465; Cache</button></div>
 </div>
 
@@ -147,6 +148,9 @@ textarea{height:90px;resize:vertical;line-height:1.5}
     </div>
     <div id="list"></div>
     <div id="msgp">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:4px">
+        <button id="btn-expand-msg" onclick="toggleMsgPanel()" style="font-size:10px;padding:2px 8px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;color:#555">⤢ Espandi</button>
+      </div>
       <div class="mrow">
         <span class="mlbl">Template</span>
         <select id="tpl-sel" style="width:140px">
@@ -157,7 +161,13 @@ textarea{height:90px;resize:vertical;line-height:1.5}
           <option value="news">Aggiornamento MotorK</option>
         </select>
 
+        <button class="btn" id="ai-btn" style="white-space:nowrap;color:#9c27b0;border-color:#9c27b0">&#10024; AI</button>
         <button class="btn" id="btn-test" style="white-space:nowrap;color:#e65100;border-color:#e65100">&#128236; Test</button>
+      </div>
+      <div id="ai-prompt-panel" style="display:none;background:#f3e5f5;border-radius:6px;padding:8px;margin-bottom:7px">
+        <div style="font-size:11px;color:#6a1b9a;font-weight:600;margin-bottom:5px">✨ Descrivi cosa vuoi comunicare</div>
+        <textarea id="ai-prompt-input" style="width:100%;height:55px;font-size:12px;border:1px solid #ce93d8;border-radius:4px;padding:5px;resize:none" placeholder="Es: vuoi proporre StockSparK a un dealer che usa già il sito ma non gestisce bene lo stock..."></textarea>
+        <button id="ai-run-btn" onclick="runGenAI()" style="margin-top:5px;background:#9c27b0;color:#fff;border:none;border-radius:4px;padding:4px 12px;font-size:11px;cursor:pointer">Genera</button>
       </div>
       <div class="mrow">
         <span class="mlbl">Oggetto</span>
@@ -285,6 +295,7 @@ textarea{height:90px;resize:vertical;line-height:1.5}
     </div>
     <div id="txt-modal-footer" style="padding:12px 16px;border-top:1px solid #eee;display:flex;gap:8px;align-items:center;justify-content:flex-end">
       <span id="txt-modal-status" style="font-size:11px;color:#888;flex:1"></span>
+      <button id="txt-modal-gen" style="background:#9c27b0;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer">&#10024; Genera testo AI</button>
       <button id="txt-modal-usa" style="background:#1a5cb8;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer">&#10003; Usa selezione</button>
 
 
@@ -294,17 +305,17 @@ textarea{height:90px;resize:vertical;line-height:1.5}
 
 <script>
 var PROD_MAP={
-  'webspark sales':'WS','webspark':'WS','sito web':'LIV','sito':'LIV',
-  'webspark rent':'RENT','webspark b2b':'B2B','webspark servizi':'SERV','sellspark':'SELL',
+  'webspark sales':'WS','ws revolution - core':'REV','ws revolution':'REV','ws - privacy policy':'WS','ws privacy':'WS','webspark accessibility':'WS','webspark add-on':'WS','webspark':'WS','sito web':'LIV','sito':'LIV',
+  'webspark rent':'RENT','webspark b2b':'B2B','ws b2b':'B2B','webspark servizi':'SERV','ws servizi':'SERV','webspark rent':'RENT','ws rent':'RENT','webspark servizi':'SERV','sellspark':'SELL',
   'livespark':'LVS','creative pack':'CP','cloudflare':'CF','cloudfare':'CF',
   'background removal':'BGR','ai video':'VIDEO','video':'VIDEO','revolution':'REV',
   'stockspark app':'APP','stockspark advanced':'SSK BI','stockspark bi':'SSK BI','stockspark':'SSK',
-  'leadspark essential':'LS','ls essential':'LS','ls - essential':'LS','ls1':'LS','lse':'LS',
+  'leadspark essential':'LS','ls - professional':'LS','ls - standard':'LS','ls - premium':'LS','ls - telephone':'LS','ls professional':'LS','ls standard':'LS','ls premium':'LS','ls essential':'LS','ls - essential':'LS','ls1':'LS','lse':'LS',
   'ls - standard':'LS','ls - premium':'LS','ls - telephone':'LS','ls 1':'LS',
   'leadspark revolution':'LSR','ls revolution':'LSR','ls 2':'LSR','ls2':'LSR',
   'ls 2 - premium':'LSR','ls 2 - standard':'LSR','lsr':'LSR','leadspark':'LS',
   'whatsapp business':'WAPP','whatsapp':'WAPP','tip report':'TIP','tip':'TIP',
-  'marketing automation':'M.AUT','fidspark':'FSK','predictspark':'PSK','callspark':'CSK',
+  'marketing automation':'M.AUT','marketing management fee':'MKTG','marketing tech fee':'MKTG','campaign budget':'MKTG','marketing management':'MKTG','marketing tech':'MKTG','fidspark':'FSK','predictspark':'PSK','callspark':'CSK',
   'agentspark':'AGEN','customer data platform':'CDP','cdp':'CDP',
   'seospark':'SEO','seo':'SEO','lead generation':'MKTG','adspark':'MKTG',
   'gestionale auto':'GEST','gestionale dealer':'GEST','gestionale web':'GEST','gestionale':'GEST'
@@ -332,6 +343,7 @@ function mapProds(str){
 }
 
 var FIRMA="\n\n--\nPaolo Pesenti\nSenior Dealer Coach\nMobile Phone: +39 339 4581385\nEmail: paolo.pesenti@motork.io\n\nMotorK Italia SRL\nvia Ludovico d'Aragona 9, 20132 Milano";
+var LINKS_CATALOG='Link disponibili (usali come <a href=URL>testo</a> quando pertinenti):\n- Presentazione StockSparK: https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing\n- Demo WebSparK: https://webspark-revolution-it.getwebspark.com/\n- Presentazione WebSparK: https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present\n- Presentazione LeadSparK: https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present\n- Presentazione CallSparK: https://docs.google.com/presentation/d/185utUR8TkIl8lUsW3DkpNNW8RDtiVBHUIB_ghK8A2hk/present\n- Presentazione PredictSparK: https://docs.google.com/presentation/d/1LqHmmVMst3zOtl-KggSmUg0NWGezzIBG9qtFQ78RfqY/present\n- Presentazione FidSparK: https://docs.google.com/presentation/d/1tKwQ8I8RfuCLswVCublwRyTGEnwUCwqAmaMzWxID7Is/present\n- Presentazione SeoSparK: https://docs.google.com/presentation/d/1dj2zvXwHZLN9OkFHTjeJRXoZtXFjHFF5KCg7u6NLR2g/present\n- Presentazione AdSparK: https://docs.google.com/presentation/d/1fQ6g4F2XHEdEYb2RsL7eAcI_n26x2xWXL0RO1ctsD2w/present\n- Demo Noleggio: https://webspark-revolution-mobility.getwebspark.com/\n- Demo Truck: https://demo-truck-it.getwebspark.com/\n- Demo Moto: https://demo-moto.websparksite-it.dealerk.com/\n- Demo B2B: https://demo-b2b-add.wsr74.dealerk.com/';
 
 var DSM_DIRECTORY=[
   {name:"Andrea Genova",email:"andrea.genova@motork.io"},
@@ -361,10 +373,10 @@ var RM={'LOM':'Lombardia','PIE':'Piemonte','LIG':'Liguria','VDA':'Valle d Aosta'
 function tc(t){return TC[t]||TC.default;}
 function nr(r){return RM[r]||r||'';}
 
-function dbOpen(){return new Promise(function(res,rej){var r=indexedDB.open('outreach2',1);r.onupgradeneeded=function(e){['account','contact','database'].forEach(function(s){if(!e.target.result.objectStoreNames.contains(s))e.target.result.createObjectStore(s);});};r.onsuccess=function(e){res(e.target.result);};r.onerror=rej;});}
-function dbSave(s,v){dbOpen().then(function(db){db.transaction(s,'readwrite').objectStore(s).put(v,'d');}).catch(function(){});}
-function dbGet(s){return dbOpen().then(function(db){return new Promise(function(res){var r=db.transaction(s,'readonly').objectStore(s).get('d');r.onsuccess=function(e){res(e.target.result||null);};r.onerror=function(){res(null);};});}).catch(function(){return null;});}
-function dbDel(){return new Promise(function(res,rej){var r=indexedDB.deleteDatabase('outreach2');r.onsuccess=res;r.onerror=rej;r.onblocked=res;});}
+
+
+
+
 
 function toast(m,d){var t=document.getElementById('toast');t.textContent=m;t.style.display='block';clearTimeout(t._x);t._x=setTimeout(function(){t.style.display='none';},d||2500);}
 
@@ -393,7 +405,7 @@ function setupInputs(){
     el.addEventListener('change',function(){
       if(!el.files||!el.files[0]) return;
       var fr=new FileReader();
-      fr.onload=function(e){var txt=e.target.result;dbSave(pair[1],txt);parseCSV(txt,function(rows){DATA[pair[1]]=rows;afterLoad(pair[1]);});};
+      fr.onload=function(e){var txt=e.target.result;parseCSV(txt,function(rows){DATA[pair[1]]=rows;afterLoad(pair[1]);});};
       fr.readAsText(el.files[0],'UTF-8');
       el.value='';
     });
@@ -529,19 +541,56 @@ function syncPills(){
 }
 
 function aiSearch(){
-  var query=document.getElementById('ai-search').value.trim().toLowerCase();
+  var query=document.getElementById('ai-search').value.trim();
   if(!query) return;
   var status=document.getElementById('ai-search-status');
-  // Ricerca locale senza AI: filtra per nome azienda, tipo, prodotto, provincia
-  var terms=query.split(/\s+/);
-  FILTERED=COMPANIES.filter(function(c){
-    var haystack=(c.name+' '+c.type+' '+c.province+' '+c.region+' '+c.products).toLowerCase();
-    return terms.every(function(t){return haystack.indexOf(t)!==-1;});
+  status.textContent='Ricerca...';
+  var prodList=Object.entries(PROD_LABELS).map(function(e){return e[0]+':'+e[1];}).join(', ');
+  var prompt='Sei un assistente che filtra un database di concessionarie auto italiane.\n'
+    +'Prodotti disponibili (sigla:nome): '+prodList+'\n'
+    +'Tipi cliente disponibili: Customer, Customer GA, Customer Prospect, New, New Prospect, Ex Customer\n'
+    +'Mappatura linguaggio italiano: "cliente/clienti" = [Customer, Customer GA]; "ex cliente/ex clienti" = [Ex Customer]; "prospect" = [Customer Prospect, New Prospect]; "nuovo/nuovi" = [New, New Prospect]\n'
+    +'Query: "'+query+'"\n\n'
+    +'Rispondi SOLO con JSON valido, niente markdown:\n'
+    +'{"types":[],"regions":[],"provinces":[],"has_products":[],"not_products":[],"contact_filter":"any","explanation":""}';
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:400,messages:[{role:'user',content:prompt}]})
+  }).then(function(r){return r.json();}).then(function(d){
+    var t=(d.content&&d.content[0]&&d.content[0].text)||'';
+    t=t.replace(/```json|```/g,'').trim();
+    var f=JSON.parse(t);
+    if(f.types&&f.types.length) ACT.type=new Set(f.types);
+    if(f.regions&&f.regions.length) ACT.region=new Set(f.regions);
+    if(f.provinces&&f.provinces.length) ACT.province=new Set(f.provinces);
+    if(f.contact_filter) ACT.contact=new Set([f.contact_filter]);
+    var hasP=f.has_products||[],notP=f.not_products||[];
+    FILTERED=COMPANIES.filter(function(c){
+      if(ACT.type.size&&!ACT.type.has(c.type)) return false;
+      if(ACT.region.size&&!ACT.region.has(c.region)) return false;
+      if(ACT.province.size&&!ACT.province.has(c.province)) return false;
+      if(hasP.length&&!hasP.every(function(p){return c.mappedProds.indexOf(p)!==-1;})) return false;
+      if(notP.length&&notP.some(function(p){return c.mappedProds.indexOf(p)!==-1;})) return false;
+      if(ACT.contact.has('email')&&!c.contacts.some(function(x){return x.email;})) return false;
+      if(ACT.contact.has('phone')&&!c.contacts.some(function(x){return x.phone&&x.phone!=='-';})) return false;
+      return true;
+    });
+    SELECTED=new Set(FILTERED.map(function(c){return c.name;}));
+    renderList();updSel();syncPills();
+    status.textContent=FILTERED.length+' aziende'+(f.explanation?' - '+f.explanation:'');
+    setTimeout(function(){status.textContent='';},7000);
+  }).catch(function(){
+    // fallback ricerca locale
+    var terms=query.toLowerCase().split(/\s+/);
+    FILTERED=COMPANIES.filter(function(c){
+      var h=(c.name+' '+c.type+' '+c.province+' '+c.region+' '+c.products).toLowerCase();
+      return terms.every(function(t){return h.indexOf(t)!==-1;});
+    });
+    SELECTED=new Set(FILTERED.map(function(c){return c.name;}));
+    renderList();updSel();syncPills();
+    status.textContent=FILTERED.length+' aziende (ricerca locale)';
+    setTimeout(function(){status.textContent='';},5000);
   });
-  SELECTED=new Set(FILTERED.map(function(c){return c.name;}));
-  renderList();updSel();syncPills();
-  status.textContent=FILTERED.length+' aziende';
-  setTimeout(function(){status.textContent='';},5000);
 }
 
 var _showContacts=true;
@@ -607,9 +656,163 @@ var TPLS={
 };
 function applyTpl(){var v=document.getElementById('tpl-sel').value;if(!v)return;document.getElementById('msg-sub').value=TPLS[v].s;document.getElementById('msg-body').value=TPLS[v].b;_linkMap=[];}
 
-function sendTestMail(){toast('Test mail: funziona solo da Netlify');}
+function toggleMsgPanel(){
+  var panel=document.getElementById('msgp');
+  var btn=document.getElementById('btn-expand-msg');
+  var ta=document.getElementById('msg-body');
+  if(!panel||!btn||!ta) return;
+  if(panel.dataset.expanded==='1'){
+    panel.dataset.expanded='0';
+    panel.style.position='';panel.style.bottom='';panel.style.left='';
+    panel.style.right='';panel.style.zIndex='';panel.style.background='';
+    panel.style.boxShadow='';panel.style.borderRadius='';panel.style.padding='';
+    ta.style.height='90px';btn.textContent='⤢ Espandi';
+  } else {
+    panel.dataset.expanded='1';
+    panel.style.position='fixed';panel.style.bottom='0';panel.style.left='260px';
+    panel.style.right='210px';panel.style.zIndex='5000';panel.style.background='#fff';
+    panel.style.boxShadow='0 -4px 20px rgba(0,0,0,.15)';panel.style.borderRadius='10px 10px 0 0';
+    panel.style.padding='12px';panel.style.maxHeight='80vh';panel.style.overflowY='auto';
+    ta.style.height='300px';btn.textContent='⤡ Riduci';
+  }
+}
+
+function genAI(){
+  var panel=document.getElementById('ai-prompt-panel');
+  if(!panel) return;
+  panel.style.display=panel.style.display==='none'?'block':'none';
+}
+function runGenAI(){
+  var p=document.getElementById('ai-prompt-input').value.trim();
+  if(!p){toast('Scrivi cosa vuoi comunicare');return;}
+  var btn=document.getElementById('ai-run-btn');if(btn)btn.textContent='...';btn.disabled=true;
+  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:'Sei Paolo Pesenti, Senior Dealer Coach di MotorK. Scrivi una email professionale in italiano per dealer auto. '+p+' Se menzioni prodotti MotorK inserisci il link pertinente come <a href=URL>testo</a>. '+LINKS_CATALOG+' Rispondi SOLO con JSON: {"s":"oggetto","b":"corpo"}. Usa {NOME} come placeholder. Niente trattini, usa virgole. Niente emoji.'}]})})
+  .then(function(r){return r.json();}).then(function(d){
+    var t=(d.content&&d.content[0]&&d.content[0].text)||'';
+    t=t.replace(/```json|```/g,'').trim();var obj=JSON.parse(t);
+    document.getElementById('msg-sub').value=obj.s||'';
+    document.getElementById('msg-body').value=obj.b||'';
+    _linkMap=[];
+    document.getElementById('ai-prompt-panel').style.display='none';
+    toast('Testo generato!');
+  }).catch(function(){toast('Errore AI');});
+  if(btn){btn.textContent='Genera';btn.disabled=false;}
+}
+
+function sendTestMail(){
+  var sub=document.getElementById('msg-sub').value||'(nessun oggetto)';
+  var body=document.getElementById('msg-body').value||'';
+  if(!body.trim()){toast('Scrivi un messaggio prima');return;}
+  var btn=document.getElementById('btn-test');btn.textContent='Invio...';btn.disabled=true;
+  var bodyFilled=bodyWithLinks(body.replace(/{NOME}/g,'Paolo'));
+  doDraft({to:'paolo.pesenti@motork.io',cc:[],subject:'[TEST] '+sub,body:bodyFilled})
+  .then(function(){toast('Bozza test creata in Gmail!');})
+  .catch(function(err){toast('Errore test: '+err.message);})
+  .finally(function(){btn.textContent='📨 Test';btn.disabled=false;});
+}
 
 
+
+var skippedCompanies=[];
+var skippedBtn=null;
+
+function downloadSkipped(){
+  if(!skippedCompanies.length){toast('Nessuna azienda saltata');return;}
+  var lines=['Azienda,Nome,Cognome,Motivo'];
+  skippedCompanies.forEach(function(s){
+    if(s.contacts&&s.contacts.length){
+      s.contacts.forEach(function(ct){
+        lines.push('"'+s.name+'","'+(ct.first||'')+'","'+(ct.last||ct.name||'')+'","'+s.reason+'"');
+      });
+    } else {
+      lines.push('"'+s.name+'","","","'+s.reason+'"');
+    }
+  });
+  var csv=lines.join('\n');
+  try {
+    var blob=new Blob([csv],{type:'text/csv'});
+    var url=window.URL.createObjectURL(blob);
+    var a=document.createElement('a');a.href=url;a.download='aziende_senza_mail.csv';
+    document.body.appendChild(a);a.click();
+    setTimeout(function(){window.URL.revokeObjectURL(url);document.body.removeChild(a);},100);
+  } catch(e) {
+    alert('Aziende senza email:\n\n'+skippedCompanies.map(function(s){return s.name;}).join('\n'));
+  }
+}
+
+function cleanCompanyName(name){
+  return name.replace(/\b(srl|spa|snc|sas|srls|s\.r\.l\.|s\.p\.a\.)\b/gi,'').replace(/\s+/g,' ').trim();
+}
+
+var SKIP_NAMES=/^(invoicing|fatturazione|azienda|info|amministrazione|segreteria|contabilita|contabilità|billing|noreply|no.reply|office|reception|xxx)$/i;
+
+function isPersonalName(name){
+  if(!name||name.trim().length<2) return false;
+  var first=(name.split(' ')[0]||'').toLowerCase();
+  return !SKIP_NAMES.test(first) && /^[a-zàáèéìíòóùú]/i.test(first);
+}
+
+function buildSaluto(contacts,companyName){
+  var personal=contacts.filter(function(c){
+    var first=c.first||(c.name?c.name.split(' ')[0]:'');
+    return isPersonalName(first);
+  });
+  var n=personal.length;
+  if(n===0) return {saluto:'Ciao,',plurale:contacts.length>1};
+  if(n===1){var nome=personal[0].first||personal[0].name.split(' ')[0]||'';return {saluto:'Ciao '+nome+',',plurale:false};}
+  if(n===2){var n1=personal[0].first||personal[0].name.split(' ')[0]||'';var n2=personal[1].first||personal[1].name.split(' ')[0]||'';return {saluto:'Ciao '+n1+' e '+n2+',',plurale:true};}
+  return {saluto:'Ciao team '+cleanCompanyName(companyName)+',',plurale:true};
+}
+
+function buildPayload(item,sub,body){
+  var c=item.c;var txState=item.txState;
+  var toList=[],cc=[],emailContacts=[];
+
+  if(txState){
+    var toEmail=txState.toEmail||'';
+    cc=(txState.ccEmails||[]).filter(function(e){return e&&e!==toEmail;});
+    (txState.dsm||[]).forEach(function(d){if(d.email&&cc.indexOf(d.email)===-1&&d.email!==toEmail)cc.push(d.email);});
+    if(toEmail) toList=[toEmail];
+    else if(cc.length){toList=[cc.shift()];}
+    if(!toList.length){var ac=c.contacts.find(function(x){return x.email;});if(ac)toList=[ac.email];}
+    emailContacts=c.contacts.filter(function(x){return toList.indexOf(x.email)!==-1;});
+    if(!emailContacts.length) emailContacts=c.contacts.filter(function(x){return x.email;}).slice(0,1);
+  } else {
+    var cts=c.contacts.filter(function(x){return x.email;});
+    if(!cts.length){var sCts=c.contacts.map(function(ct){var p2=(ct.name||'').split(' ');return {first:ct.first||p2[0]||'',last:p2.slice(1).join(' ')||''};});skippedCompanies.push({name:c.name,reason:'Nessuna email disponibile',contacts:sCts});return null;}
+    if(cts.length===1){toList=[cts[0].email];emailContacts=[cts[0]];}
+    else if(cts.length===2){toList=[cts[0].email,cts[1].email];emailContacts=cts.slice(0,2);}
+    else{toList=cts.map(function(x){return x.email;});emailContacts=cts;}
+    // DSM in CC se presente (lista diretta senza modale)
+    if(c.dsm&&c.dsm[0]&&c.dsm[0].email){
+      var dsmE=c.dsm[0].email;
+      if(toList.indexOf(dsmE)===-1&&cc.indexOf(dsmE)===-1) cc.push(dsmE);
+    }
+  }
+
+  if(!toList.length){var sCts=c.contacts.map(function(ct){var p2=(ct.name||'').split(' ');return {first:ct.first||p2[0]||'',last:p2.slice(1).join(' ')||''};});skippedCompanies.push({name:c.name,reason:'Nessuna email disponibile',contacts:sCts});return null;}
+
+  var salutoObj=buildSaluto(emailContacts,c.name);
+  var cSub=txState&&txState.subject?txState.subject:sub;
+  var cBody=txState&&txState.body?txState.body:body;
+  var nome=emailContacts[0]?emailContacts[0].first||emailContacts[0].name.split(' ')[0]||'':c.name;
+  var bodyText=cBody.replace(/{NOME}/g,nome);
+  bodyText=bodyText.replace(/^Ciao[^,\n]*,/,salutoObj.saluto);
+  var bFilled=bodyWithLinks(bodyText);
+  return {to:toList[0],cc:toList.slice(1).concat(cc),subject:cSub,body:bFilled};
+}
+
+function doDraft(payload){
+  return fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1024,
+      tools:[{name:'create_draft',description:'Creates a Gmail draft',input_schema:{type:'object',properties:{to:{type:'string'},cc:{type:'string'},subject:{type:'string'},body:{type:'string'},mimeType:{type:'string'}},required:['to','subject','body']}}],
+      tool_choice:{type:'any'},
+      messages:[{role:'user',content:'Crea bozza Gmail. TO:'+payload.to+(payload.cc.length?' CC:'+payload.cc.join(','):'')+' OGGETTO:'+payload.subject+' CORPO HTML:'+payload.body}],
+      mcp_servers:[{type:'url',url:'https://gmailmcp.googleapis.com/mcp/v1',name:'gmail'}]
+    })
+  }).then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error('HTTP '+r.status);});return r.json();});
+}
 
 function createDrafts(){
   var cos=getSel();if(!cos.length){toast('Nessuna azienda selezionata');return;}
@@ -617,62 +820,49 @@ function createDrafts(){
   var body=document.getElementById('msg-body').value||'';
   if(!body.trim()){toast('Scrivi un messaggio prima');return;}
   var btn=document.getElementById('btn-drafts');
-  // Se ci sono aziende con stato modale, filtra solo quelle con TO impostato
   if(cos.length>5&&!confirm('Stai per creare '+cos.length+' bozze Gmail. Procedere?')){return;}
   btn.textContent='Creo...';btn.disabled=true;
-  var total=cos.length;
-  var ok=0;
+  var total=cos.length;var ok=0;
+  skippedCompanies=[];
   var queue=cos.map(function(c){
     var txState=TXT_STATE.companies.find(function(s){return norm(s.name)===norm(c.name)||fuzzy(s.name,c.name);});
     return {c:c,txState:txState||null};
   });
-
-  function next(i){
-    if(i>=queue.length){btn.textContent='Crea bozze Gmail';btn.disabled=false;toast(ok+' bozze create');return;}
-    var item=queue[i];
-    var c=item.c;
-    var txState=item.txState||TXT_STATE.companies.find(function(s){return norm(s.name)===norm(c.name);});
-    var to,cc,nome;
-    if(txState){
-      to=txState.toEmail||'';
-      cc=txState.ccEmails.filter(function(e){return e&&e!==to;});
-      txState.dsm.forEach(function(d){
-        if(d.email&&cc.indexOf(d.email)===-1&&d.email!==to) cc.push(d.email);
+  // Process in batches of 3 for speed
+  var BATCH=3;
+  var batches=[];
+  for(var b=0;b<queue.length;b+=BATCH) batches.push(queue.slice(b,b+BATCH));
+  var chain=Promise.resolve();
+  batches.forEach(function(batch){
+    chain=chain.then(function(){
+      var promises=batch.map(function(item){
+        var p=buildPayload(item,sub,body);
+        if(!p){return Promise.resolve();}
+        return doDraft(p).then(function(){
+          ok++;btn.textContent=ok+'/'+total;
+        }).catch(function(err){
+          toast('Errore '+item.c.name+': '+err.message.substring(0,40));
+        });
       });
-      var toContact=c.contacts.find(function(x){return x.email===to;});
-      nome=toContact?(toContact.first||toContact.name.split(' ')[0]||''):(c.contacts[0]?c.contacts[0].first||c.contacts[0].name.split(' ')[0]:'');
-      if(!to&&cc.length){to=cc.shift();}
-      if(!to){next(i+1);return;}
-    } else {
-      var cts=c.contacts.filter(function(x){return x.email;});
-      if(!cts.length){next(i+1);return;}
-      var tit=cts.find(function(x){return x.role&&x.role.toLowerCase().includes('titol');});
-      var main=tit||cts[0];
-      to=main.email;
-      cc=cts.filter(function(x){return x.email!==to;}).map(function(x){return x.email;});
-      nome=main.first||main.name.split(' ')[0]||'';
-    }
-    var bodyFilled=bodyWithLinks(body.replace(/{NOME}/g,nome||c.name))+FIRMA.replace(/\n/g,'<br>');
-    fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:200,
-        messages:[{role:'user',content:'Crea una bozza Gmail. TO:'+to+(cc.length?' CC:'+cc.join(','):'')+' OGGETTO:'+sub+' CORPO:'+bodyFilled+' Rispondi solo OK.'}],
-        mcp_servers:[{type:'url',url:'https://gmailmcp.googleapis.com/mcp/v1',name:'gmail'}]
-      })
-    }).then(function(r){
-      if(!r.ok) return r.text().then(function(t){throw new Error('HTTP '+r.status+': '+t.substring(0,120));});
-      return r.json();
-    }).then(function(d){
-      if(d.error) throw new Error(d.error.message||JSON.stringify(d.error));
-      ok++;btn.textContent=ok+'/'+total;
-      setTimeout(function(){next(i+1);},50);
-    }).catch(function(err){
-      console.error('Bozza error:',err);
-      toast('Errore bozza: '+err.message);
-      setTimeout(function(){next(i+1);},50);
+      return Promise.all(promises).then(function(){
+        return new Promise(function(r){setTimeout(r,500);});
+      });
     });
-  }
-  next(0);
+  });
+  chain.then(function(){
+    btn.textContent='Crea bozze Gmail';btn.disabled=false;
+    var msg=ok+' bozze create';
+    if(skippedCompanies.length) msg+=' · '+skippedCompanies.length+' saltate';
+    toast(msg,4000);
+    if(skippedCompanies.length){
+      if(skippedBtn&&document.body.contains(skippedBtn)) document.body.removeChild(skippedBtn);
+      skippedBtn=document.createElement('button');
+      skippedBtn.textContent='⬇ Scarica aziende senza email ('+skippedCompanies.length+')';
+      skippedBtn.style.cssText='position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:#e53935;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;z-index:9999;box-shadow:0 2px 8px rgba(0,0,0,.3)';
+      skippedBtn.onclick=function(){downloadSkipped();if(document.body.contains(skippedBtn))document.body.removeChild(skippedBtn);skippedBtn=null;};
+      document.body.appendChild(skippedBtn);
+    }
+  });
 }
 
 function startWA(){
@@ -703,13 +893,11 @@ function nextWA(){WA_IDX++;openWA(WA_IDX);}
 
 function clearCache(){
   if(!confirm('Svuotare la cache?'))return;
-  dbDel().then(function(){
-    DATA={account:null,contact:null,database:null};COMPANIES=[];FILTERED=[];SELECTED=new Set();
-    ['account','contact','database'].forEach(function(t){var e=document.getElementById('st-'+t);e.textContent='Non caricato';e.className='fst ko';});
-    document.getElementById('list').innerHTML='';
-    document.getElementById('rcount').textContent='Carica i file per iniziare';
-    toast('Cache svuotata');
-  });
+  DATA={account:null,contact:null,database:null};COMPANIES=[];FILTERED=[];SELECTED=new Set();
+  ['account','contact','database'].forEach(function(t){var e=document.getElementById('st-'+t);e.textContent='Non caricato';e.className='fst ko';});
+  document.getElementById('list').innerHTML='';
+  document.getElementById('rcount').textContent='Carica i file per iniziare';
+  toast('Cache svuotata');
 }
 
 // ============================================================
@@ -809,13 +997,10 @@ function fuSearch(query){
       div.addEventListener('click', function(e){
         e.preventDefault();
         e.stopPropagation();
-        console.log('FU click su:', company.name, company);
         try {
           document.getElementById('fu-modal').style.display='none';
           renderTxtModal([{input:company.name,company:company}],[]);
         } catch(err) {
-          console.error('renderTxtModal error:', err);
-          alert('Errore: '+err.message);
         }
       });
     })(c);
@@ -897,10 +1082,38 @@ function renderTxtModal(found,notFound){
   TXT_STATE.companies=found.map(function(f){
     var c=f.company;
     var notActive=allProds.filter(function(p){return !c.mappedProds.includes(p);});
+    // Resolve DSM: match by email against directory
+    var dsmArr=(c.dsm||[]).slice();
+    // Se dsm vuoto o email mancante, prova a costruire email dal nome raw
+    if((!dsmArr.length||!dsmArr[0].email)&&c.dsm&&c.dsm[0]&&c.dsm[0].name){
+      var rawDsm=c.dsm[0].name;
+      var dsmParts=rawDsm.toLowerCase()
+        .replace(/[àáâãäå]/g,'a').replace(/[èéêë]/g,'e')
+        .replace(/[ìíîï]/g,'i').replace(/[òóôõö]/g,'o').replace(/[ùúûü]/g,'u')
+        .replace(/[^a-z0-9 ]/g,'').trim().split(/\s+/);
+      var builtEmail=dsmParts.length>=2?dsmParts[0]+'.'+dsmParts[dsmParts.length-1]+'@motork.io':dsmParts[0]+'@motork.io';
+      dsmArr=[{name:rawDsm,email:builtEmail,role:'DSM',src:'dsm'}];
+    }
+    // Canonicalizza nome dal directory se match per email
+    if(dsmArr.length&&dsmArr[0].email){
+      var dirMatch=DSM_DIRECTORY.find(function(d){return d.email===dsmArr[0].email;});
+      if(dirMatch) dsmArr=[{name:dirMatch.name,email:dirMatch.email,role:'DSM',src:'dsm'}];
+    }
+    // Ultimo tentativo: match per nome nel directory
+    if(dsmArr.length&&!dsmArr[0].email){
+      var rawN=(dsmArr[0].name||'').toLowerCase().trim();
+      var dirN=DSM_DIRECTORY.find(function(d){
+        var dn=d.name.toLowerCase();
+        return dn===rawN||dn.indexOf(rawN)!==-1||rawN.indexOf(dn)!==-1||
+          dn.split(' ').some(function(w){return w===rawN&&w.length>3;})||
+          rawN.split(' ').some(function(w){return dn.indexOf(w)!==-1&&w.length>3;});
+      });
+      if(dirN) dsmArr=[{name:dirN.name,email:dirN.email,role:'DSM',src:'dsm'}];
+    }
     return {
       name:c.name,
       contacts:c.contacts,
-      dsm:c.dsm||[],
+      dsm:dsmArr,
       products:c.mappedProds,
       notActive:notActive,
       // default: tutti in CC, nessuno in A — l'utente sceglie
@@ -968,6 +1181,7 @@ function renderTxtModal(found,notFound){
     html+='<div style="padding:0 14px 10px;border-top:1px solid #f0f0e8">';
     html+='<div style="font-size:10px;font-weight:700;color:#1a5cb8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">&#127970; DSM MotorK</div>';
     var dsm0=state.dsm&&state.dsm[0]?state.dsm[0]:{name:'',email:''};
+
     var dsmId='dsm_'+idx+'_0';
     html+='<div style="display:flex;align-items:center;gap:6px;font-size:12px;background:#f0f4ff;border-radius:5px;padding:6px 8px">';
     html+='<select id="dsmsel_'+idx+'" data-idx="'+idx+'" onchange="pickDsmFromDir(this)" style="font-size:11px;padding:2px 4px;border:1px solid #c5d5f5;border-radius:4px;color:#333;min-width:120px">';
@@ -975,10 +1189,11 @@ function renderTxtModal(found,notFound){
     DSM_DIRECTORY.forEach(function(d){
       var raw=(dsm0.name||'').toLowerCase().trim();
       var dn=d.name.toLowerCase();
-      // match esatto, o cognome contenuto, o nome contenuto
-      var isMatch=raw&&(dn===raw||dn.indexOf(raw)!==-1||raw.indexOf(dn)!==-1||
+      var emailMatch=!!(dsm0.email&&d.email&&dsm0.email.trim()===d.email.trim());
+      var nameMatch=!!(raw&&(dn===raw||dn.indexOf(raw)!==-1||raw.indexOf(dn)!==-1||
         dn.split(' ').some(function(w){return w===raw;})||
-        raw.split(' ').some(function(w){return dn.indexOf(w)!==-1&&w.length>3;}));
+        raw.split(' ').some(function(w){return dn.indexOf(w)!==-1&&w.length>3;})));
+      var isMatch=emailMatch||nameMatch;
       html+='<option value="'+d.email+'" '+(isMatch?'selected':'')+'>'+d.name+'</option>';
     });
     html+='</select>';
@@ -1054,6 +1269,92 @@ function excludeAll(idx){
   // update selects
   var card=document.querySelector('.txt-co-card[data-idx="'+idx+'"]');
   if(card) card.querySelectorAll('select[data-idx="'+idx+'"]').forEach(function(s){s.value='Escludi';});
+}
+
+function genTxtAI(){
+  var btn=document.getElementById('txt-modal-gen');
+  var notes=document.getElementById('txt-visit-notes')?document.getElementById('txt-visit-notes').value:'';
+  btn.textContent='Genero...';btn.disabled=true;
+  var statusEl=document.getElementById('txt-modal-status');
+  var companiesInfo=TXT_STATE.companies.map(function(s){
+    var activeNames=s.products.map(function(p){return PROD_LABELS[p]||p;});
+    var proposedNames=s.proposedProds.length?s.proposedProds.map(function(p){return PROD_LABELS[p]||p;}):[];
+    var toName=s.contacts.find(function(x){return x.email===s.toEmail;})||(s.contacts[0]||{});
+    return 'Azienda: '+s.name+'\nDestinatario: '+(toName.first||toName.name||'{NOME}')+'\nProdotti attivi: '+(activeNames.length?activeNames.join(', '):'nessuno')+(proposedNames.length?'\nProdotti da proporre: '+proposedNames.join(', '):'');
+  }).join('\n\n');
+  var prompt='Sei Paolo Pesenti, Senior Dealer Coach di MotorK. Hai appena visitato questi dealer.\n\n'
+    +companiesInfo+'\n\n'
+    +(notes?'Note dalla visita: '+notes+'\n\n':'')
+    +'Scrivi una email in italiano per ogni azienda. Tono colloquiale e amichevole, ciao non Gentile, stile post-visita. '
+    +'Usa virgole al posto dei trattini. Niente emoji. Usa {NOME} come placeholder del nome. '
+    +'Per ogni prodotto proposto cita brevemente il vantaggio concreto e inserisci il link pertinente come <a href=URL>testo cliccabile</a> se disponibile. Non URL per esteso. '+LINKS_CATALOG+' Rispondi SOLO con JSON array: [{"azienda":"nome","oggetto":"...","corpo":"..."}]. Corpo in testo piano con newline \\n.';
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:3000,messages:[{role:'user',content:prompt}]})
+  }).then(function(r){return r.json();}).then(function(d){
+    var t=(d.content&&d.content[0]&&d.content[0].text)||'[]';
+    t=t.replace(/```json|```/g,'').trim();
+    var arr;try{arr=JSON.parse(t);}catch(e){arr=[];}
+    var genHtml='<div style="margin-top:12px"><div style="font-size:13px;font-weight:700;color:#1a5cb8;margin-bottom:10px">&#10024; Testi generati</div>';
+    arr.forEach(function(item,i){
+      genHtml+='<div style="border:1px solid #e0e0d8;border-radius:7px;margin-bottom:10px;overflow:hidden">';
+      genHtml+='<div style="background:#f5f5f0;padding:8px 12px;font-weight:600;font-size:13px">'+item.azienda+'</div>';
+      genHtml+='<div style="padding:10px 12px">';
+      genHtml+='<div style="font-size:10px;color:#888;margin-bottom:2px">OGGETTO</div>';
+      genHtml+='<div style="font-size:12px;font-weight:600;background:#f0f4ff;padding:5px 8px;border-radius:4px;margin-bottom:8px" id="gen-sub-'+i+'">'+item.oggetto+'</div>';
+      genHtml+='<div style="font-size:10px;color:#888;margin-bottom:2px">TESTO</div>';
+      genHtml+='<textarea id="gen-body-'+i+'" data-azienda="'+item.azienda+'" style="width:100%;height:140px;font-size:12px;border:1px solid #ddd;border-radius:4px;padding:6px;resize:vertical">'+item.corpo+'</textarea>';
+      
+      genHtml+='</div></div>';
+    });
+    genHtml+='</div>';
+    var existing=document.getElementById('txt-gen-output');
+    if(existing) existing.remove();
+    var div=document.createElement('div');div.id='txt-gen-output';div.innerHTML=genHtml;
+    document.getElementById('txt-modal-body').appendChild(div);
+    statusEl.textContent=arr.length+' testi generati';
+    btn.textContent='&#10024; Rigenera';btn.disabled=false;
+  }).catch(function(err){
+    statusEl.textContent='Errore: '+err.message;
+    btn.textContent='&#10024; Genera testo AI';btn.disabled=false;
+  });
+}
+
+function syncGenText(el){
+  var azienda=el.dataset.azienda;
+  var state=TXT_STATE.companies.find(function(s){return norm(s.name)===norm(azienda);});
+  if(!state) return;
+  var idx=parseInt(el.dataset.idx);
+  var subEl=document.getElementById('gen-sub-'+idx);
+  var bodyEl=document.getElementById('gen-body-'+idx);
+  if(subEl) state.subject=subEl.value;
+  if(bodyEl) state.body=bodyEl.value;
+}
+
+function applyOneTxt(i){
+  var subEl=document.getElementById('gen-sub-'+i);
+  var bodyEl=document.getElementById('gen-body-'+i);
+  if(!subEl||!bodyEl) return;
+  document.getElementById('msg-sub').value=subEl.textContent;
+  document.getElementById('msg-body').value=bodyEl.value;
+  _linkMap=[];
+  document.getElementById('txt-modal').style.display='none';
+  toast('Testo applicato!');
+}
+
+function testMailFromModal(){
+  var firstState=TXT_STATE.companies[0];
+  if(!firstState){toast('Nessuna azienda nella modale');return;}
+  var sub=firstState.subject||document.getElementById('msg-sub').value||'(nessun oggetto)';
+  var body=firstState.body||document.getElementById('msg-body').value||'';
+  if(!body.trim()){toast('Genera prima il testo');return;}
+  var nome=firstState.contacts[0]?firstState.contacts[0].first||firstState.contacts[0].name.split(' ')[0]||'':'Paolo';
+  var bodyText=body.replace(/{NOME}/g,nome);
+  bodyText=bodyText.replace(/^Ciao[^,\n]*,/,buildSaluto(firstState.contacts.filter(function(x){return x.email;}),firstState.name).saluto);
+  var bFilled=bodyWithLinks(bodyText);
+  doDraft({to:'paolo.pesenti@motork.io',cc:[],subject:'[TEST] '+sub,body:bFilled})
+  .then(function(){toast('Bozza test creata in Gmail!');})
+  .catch(function(err){toast('Errore: '+err.message);});
 }
 
 function usaSelezione(){
@@ -1185,6 +1486,17 @@ function updateProd(chk){
 
 
 
+function syncGenText(el){
+  var azienda=el.dataset.azienda;
+  var state=TXT_STATE.companies.find(function(s){return norm(s.name)===norm(azienda);});
+  if(!state) return;
+  var idx=parseInt(el.dataset.idx);
+  var subEl=document.getElementById('gen-sub-'+idx);
+  var bodyEl=document.getElementById('gen-body-'+idx);
+  if(subEl) state.subject=subEl.value;
+  if(bodyEl) state.body=bodyEl.value;
+}
+
 function applyOneTxt(i){
   var subEl=document.getElementById('gen-sub-'+i);
   var bodyEl=document.getElementById('gen-body-'+i);
@@ -1218,6 +1530,8 @@ window.addEventListener('DOMContentLoaded',function(){
   document.getElementById('btn-sel-none').addEventListener('click',selNone);
   document.getElementById('btn-toggle-contacts').addEventListener('click',toggleContacts);
   document.getElementById('btn-cache').addEventListener('click',clearCache);
+  if(document.getElementById('btn-refresh-drive')) document.getElementById('btn-refresh-drive').addEventListener('click',function(){toast('Drive non disponibile in locale - carica i file manualmente');});
+  document.getElementById('ai-btn').addEventListener('click',genAI);
   // TXT modal
   document.getElementById('btn-followup').addEventListener('click',openFollowUp);
   document.getElementById('fu-modal-close').addEventListener('click',function(){document.getElementById('fu-modal').style.display='none';});
@@ -1250,21 +1564,23 @@ window.addEventListener('DOMContentLoaded',function(){
     e.target.value='';
   });
   document.getElementById('txt-modal-close').addEventListener('click',function(){document.getElementById('txt-modal').style.display='none';});
-  document.getElementById('txt-modal-usa').addEventListener('click',usaSelezione);
+  var _el_txt_modal_gen=document.getElementById('txt-modal-gen');if(_el_txt_modal_gen) _el_txt_modal_gen.addEventListener('click',genTxtAI);
+  var _el_txt_modal_test=document.getElementById('txt-modal-test');if(_el_txt_modal_test) _el_txt_modal_test.addEventListener('click',testMailFromModal);
+  var _el_txt_modal_usa=document.getElementById('txt-modal-usa');if(_el_txt_modal_usa) _el_txt_modal_usa.addEventListener('click',usaSelezione);
 
 
   document.getElementById('txt-modal').addEventListener('click',function(e){if(e.target===document.getElementById('txt-modal'))document.getElementById('txt-modal').style.display='none';});
   document.getElementById('tpl-sel').addEventListener('change',applyTpl);
-  document.getElementById('btn-test').addEventListener('click',sendTestMail);
+  var _el_btn_test=document.getElementById('btn-test');if(_el_btn_test) _el_btn_test.addEventListener('click',sendTestMail);
   document.getElementById('ai-search').addEventListener('keydown',function(e){if(e.key==='Enter')aiSearch();});
-  document.getElementById('fa-type-all').addEventListener('click',function(){faAll('type','f-type');});
-  document.getElementById('fa-type-none').addEventListener('click',function(){faNone('type','f-type');});
-  document.getElementById('fa-region-all').addEventListener('click',function(){faAll('region','f-region');});
-  document.getElementById('fa-region-none').addEventListener('click',function(){faNone('region','f-region');});
-  document.getElementById('fa-province-all').addEventListener('click',function(){faAll('province','f-province');});
-  document.getElementById('fa-province-none').addEventListener('click',function(){faNone('province','f-province');});
-  document.getElementById('fa-products-all').addEventListener('click',function(){faAll('products','f-products');});
-  document.getElementById('fa-products-none').addEventListener('click',function(){faNone('products','f-products');});
+  var _el_fa_type_all=document.getElementById('fa-type-all');if(_el_fa_type_all) _el_fa_type_all.addEventListener('click',function(){faAll('type','f-type');});
+  var _el_fa_type_none=document.getElementById('fa-type-none');if(_el_fa_type_none) _el_fa_type_none.addEventListener('click',function(){faNone('type','f-type');});
+  var _el_fa_region_all=document.getElementById('fa-region-all');if(_el_fa_region_all) _el_fa_region_all.addEventListener('click',function(){faAll('region','f-region');});
+  var _el_fa_region_none=document.getElementById('fa-region-none');if(_el_fa_region_none) _el_fa_region_none.addEventListener('click',function(){faNone('region','f-region');});
+  var _el_fa_province_all=document.getElementById('fa-province-all');if(_el_fa_province_all) _el_fa_province_all.addEventListener('click',function(){faAll('province','f-province');});
+  var _el_fa_province_none=document.getElementById('fa-province-none');if(_el_fa_province_none) _el_fa_province_none.addEventListener('click',function(){faNone('province','f-province');});
+  var _el_fa_products_all=document.getElementById('fa-products-all');if(_el_fa_products_all) _el_fa_products_all.addEventListener('click',function(){faAll('products','f-products');});
+  var _el_fa_products_none=document.getElementById('fa-products-none');if(_el_fa_products_none) _el_fa_products_none.addEventListener('click',function(){faNone('products','f-products');});
 
   // Sezioni collassabili
   document.querySelectorAll('.lp-section-hdr').forEach(function(hdr){
@@ -1284,26 +1600,7 @@ window.addEventListener('DOMContentLoaded',function(){
     });
   });
 
-  // Carica da Drive
-  var URLS={
-    account:'https://docs.google.com/spreadsheets/d/18vIfwCnBM9PWgDL8_vk5SxvSRsbXC7w8Ouu4G90greo/export?format=csv&gid=1412554961',
-    contact:'https://docs.google.com/spreadsheets/d/18vIfwCnBM9PWgDL8_vk5SxvSRsbXC7w8Ouu4G90greo/export?format=csv&gid=0',
-    database:'https://docs.google.com/spreadsheets/d/1Y-PRdKjclVCRyO2gBCNIQZ5zcgM-tvX96FLMcqbCCZw/export?format=csv&gid=2089600509'
-  };
-  var types=['account','contact','database'];
-  document.getElementById('rcount').textContent='Caricamento da Google Drive...';
-  Promise.all(types.map(function(t){
-    return fetch(URLS[t])
-      .then(function(r){if(!r.ok)throw new Error();return r.text();})
-      .then(function(text){dbSave(t,text);return {type:t,text:text,ok:true};})
-      .catch(function(){return dbGet(t).then(function(saved){return {type:t,text:saved,ok:false};});});
-  })).then(function(results){
-    var fromDrive=results.filter(function(r){return r.ok;}).length;
-    results.forEach(function(r){if(r.text){parseCSV(r.text,function(rows){DATA[r.type]=rows;afterLoad(r.type);});}});
-    if(fromDrive===3) toast('Dati aggiornati da Google Drive',2000);
-    else if(fromDrive>0) toast('Alcuni file da cache locale',3000);
-    else toast('Dati da cache - Drive non raggiungibile',3000);
-  });
+  document.getElementById('rcount').textContent='Carica i file dalla sidebar';
 });
 </script>
 </body>

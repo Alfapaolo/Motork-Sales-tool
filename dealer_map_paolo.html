@@ -44,7 +44,7 @@ body{font-family:system-ui,sans-serif;background:#f5f5f0;height:100vh;height:100
 #omw-go{background:#1a5cb8;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
 #omw-go:active{transform:scale(.96)}
 #omw-clear{background:#e53935;color:#fff;border:none;border-radius:6px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer;display:none}
-#omw-export{background:#388e3c;color:#fff;border:none;border-radius:6px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer;display:none}
+#omw-export{background:#388e3c;color:#fff;border:none;border-radius:6px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer}
 .omw-label{font-size:10px;color:#1a5cb8;font-weight:700;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
 #omw-result-panel{position:fixed;right:0;top:0;bottom:70px;width:280px;background:#fff;border-left:2px solid #1a5cb8;z-index:1500;display:none;flex-direction:column;box-shadow:-4px 0 16px rgba(0,0,0,.15)}
 #omw-panel-header{background:#1a5cb8;color:#fff;padding:10px 12px;font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
@@ -102,14 +102,16 @@ input[type=text]{border:1px solid #ddd;border-radius:6px;padding:5px 10px;font-s
   <input type="text" id="omw-via" placeholder="Via… (opz.)" title="Passa per questo comune o concessionaria">
   <input type="text" id="omw-arrivo" placeholder="Arrivo…" value="Gorle">
   <select id="omw-km">
-    <option value="5">± 5 km</option>
-    <option value="10" selected>± 10 km</option>
+    <option value="5" selected>± 5 km</option>
+    <option value="10">± 10 km</option>
     <option value="15">± 15 km</option>
+    <option value="20">± 20 km</option>
+    <option value="30">± 30 km</option>
+    <option value="50">± 50 km</option>
   </select>
   <button id="omw-go" onclick="runOnMyWay()">🔍 Cerca</button>
   <button id="omw-clear" onclick="clearRoute()">✕ Pulisci</button>
-  <button id="omw-export" onclick="exportDOCX()" title="DOCX dealer lungo il percorso">⬇ DOCX rotta</button>
-  <button class="btn" style="background:#1a5cb8;color:#fff;padding:5px 10px;font-size:12px;font-weight:700" onclick="mapPanelOpen ? downloadMapDOCX() : exportDOCXVisible()" title="Prima apertura: mostra pannello. Clic successivi: scarica DOCX">⬇ DOCX mappa</button>
+  <button id="omw-export" onclick="exportUnified()">⬇ Export DOCX</button>
   <button class="btn" style="background:#f5f5f0;padding:5px 8px;font-size:16px;line-height:1" onclick="locateMe()" title="Vicino a me">📍</button>
   <button class="btn" style="background:#f5f5f0;padding:5px 8px;font-size:13px;font-weight:700" onclick="zoomToVisible()" title="Zoom sui dealer visibili">⛶ Zoom</button>
   <span style="margin-left:auto;font-size:13px;font-weight:700;color:#1a5cb8;white-space:nowrap" id="visible-count-bar">0</span>
@@ -647,8 +649,6 @@ function refreshOmwWithFilters(q){
       list.appendChild(el);
     });
   }
-  if(omwDealers.length>0) document.getElementById('omw-export').style.display='inline-block';
-  else document.getElementById('omw-export').style.display='none';
   updateVisibleCount(markerLayer.getLayers().length);
 }
 
@@ -857,12 +857,13 @@ function distFromRoute(lat, lng, routePoints) {
 
 function clearRoute() {
   if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
+  if (window._radarCircle) { map.removeLayer(window._radarCircle); window._radarCircle = null; }
   omwMarkers.forEach(function(m) { map.removeLayer(m); });
   omwMarkers = [];
   omwDealers = [];
   document.getElementById('omw-result-panel').style.display = 'none';
   document.getElementById('omw-clear').style.display = 'none';
-  document.getElementById('omw-export').style.display = 'none';
+  
   document.getElementById('omw-panel-list').innerHTML = '';
   filterMarkers();
 }
@@ -872,7 +873,13 @@ async function runOnMyWay() {
   var arrivoRaw = document.getElementById('omw-arrivo').value.trim();
   var kmRange = parseInt(document.getElementById('omw-km').value);
 
-  if (!partenzaRaw || !arrivoRaw) { toast('⚠ Inserisci partenza e arrivo'); return; }
+  if (!partenzaRaw) { toast('⚠ Inserisci almeno il comune di partenza'); return; }
+
+  // Modalità radar: solo partenza compilata
+  if (!arrivoRaw) {
+    runRadar(partenzaRaw, kmRange);
+    return;
+  }
 
   var partenzaNorm = normalizeCity(partenzaRaw);
   var arrivoNorm = normalizeCity(arrivoRaw);
@@ -1035,7 +1042,7 @@ async function runOnMyWay() {
 
   panel.style.display = 'flex';
   document.getElementById('omw-clear').style.display = 'inline-block';
-  if (omwDealers.length > 0) document.getElementById('omw-export').style.display = 'inline-block';
+  if (omwDealers.length > 0) 
   toast('✅ ' + omwDealers.length + ' dealer trovati lungo il percorso');
 }
 
@@ -1234,6 +1241,339 @@ function downloadMapDOCX() {
   if (visibleList.length === 0) { toast('⚠ Nessun dealer visibile'); return; }
   exportDOCX(visibleList, 'Dealer visibili sulla mappa', 'dealer_mappa_visibili.docx');
 }
+
+// ===== AI SEARCH =====
+var aiSearchOpen = false;
+
+function toggleAiSearch() {
+  aiSearchOpen = !aiSearchOpen;
+  var panel = document.getElementById('ai-search-panel');
+  panel.style.display = aiSearchOpen ? 'flex' : 'none';
+  document.getElementById('ai-search-results').innerHTML = '';
+  document.getElementById('ai-search-status').textContent = '';
+}
+
+function parseQuery(q) {
+  var filters = { hasProd:[], notProd:[], type:null, rating:null, city:null, province:null };
+
+  var PRODS = ['webspark ultra','webspark classic','webspark','leadspark','callspark',
+               'stockspark','reportspark','fidspark','predictspark','adspark',
+               'agentspark','seospark','cdp','datastudio'];
+
+  var qLow = q.toLowerCase();
+  var notKws = ['senza ','non ','privi di ','che non hanno ','ma non '];
+
+  PRODS.forEach(function(p) {
+    var idx = qLow.indexOf(p.toLowerCase());
+    if (idx < 0) return;
+    var before = qLow.substring(0, idx);
+    var isNot = false;
+    notKws.forEach(function(kw) { if (before.lastIndexOf(kw) >= 0) isNot = true; });
+    if (isNot) { filters.notProd.push(p); }
+    else { filters.hasProd.push(p); }
+  });
+
+  var TYPES = ['customer','prospect','new','ex','ex-cliente','multimarche','ufficiale'];
+  // Sinonimi italiani
+  var TYPE_SYNONYMS = {
+    'clienti attivi':'customer','cliente attivo':'customer','clienti':'customer',
+    'ex clienti':'ex','ex-clienti':'ex','ex cliente':'ex',
+    'prospect':'prospect','nuovi':'new','nuovo':'new',
+    'ufficiali':'ufficiale','multimarca':'multimarche'
+  };
+  Object.keys(TYPE_SYNONYMS).forEach(function(k){ if(qLow.indexOf(k)>=0) filters.type=TYPE_SYNONYMS[k]; });
+  TYPES.forEach(function(t) { if (qLow.indexOf(t) >= 0 && !filters.type) filters.type = t; });
+
+  var RATINGS = ['hot','warm','cold','important','medium'];
+  RATINGS.forEach(function(r) { if (qLow.indexOf(r) >= 0) filters.rating = r; });
+
+  // Mappa nome provincia → sigla
+  var PROV_MAP = {
+    'bergamo':'bg','milano':'mi','torino':'to','genova':'ge','varese':'va',
+    'como':'co','lecco':'lc','sondrio':'so','brescia':'bs','monza':'mb',
+    'lodi':'lo','cremona':'cr','mantova':'mn','pavia':'pv','novara':'no',
+    'vercelli':'vc','biella':'bi','verbania':'vb','alessandria':'al',
+    'asti':'at','cuneo':'cn','savona':'sv','imperia':'im','la spezia':'sp',
+    'aosta':'ao','piacenza':'pc','parma':'pr','bologna':'bo','modena':'mo',
+    'reggio emilia':'re','ferrara':'fe','ravenna':'ra','trento':'tn',
+    'verona':'vr','vicenza':'vi','padova':'pd','venezia':'ve','treviso':'tv',
+    'udine':'ud','trieste':'ts','pordenone':'pn','gorizia':'go'
+  };
+
+  var provDiMatch = qLow.match(/provincia\s+(?:di\s+)?([a-zà-ü\s]{3,}?)(?:\s|$)/i);
+  var cityMatch = qLow.match(/(?:a|in)\s+([a-zà-ü\s]{3,}?)(?:\s*(?:con|senza|che|$))/i);
+  var extracted = provDiMatch ? provDiMatch[1].trim() : (cityMatch ? cityMatch[1].trim() : null);
+
+  if (extracted) {
+    var isComune = qLow.indexOf('comune di') >= 0 || qLow.indexOf('citta di') >= 0 || qLow.indexOf('città di') >= 0;
+    if (isComune) {
+      // cerca solo nella città esatta
+      filters.city = extracted;
+    } else if (PROV_MAP[extracted]) {
+      // nome di provincia noto → usa sigla su BillingState
+      filters.province = PROV_MAP[extracted];
+      filters.city = null;
+    } else {
+      // comune generico → cerca in BillingCity
+      filters.city = extracted;
+    }
+  }
+
+  var provMatch = q.match(/([A-Z]{2})/);
+  if (provMatch) filters.province = provMatch[1].toLowerCase();
+
+  return filters;
+}
+
+function matchDealer(d, f) {
+  var prods = (d.Active_Products_List__c || '').toLowerCase();
+  var type  = (d.Customer_Type__c || '').toLowerCase();
+  var rating = (d.Rating || '').toLowerCase();
+  var city  = (d.BillingCity || '').toLowerCase();
+  var prov  = (d.BillingState || '').toLowerCase();
+
+  function hasProduct(prodField, term) { return prodField.indexOf(term.toLowerCase()) >= 0; }
+
+  for (var i=0; i<f.hasProd.length; i++) {
+    if (!hasProduct(prods, f.hasProd[i])) return false;
+  }
+  for (var j=0; j<f.notProd.length; j++) {
+    if (hasProduct(prods, f.notProd[j])) return false;
+  }
+  if (f.type) {
+    var typeMap = {'customer':'customer','prospect':'prospect','new':'prospect',
+      'ex':'ex','ex-cliente':'ex','multimarche':'multimarche','ufficiale':'ufficiale'};
+    var mapped = typeMap[f.type] || f.type;
+    if (type.indexOf(mapped) < 0) return false;
+  }
+  if (f.rating && rating.indexOf(f.rating) < 0) return false;
+  if (f.city) {
+    if (city.indexOf(f.city) < 0) return false;
+  }
+  if (f.province && prov.indexOf(f.province) < 0) return false;
+  return true;
+}
+
+function buildMatchReason(d, f) {
+  var parts = [];
+  if (f.hasProd.length) parts.push('Ha: ' + f.hasProd.join(', '));
+  if (f.notProd.length) parts.push('Senza: ' + f.notProd.join(', '));
+  if (f.type) parts.push('Tipo: ' + (d.Customer_Type__c || f.type));
+  if (f.rating) parts.push('Rating: ' + f.rating);
+  if (f.city) parts.push('Città: ' + (d.BillingCity || f.city));
+  return parts.join(' · ') || 'Corrisponde alla ricerca';
+}
+
+function runAiSearch() {
+  var query = document.getElementById('ai-search-input').value.trim();
+  if (!query) return;
+  if (!markers || markers.length === 0) {
+    document.getElementById('ai-search-status').textContent = '⚠ Nessun dato caricato';
+    return;
+  }
+
+  document.getElementById('ai-search-status').textContent = 'Ricerca in corso…';
+  document.getElementById('ai-search-results').innerHTML = '';
+
+  var f = parseQuery(query);
+  var results = [];
+
+  markers.forEach(function(o) {
+    var d = o.dealer;
+    if (matchDealer(d, f)) {
+      results.push({
+        name: d.Name,
+        city: d.BillingCity || '',
+        type: d.Customer_Type__c || '',
+        rating: d.Rating || '',
+        products: d.Active_Products_List__c || '',
+        matchReason: buildMatchReason(d, f),
+        _marker: o
+      });
+    }
+  });
+
+  document.getElementById('ai-search-status').textContent = results.length + ' risultati';
+  renderAiResults(results);
+  highlightAiResults(results);
+}
+
+function renderAiResults(results) {
+  var container = document.getElementById('ai-search-results');
+  container.innerHTML = '';
+  if (results.length === 0) {
+    container.innerHTML = '<div style="padding:16px;color:#888;font-size:13px;text-align:center">Nessun dealer trovato</div>';
+    return;
+  }
+  results.forEach(function(r) {
+    var matchedMarker = null;
+    markers.forEach(function(o) {
+      if (!matchedMarker && o.dealer.Name === r.name) matchedMarker = o;
+    });
+    var col = matchedMarker ? tc(matchedMarker.dealer.Customer_Type__c) : '#888';
+    var el = document.createElement('div');
+    el.className = 'ai-item';
+    el.innerHTML = '<div class="ai-item-name">' + r.name + '</div>'
+      + '<div class="ai-item-meta"><span class="ai-item-badge" style="background:' + col + ';color:#fff">' + (r.type||'—') + '</span>'
+      + (r.city ? '📍 ' + r.city : '') + ' · ' + (r.rating||'—') + '</div>'
+      + '<div class="ai-item-meta" style="margin-top:3px;color:#555">' + (r.products||'—') + '</div>'
+      + '<div class="ai-item-meta" style="margin-top:4px;background:#f3e5f5;border-radius:4px;padding:3px 6px;color:#6a1b9a;font-style:italic">' + (r.matchReason||'') + '</div>';
+    if (matchedMarker) {
+      el.onclick = (function(o){ return function(){
+        map.setView(o.marker.getLatLng(), 13);
+        o.marker.openPopup();
+      }; })(matchedMarker);
+    }
+    container.appendChild(el);
+  });
+}
+
+function highlightAiResults(results) {
+  var matchNames = new Set(results.map(function(r){ return r.name; }));
+  markerLayer.clearLayers();
+  markers.forEach(function(o) {
+    var d = o.dealer;
+    var isMatch = matchNames.has(d.Name);
+    var col = tc(d.Customer_Type__c), r = ri(d.Rating), s = r.s;
+    if (isMatch) s = s + 4;
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+(s*2)+'" height="'+(s*2)+'" viewBox="0 0 '+(s*2)+' '+(s*2)+'">'
+      +'<circle cx="'+s+'" cy="'+s+'" r="'+(s-2)+'" fill="'+col+'" stroke="'+(isMatch?'#ce93d8':'white')+'" stroke-width="'+(isMatch?3:2)+'" opacity="'+(isMatch?1:.25)+'"/>'
+      +'<circle cx="'+s+'" cy="'+s+'" r="'+Math.floor(s/3)+'" fill="white" opacity="'+(isMatch?.9:.15)+'"/>'
+      +'</svg>';
+    var icon = L.divIcon({html:svg,className:'',iconSize:[s*2,s*2],iconAnchor:[s,s],popupAnchor:[0,-s]});
+    o.marker.setIcon(icon);
+    markerLayer.addLayer(o.marker);
+  });
+}
+// ===== END AI SEARCH =====
+
+async function runRadar(comuneRaw, kmRange) {
+  var pCoords = latLng(comuneRaw);
+  if (!pCoords) {
+    toast('🔄 Geolocalizzazione comune…');
+    await geocodeCitiesBatch([comuneRaw]);
+    pCoords = latLng(comuneRaw);
+  }
+  if (!pCoords) { toast('⚠ Comune non trovato: ' + comuneRaw); return; }
+
+  clearRoute();
+  toast('🔄 Ricerca dealer nel raggio di ' + kmRange + ' km…');
+
+  // Cerchio visivo sulla mappa
+  if (window._radarCircle) map.removeLayer(window._radarCircle);
+  window._radarCircle = L.circle([pCoords.lat, pCoords.lng], {
+    radius: kmRange * 1000,
+    color: '#e53935', weight: 2, opacity: 0.7,
+    fillColor: '#e53935', fillOpacity: 0.06
+  }).addTo(map);
+  map.fitBounds(window._radarCircle.getBounds().pad(0.05));
+
+  // Trova dealer nel raggio
+  var q = document.getElementById('search').value.toLowerCase().trim();
+  omwDealers = [];
+  markers.forEach(function(o) {
+    var d = o.dealer;
+    if((!d.Customer_Type__c || activeTypes.has(d.Customer_Type__c)) &&
+       (!d.Rating || activeRatings.has(d.Rating)) &&
+       (!q || d.Name.toLowerCase().includes(q))) {
+      var ll = o.marker.getLatLng();
+      var dist = haversine(pCoords.lat, pCoords.lng, ll.lat, ll.lng);
+      if (dist <= kmRange) omwDealers.push({o: o, dist: dist});
+    }
+  });
+
+  omwDealers.sort(function(a, b) { return a.dist - b.dist; });
+
+  // Evidenzia marker
+  markerLayer.clearLayers();
+  var matchSet = new Set(omwDealers.map(function(x){ return x.o; }));
+  markers.forEach(function(o) {
+    var d = o.dealer;
+    var isMatch = matchSet.has(o);
+    var col = tc(d.Customer_Type__c), r = ri(d.Rating), s = r.s;
+    if (isMatch) s = s + 4;
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+(s*2)+'" height="'+(s*2)+'" viewBox="0 0 '+(s*2)+' '+(s*2)+'">'
+      +'<circle cx="'+s+'" cy="'+s+'" r="'+(s-2)+'" fill="'+col+'" stroke="'+(isMatch?'#ffe600':'white')+'" stroke-width="'+(isMatch?3:2)+'" opacity="'+(isMatch?1:.25)+'"/>'
+      +'<circle cx="'+s+'" cy="'+s+'" r="'+Math.floor(s/3)+'" fill="white" opacity="'+(isMatch?.9:.15)+'"/>'
+      +'</svg>';
+    var icon = L.divIcon({html:svg,className:'',iconSize:[s*2,s*2],iconAnchor:[s,s],popupAnchor:[0,-s]});
+    o.marker.setIcon(icon);
+    markerLayer.addLayer(o.marker);
+  });
+
+  // Pannello
+  var panel = document.getElementById('omw-result-panel');
+  var list = document.getElementById('omw-panel-list');
+  document.getElementById('omw-panel-title').textContent = omwDealers.length + ' dealer entro ' + kmRange + ' km da ' + comuneRaw;
+  list.innerHTML = '';
+  if (omwDealers.length === 0) {
+    list.innerHTML = '<div style="padding:16px;color:#888;font-size:13px;text-align:center">Nessun dealer trovato<br>nel raggio selezionato</div>';
+  } else {
+    omwDealers.forEach(function(item, idx) {
+      var d = item.o.dealer;
+      var col = tc(d.Customer_Type__c);
+      var el = document.createElement('div');
+      el.className = 'omw-item';
+      el.innerHTML = '<div class="omw-item-name">' + (idx+1) + '. ' + d.Name + '</div>'
+        + '<div class="omw-item-meta" style="color:'+col+';font-weight:600">' + (d.Customer_Type__c||'—') + '</div>'
+        + '<div class="omw-item-meta">📍 ' + (d.BillingCity||'—') + ' · ' + (d.Rating||'—') + '</div>'
+        + '<div class="omw-item-meta" style="color:#555">' + (d.Active_Products_List__c||'—') + '</div>'
+        + '<div class="omw-item-dist">~' + item.dist.toFixed(1) + ' km dal centro</div>';
+      el.onclick = (function(o){ return function(){ map.setView(o.marker.getLatLng(),13); o.marker.openPopup(); }; })(item.o);
+      list.appendChild(el);
+    });
+  }
+
+  panel.style.display = 'flex';
+  document.getElementById('omw-clear').style.display = 'inline-block';
+  if (omwDealers.length > 0) 
+  toast('✅ ' + omwDealers.length + ' dealer entro ' + kmRange + ' km da ' + comuneRaw);
+}
+
+
+function exportUnified() {
+  if (!window.docx) { toast('⚠ Libreria DOCX non caricata'); return; }
+  if (!markers || markers.length === 0) { toast('⚠ Nessun dato caricato'); return; }
+
+  // Se c'è rotta o radar attivi → usa quelli
+  if (omwDealers && omwDealers.length > 0) {
+    var title = document.getElementById('omw-panel-title').textContent || 'Dealer selezionati';
+    exportDOCX(omwDealers, title, 'dealer_export.docx');
+    return;
+  }
+
+  // Altrimenti prendi i dealer visibili sulla mappa
+  var q = document.getElementById('search').value.toLowerCase().trim();
+  var visibleList = [];
+  markers.forEach(function(o) {
+    var d = o.dealer;
+    var passa = false;
+    if (q) {
+      passa = d.Name.toLowerCase().indexOf(q) >= 0;
+    } else {
+      passa = activeTypes.size > 0 && activeRatings.size > 0 && activeTypes.has(d.Customer_Type__c) && activeRatings.has(d.Rating);
+    }
+    if (passa) visibleList.push({o: o, dist: null});
+  });
+
+  if (visibleList.length === 0) { toast('⚠ Nessun dealer visibile'); return; }
+
+  // Apri pannello se non aperto
+  if (!mapPanelOpen) {
+    mapPanelOpen = true;
+    var panel = document.getElementById('omw-result-panel');
+    panel.style.display = 'flex';
+    document.getElementById('omw-panel-close').onclick = function() {
+      panel.style.display = 'none';
+      mapPanelOpen = false;
+    };
+    refreshMapPanel();
+  }
+
+  toast('📋 Export ' + visibleList.length + ' dealer in corso…');
+  exportDOCX(visibleList, 'Dealer visibili sulla mappa', 'dealer_mappa_visibili.docx');
+}
+
 </script>
 </body>
 </html>
