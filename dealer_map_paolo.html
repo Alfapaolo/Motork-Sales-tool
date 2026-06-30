@@ -70,7 +70,12 @@ input[type=text]{border:1px solid #ddd;border-radius:6px;padding:5px 10px;font-s
 .popup-row{font-size:12px;color:#444;margin-bottom:3px;display:flex;gap:6px}
 .popup-label{color:#888;min-width:72px;flex-shrink:0}
 .popup-badge{display:inline-block;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600}
-.popup-btn{margin-top:8px;width:100%;text-align:center;background:#1a5cb8;color:#ffe600;border:none;border-radius:6px;padding:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;display:block}
+.popup-btn{margin-top:8px;width:100%;text-align:center;background:#1a5cb8!important;color:#ffffff!important;border:none;border-radius:6px;padding:8px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none!important;display:block}
+.popup-btn:visited,.popup-btn:link,.popup-btn:hover,.popup-btn:active{color:#ffffff!important;background:#1a5cb8!important}
+.popup-btn-web{margin-top:6px;width:100%;text-align:center;background:#388e3c!important;color:#ffffff!important;border:none;border-radius:6px;padding:8px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none!important;display:block}
+.popup-btn-web:visited,.popup-btn-web:link,.popup-btn-web:hover,.popup-btn-web:active{color:#ffffff!important;background:#388e3c!important}
+.dealer-label{background:rgba(255,255,255,.95)!important;border:1px solid #ccc!important;border-radius:4px!important;padding:2px 6px!important;font-size:11px!important;font-weight:600!important;color:#222!important;box-shadow:0 1px 3px rgba(0,0,0,.2)!important}
+.dealer-label::before{display:none!important}
 #miss-bar{background:#fff3cd;border-bottom:1px solid #ffc107;padding:5px 10px;font-size:11px;color:#856404;display:none;flex-shrink:0;word-break:break-word}
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:9999;display:none;white-space:nowrap}
 </style>
@@ -112,7 +117,16 @@ input[type=text]{border:1px solid #ddd;border-radius:6px;padding:5px 10px;font-s
   <button id="omw-go" onclick="runOnMyWay()">🔍 Cerca</button>
   <button id="omw-clear" onclick="clearRoute()">✕ Pulisci</button>
   <button id="omw-export" onclick="exportUnified()">⬇ Export DOCX</button>
-  <button class="btn" style="background:#f5f5f0;padding:5px 8px;font-size:16px;line-height:1" onclick="locateMe()" title="Vicino a me">📍</button>
+  <button class="btn" style="background:#f5f5f0;padding:5px 8px;font-size:16px;line-height:1" onclick="locateMe()" title="Centra sulla mia posizione">📍</button>
+  <select id="nearme-km" onchange="searchNearMe()" style="border:1px solid #ccc;border-radius:6px;padding:5px 6px;font-size:12px;background:#fff;cursor:pointer">
+    <option value="">Vicino a me…</option>
+    <option value="5">± 5 km</option>
+    <option value="10">± 10 km</option>
+    <option value="15">± 15 km</option>
+    <option value="20">± 20 km</option>
+    <option value="30">± 30 km</option>
+    <option value="50">± 50 km</option>
+  </select>
   <button class="btn" style="background:#f5f5f0;padding:5px 8px;font-size:13px;font-weight:700" onclick="zoomToVisible()" title="Zoom sui dealer visibili">⛶ Zoom</button>
   <span style="margin-left:auto;font-size:13px;font-weight:700;color:#1a5cb8;white-space:nowrap" id="visible-count-bar">0</span>
 </div>
@@ -521,6 +535,11 @@ function initMap(){
   map=L.map('map',{zoomControl:false}).setView([45.4,9.2],7);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(map);
   markerLayer=L.layerGroup().addTo(map);
+  var labelDebounce=null;
+  map.on('moveend zoomend',function(){
+    clearTimeout(labelDebounce);
+    labelDebounce=setTimeout(updateSmartLabels,150);
+  });
 }
 
 function makeIcon(d){
@@ -535,15 +554,21 @@ function makeIcon(d){
 function buildPopup(d){
   var col=tc(d.Customer_Type__c);
   var nav='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent((d.BillingStreet||'')+' '+(d.BillingCity||'')+' Italy');
-  return '<div class="popup-title">'+d.Name+'</div>'
+  var website=d.Website||d.Website__c||d.URL__c||'';
+  var websiteUrl=website ? (website.indexOf('http')===0?website:'https://'+website) : '';
+  var html='<div class="popup-title">'+d.Name+'</div>'
     +'<div class="popup-row"><span class="popup-label">Città</span><span>'+(d.BillingCity||'—')+'</span></div>'
     +'<div class="popup-row"><span class="popup-label">Tipo</span><span class="popup-badge" style="background:'+col+'22;color:'+col+';border:1px solid '+col+'44">'+(d.Customer_Type__c||'—')+'</span></div>'
     +'<div class="popup-row"><span class="popup-label">Rating</span><span>'+(d.Rating||'—')+'</span></div>'
     +'<div class="popup-row"><span class="popup-label">Azienda</span><span>'+(d.Company_type__c||'—')+'</span></div>'
     +'<div class="popup-row"><span class="popup-label">Brand</span><span>'+(d.Official_brand__c||'—')+'</span></div>'
     +'<div class="popup-row"><span class="popup-label">Provider</span><span>'+(d.Website_Provider__c||'—')+'</span></div>'
-    +'<div class="popup-row"><span class="popup-label">Prodotti</span><span style="max-width:160px;word-break:break-word">'+(d.Active_Products_List__c||'—')+'</span></div>'
-    +'<a class="popup-btn" href="'+nav+'" target="_blank">🗺 Naviga con Google Maps</a>';
+    +'<div class="popup-row"><span class="popup-label">Prodotti</span><span style="max-width:160px;word-break:break-word">'+(d.Active_Products_List__c||'—')+'</span></div>';
+  if(website){
+    html+='<a class="popup-btn-web" href="'+websiteUrl+'" target="_blank">🌐 Vedi sito web</a>';
+  }
+  html+='<a class="popup-btn" href="'+nav+'" target="_blank">🗺 Naviga con Google Maps</a>';
+  return html;
 }
 
 function buildFilters(dealers){
@@ -684,6 +709,53 @@ function updateVisibleCount(visible){
   var el=document.getElementById('visible-count-bar');
   if(!el) return;
   el.textContent=visible;
+  updateSmartLabels();
+}
+
+function updateSmartLabels(){
+  var visibleMarkers=[];
+  markerLayer.eachLayer(function(m){ if(m.getLatLng) visibleMarkers.push(m); });
+
+  // Sopra 30 dealer: nascondi tutte le label permanenti (troppo affollato)
+  if(visibleMarkers.length===0 || visibleMarkers.length>30){
+    markers.forEach(function(o){
+      if(o.marker.isTooltipOpen && o.marker.isTooltipOpen()) o.marker.closeTooltip();
+    });
+    return;
+  }
+
+  // Sotto 30: mostra le label, scegliendo direzione per minimizzare sovrapposizioni
+  // Converte lat/lng in pixel schermo per stimare collisioni
+  var points=visibleMarkers.map(function(m){
+    var p=map.latLngToLayerPoint(m.getLatLng());
+    return {marker:m, x:p.x, y:p.y};
+  });
+
+  // Per ogni marker calcola la direzione migliore guardando i vicini
+  points.forEach(function(pt){
+    var neighborsRight=0, neighborsLeft=0, neighborsAbove=0, neighborsBelow=0;
+    points.forEach(function(other){
+      if(other===pt) return;
+      var dx=other.x-pt.x, dy=other.y-pt.y;
+      var dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist>120) return; // troppo lontano per influire
+      if(dx>0) neighborsRight++;
+      if(dx<0) neighborsLeft++;
+      if(dy<0) neighborsAbove++;
+      if(dy>0) neighborsBelow++;
+    });
+
+    // Scegli la direzione con meno vicini (meno probabilità di sovrapposizione)
+    var dir='right', offset=[10,0];
+    var min=neighborsRight;
+    if(neighborsLeft<min){min=neighborsLeft;dir='left';offset=[-10,0];}
+    if(neighborsAbove<min){min=neighborsAbove;dir='top';offset=[0,-8];}
+    if(neighborsBelow<min){min=neighborsBelow;dir='bottom';offset=[0,8];}
+
+    pt.marker.unbindTooltip();
+    pt.marker.bindTooltip(pt.marker._dealerName||'',{permanent:true,direction:dir,className:'dealer-label',offset:offset});
+    pt.marker.openTooltip();
+  });
 }
 
 function zoomToVisible(){
@@ -704,6 +776,8 @@ function placeMarker(d,coords){
   var jlat=(Math.random()-0.5)*0.025,jlng=(Math.random()-0.5)*0.025;
   var m=L.marker([coords.lat+jlat,coords.lng+jlng],{icon:makeIcon(d)});
   m.bindPopup(buildPopup(d),{maxWidth:260});
+  m._dealerName=d.Name;
+  m.bindTooltip(d.Name,{permanent:false,direction:'right',className:'dealer-label',offset:[8,0]});
   markers.push({marker:m,dealer:d});
   if(activeTypes.size>0&&activeRatings.size>0&&activeTypes.has(d.Customer_Type__c)&&activeRatings.has(d.Rating))
     markerLayer.addLayer(m);
@@ -780,12 +854,35 @@ window.clearCache=async function(){
   btn.textContent='🗑 Svuota cache';btn.disabled=false;
 };
 
+var _myPosition = null;
+
 window.locateMe=function(){
   if(!navigator.geolocation){alert('Geolocalizzazione non supportata');return;}
   navigator.geolocation.getCurrentPosition(function(pos){
+    _myPosition = {lat: pos.coords.latitude, lng: pos.coords.longitude};
     map.setView([pos.coords.latitude,pos.coords.longitude],11);
-    L.circleMarker([pos.coords.latitude,pos.coords.longitude],{radius:8,color:'#1a5cb8',fillColor:'#4a90d9',fillOpacity:1,weight:3}).addTo(map).bindPopup('📍 Sei qui').openPopup();
+    if(window._myMarker) map.removeLayer(window._myMarker);
+    window._myMarker = L.circleMarker([pos.coords.latitude,pos.coords.longitude],{radius:8,color:'#1a5cb8',fillColor:'#4a90d9',fillOpacity:1,weight:3}).addTo(map).bindPopup('📍 Sei qui').openPopup();
   },function(){alert('Impossibile rilevare la posizione');});
+};
+
+window.searchNearMe=function(){
+  var kmRange = parseInt(document.getElementById('nearme-km').value);
+  if(!kmRange) return;
+
+  if(_myPosition){
+    runRadarFromCoords(_myPosition, kmRange, 'te');
+  } else {
+    if(!navigator.geolocation){alert('Geolocalizzazione non supportata');return;}
+    toast('🔄 Rilevamento posizione…');
+    navigator.geolocation.getCurrentPosition(function(pos){
+      _myPosition = {lat: pos.coords.latitude, lng: pos.coords.longitude};
+      runRadarFromCoords(_myPosition, kmRange, 'te');
+    },function(){
+      alert('Impossibile rilevare la posizione');
+      document.getElementById('nearme-km').value = '';
+    });
+  }
 };
 
 var DRIVE_ACCOUNT='https://docs.google.com/spreadsheets/d/18vIfwCnBM9PWgDL8_vk5SxvSRsbXC7w8Ouu4G90greo/export?format=csv&gid=1412554961';
@@ -863,7 +960,7 @@ function clearRoute() {
   omwDealers = [];
   document.getElementById('omw-result-panel').style.display = 'none';
   document.getElementById('omw-clear').style.display = 'none';
-  
+  document.getElementById('nearme-km').value = '';
   document.getElementById('omw-panel-list').innerHTML = '';
   filterMarkers();
 }
@@ -873,13 +970,7 @@ async function runOnMyWay() {
   var arrivoRaw = document.getElementById('omw-arrivo').value.trim();
   var kmRange = parseInt(document.getElementById('omw-km').value);
 
-  if (!partenzaRaw) { toast('⚠ Inserisci almeno il comune di partenza'); return; }
-
-  // Modalità radar: solo partenza compilata
-  if (!arrivoRaw) {
-    runRadar(partenzaRaw, kmRange);
-    return;
-  }
+  if (!partenzaRaw || !arrivoRaw) { toast('⚠ Inserisci partenza e arrivo'); return; }
 
   var partenzaNorm = normalizeCity(partenzaRaw);
   var arrivoNorm = normalizeCity(arrivoRaw);
@@ -1455,7 +1546,10 @@ async function runRadar(comuneRaw, kmRange) {
     pCoords = latLng(comuneRaw);
   }
   if (!pCoords) { toast('⚠ Comune non trovato: ' + comuneRaw); return; }
+  runRadarFromCoords(pCoords, kmRange, comuneRaw);
+}
 
+function runRadarFromCoords(pCoords, kmRange, labelText) {
   clearRoute();
   toast('🔄 Ricerca dealer nel raggio di ' + kmRange + ' km…');
 
@@ -1504,7 +1598,7 @@ async function runRadar(comuneRaw, kmRange) {
   // Pannello
   var panel = document.getElementById('omw-result-panel');
   var list = document.getElementById('omw-panel-list');
-  document.getElementById('omw-panel-title').textContent = omwDealers.length + ' dealer entro ' + kmRange + ' km da ' + comuneRaw;
+  document.getElementById('omw-panel-title').textContent = omwDealers.length + ' dealer entro ' + kmRange + ' km da ' + labelText;
   list.innerHTML = '';
   if (omwDealers.length === 0) {
     list.innerHTML = '<div style="padding:16px;color:#888;font-size:13px;text-align:center">Nessun dealer trovato<br>nel raggio selezionato</div>';
@@ -1527,7 +1621,8 @@ async function runRadar(comuneRaw, kmRange) {
   panel.style.display = 'flex';
   document.getElementById('omw-clear').style.display = 'inline-block';
   if (omwDealers.length > 0) 
-  toast('✅ ' + omwDealers.length + ' dealer entro ' + kmRange + ' km da ' + comuneRaw);
+  toast('✅ ' + omwDealers.length + ' dealer entro ' + kmRange + ' km da ' + labelText);
+  updateVisibleCount(omwDealers.length);
 }
 
 
