@@ -2,1606 +2,1671 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SparK Outreach</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Dealer Map">
+<title>Dealer Map</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@9.0.2/build/index.umd.js"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,sans-serif;background:#f5f5f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-#hdr{background:#1a5cb8;color:#fff;padding:10px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap}
-#hdr h1{font-size:15px;font-weight:600}
-#hdr .sub{font-size:11px;opacity:.7}
-#ai-search-wrap{flex:1;min-width:200px;display:flex;gap:6px;align-items:center}
-#ai-search{flex:1;border:none;border-radius:20px;padding:6px 14px;font-size:13px;outline:none;color:#333;min-width:0}
-#ai-search-btn{border:none;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;background:rgba(255,255,255,.2);color:#fff;cursor:pointer;white-space:nowrap}
-#ai-search-btn:hover{background:rgba(255,255,255,.3)}
-#ai-search-status{font-size:11px;opacity:.85;white-space:nowrap}
-#body{display:flex;flex:1;min-height:0;overflow:hidden}
-#side{width:260px;background:#fff;border-right:1px solid #e0e0d8;overflow-y:auto;flex-shrink:0}
-#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-#links-panel{width:210px;background:#fafaf8;border-left:1px solid #e0e0d8;overflow-y:auto;flex-shrink:0;padding:8px 6px}
-.sec{padding:10px 12px;border-bottom:1px solid #f0f0e8}
-.sec-t{font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
-.frow{display:flex;align-items:center;gap:6px;margin-bottom:5px}
-.flbl{font-size:12px;flex:1;color:#333}
-.fst{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;white-space:nowrap}
-.fst.ok{background:#e8f5e9;color:#2e7d32}
-.fst.ko{background:#fce4ec;color:#c62828}
-.file-input-wrap{position:relative;overflow:hidden;display:inline-block;cursor:pointer}
-.file-input-wrap .fake-btn{font-size:11px;padding:3px 8px;border:1px solid #ddd;border-radius:4px;background:#fff;pointer-events:none}
-.file-input-wrap input[type=file]{position:absolute;left:0;top:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:100px}
-.btn{border:1px solid #ddd;border-radius:5px;padding:4px 10px;font-size:11px;background:#fff;cursor:pointer;font-weight:500}
-.btn:hover{background:#f5f5f5}
-.btn.rd{background:#e53935;color:#fff;border-color:#e53935}
-.pill{border-radius:20px;padding:2px 8px;font-size:11px;font-weight:600;cursor:pointer;border:2px solid transparent;display:inline-block;margin:2px;transition:opacity .15s}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,sans-serif;background:#f5f5f0;height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+#toolbar{background:#fff;border-bottom:1px solid #e0e0d8;padding:6px 10px;display:flex;flex-wrap:nowrap;gap:4px;align-items:center;z-index:1000;flex-shrink:0;overflow-x:auto}
+#bottom-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid #1a5cb8;padding:8px 10px;display:flex;gap:6px;align-items:center;z-index:2000;flex-shrink:0;flex-wrap:wrap}
+#map{flex:1;min-height:0;margin-bottom:70px}
+#omw-partenza,#omw-arrivo,#omw-via{border:1px solid #ccc;border-radius:6px;padding:5px 8px;font-size:13px;width:120px;outline:none}
+#omw-via{border-color:#f57c00;width:110px}
+#omw-via:focus{border-color:#f57c00;box-shadow:0 0 0 2px rgba(245,124,0,.2)}
+#omw-partenza:focus,#omw-arrivo:focus{border-color:#1a5cb8}
+.omw-via-label{font-size:10px;color:#f57c00;font-weight:700;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+#ai-search-panel{position:fixed;left:0;top:50px;bottom:70px;width:300px;background:#fff;border-right:2px solid #7b1fa2;z-index:1400;display:none;flex-direction:column;box-shadow:4px 0 16px rgba(0,0,0,.15)}
+#ai-search-header{background:#7b1fa2;color:#fff;padding:10px 12px;font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+#ai-search-close{background:none;border:none;color:#fff;font-size:18px;cursor:pointer;padding:0 2px;line-height:1}
+#ai-search-body{padding:10px;display:flex;flex-direction:column;gap:8px;flex:1;overflow:hidden}
+#ai-search-input{width:100%;border:1px solid #ce93d8;border-radius:6px;padding:7px 10px;font-size:13px;outline:none;resize:none;font-family:inherit;height:70px}
+#ai-search-input:focus{border-color:#7b1fa2}
+#ai-search-btn{background:#7b1fa2;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;align-self:flex-end}
+#ai-search-btn:active{transform:scale(.96)}
+#ai-search-results{overflow-y:auto;flex:1}
+#ai-search-status{font-size:11px;color:#888;padding:4px 0}
+.ai-item{border:1px solid #e0e0d8;border-radius:8px;padding:8px 10px;margin-bottom:6px;cursor:pointer;transition:background .15s}
+.ai-item:hover{background:#f9f0ff}
+.ai-item-name{font-weight:700;font-size:13px;color:#111;margin-bottom:3px}
+.ai-item-meta{font-size:11px;color:#666}
+.ai-item-badge{display:inline-block;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;margin-right:4px}
+#ai-search-toggle{background:#7b1fa2;color:#fff;border:none;border-radius:6px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+#map.ai-open{margin-left:300px}
+
+#omw-partenza:focus,#omw-arrivo:focus{border-color:#1a5cb8}
+#omw-km{border:1px solid #ccc;border-radius:6px;padding:5px 8px;font-size:13px;background:#fff;outline:none;cursor:pointer}
+#omw-go{background:#1a5cb8;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+#omw-go:active{transform:scale(.96)}
+#omw-clear{background:#e53935;color:#fff;border:none;border-radius:6px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer;display:none}
+#omw-export{background:#388e3c;color:#fff;border:none;border-radius:6px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer}
+.omw-label{font-size:10px;color:#1a5cb8;font-weight:700;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+#omw-result-panel{position:fixed;right:0;top:0;bottom:70px;width:280px;background:#fff;border-left:2px solid #1a5cb8;z-index:1500;display:none;flex-direction:column;box-shadow:-4px 0 16px rgba(0,0,0,.15)}
+#omw-panel-header{background:#1a5cb8;color:#fff;padding:10px 12px;font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+#omw-panel-close{background:none;border:none;color:#fff;font-size:18px;cursor:pointer;padding:0 2px;line-height:1}
+#omw-panel-list{overflow-y:auto;flex:1;padding:8px}
+.omw-item{border:1px solid #e0e0d8;border-radius:8px;padding:8px 10px;margin-bottom:6px;cursor:pointer;transition:background .15s}
+.omw-item:hover{background:#f0f4ff}
+.omw-item-name{font-weight:700;font-size:13px;color:#111;margin-bottom:3px}
+.omw-item-meta{font-size:11px;color:#666}
+.omw-item-dist{font-size:11px;color:#1a5cb8;font-weight:600;margin-top:3px}
+input[type=text]{border:1px solid #ddd;border-radius:6px;padding:5px 10px;font-size:13px;width:150px;outline:none}
+.btn{border:none;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;white-space:nowrap;font-weight:500;transition:opacity .15s,transform .1s}
+.btn:active{transform:scale(.96)}
+.btn-blue{background:#1a5cb8;color:#fff}
+.btn-red{background:#e53935;color:#fff}
+.tb-label{font-size:9px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.divider{width:1px;height:22px;background:#e0e0d8;flex-shrink:0}
+.pill{border-radius:20px;padding:3px 9px;font-size:11px;font-weight:600;cursor:pointer;border:2px solid transparent;display:inline-block;transition:opacity .15s;user-select:none}
+.pill:active{transform:scale(.95)}
 .pill.off{opacity:.3}
-.fa-row{display:flex;gap:3px;margin-bottom:3px}
-.fa-btn{font-size:9px;padding:1px 5px;border-radius:3px;border:1px solid #ddd;background:#fff;cursor:pointer;color:#555}
-.fa-btn:hover{background:#eee}
-#rbar{background:#fff;border-bottom:1px solid #e0e0d8;padding:7px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0}
-#rcount{font-size:12px;color:#555;flex:1}
-#list{flex:1;overflow-y:auto;padding:8px}
-.card{background:#fff;border:1px solid #e8e8e0;border-radius:7px;margin-bottom:5px;overflow:hidden}
-.card-h{padding:7px 10px;display:flex;align-items:center;gap:7px;cursor:pointer}
-.card-h:hover{background:#f9f9f6}
-.cname{font-size:13px;font-weight:600;flex:1}
-.cbadge{font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px}
-.cpv{font-size:11px;color:#aaa}
-.crow{padding:5px 10px 5px 20px;border-top:1px solid #f0f0e8}
-.cn2{font-size:12px;font-weight:500}
-.ce{font-size:11px;color:#666}
-.cp{font-size:11px;color:#1a5cb8;font-weight:500}
-.rbadge{font-size:9px;padding:1px 5px;border-radius:3px;font-weight:600;margin-left:4px}
-.rb-t{background:#fff3e0;color:#e65100}
-.rb-o{background:#f3f3f3;color:#666}
-#msgp{background:#fff;border-top:1px solid #e0e0d8;padding:10px 12px;flex-shrink:0}
-.mrow{display:flex;gap:8px;margin-bottom:7px;align-items:flex-start}
-.mlbl{font-size:11px;color:#888;font-weight:500;min-width:58px;padding-top:5px}
-select,input[type=text],textarea{border:1px solid #ddd;border-radius:5px;padding:5px 7px;font-size:12px;width:100%;outline:none}
-textarea{height:90px;resize:vertical;line-height:1.5}
-#actbar{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
-.abtn{border:none;border-radius:6px;padding:7px 13px;font-size:13px;font-weight:600;cursor:pointer}
-#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:9px 18px;border-radius:8px;font-size:12px;z-index:9999;display:none;white-space:nowrap}
-.lp-hdr{font-size:11px;font-weight:600;color:#555;margin-bottom:8px}
-.lp-section{border-bottom:1px solid #ececec;margin-bottom:2px}
-.lp-section-hdr{font-size:11px;font-weight:700;color:#333;padding:6px 4px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;border-radius:4px}
-.lp-section-hdr:hover{background:#f0f0ec}
-.lp-arrow{font-size:10px;color:#999}
-.lp-title{font-size:9px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.4px;margin:8px 0 2px 4px}
-.lp-link{display:block;font-size:11px;color:#1a5cb8;text-decoration:none;padding:3px 4px;border-radius:4px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lp-link:hover{background:#e8f0fe}
+#status{font-size:11px;color:#888;white-space:nowrap}
+.popup-title{font-weight:600;font-size:14px;margin-bottom:6px;color:#111}
+.popup-row{font-size:12px;color:#444;margin-bottom:3px;display:flex;gap:6px}
+.popup-label{color:#888;min-width:72px;flex-shrink:0}
+.popup-badge{display:inline-block;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600}
+.popup-btn{margin-top:8px;width:100%;text-align:center;background:#1a5cb8;color:#ffffff;border:none;border-radius:6px;padding:8px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;display:block}
+.popup-btn-web{margin-top:6px;width:100%;text-align:center;background:#388e3c;color:#ffffff;border:none;border-radius:6px;padding:8px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;display:block}
+.dealer-label{background:rgba(255,255,255,.95)!important;border:1px solid #ccc!important;border-radius:4px!important;padding:2px 6px!important;font-size:11px!important;font-weight:600!important;color:#222!important;box-shadow:0 1px 3px rgba(0,0,0,.2)!important}
+.dealer-label::before{display:none!important}
+#miss-bar{background:#fff3cd;border-bottom:1px solid #ffc107;padding:5px 10px;font-size:11px;color:#856404;display:none;flex-shrink:0;word-break:break-word}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:9999;display:none;white-space:nowrap}
 </style>
 </head>
 <body>
-<div id="hdr">
-  <div><div class="sub">MotorK</div><h1>&#10003; SparK Outreach</h1></div>
-  <div id="ai-search-wrap">
-    <input id="ai-search" type="text" placeholder="Cerca: clienti BG con LeadSparK ma senza StockSparK...">
-    <button id="ai-search-btn">Cerca</button>
-    <span id="ai-search-status"></span>
-  </div>
-  <div style="position:relative;overflow:hidden;display:inline-block;cursor:pointer">
-    <button class="btn" style="background:#f90032;color:#fff;border-color:#f90032;white-space:nowrap">&#128196; Carica DOCX</button>
-    <input type="file" id="btn-load-txt" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="position:absolute;left:0;top:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:100px">
-  </div>
-  <button class="btn" id="btn-followup" style="background:#ff6f00;color:#fff;border-color:#ff6f00;white-space:nowrap">&#128172; Follow Up</button>
-  <button class="btn" id="btn-refresh-drive" style="background:#0f9d58;color:#fff;border-color:#0f9d58;white-space:nowrap">&#8635; Drive</button>
-  <div><button class="btn rd" id="btn-cache">&#128465; Cache</button></div>
+<div id="toolbar">
+  <button class="btn btn-blue" onclick="document.getElementById('csv-input').click()">📂 Carica CSV</button>
+  <button class="btn btn-red" id="clear-btn" onclick="clearCache()">🗑 Svuota cache</button>
+  <input type="file" id="csv-input" accept=".csv,text/csv,text/plain,application/csv,application/vnd.ms-excel" style="display:none">
+  <span id="status">Carica un CSV per iniziare</span>
+  <div class="divider"></div>
+  <input type="text" id="search" placeholder="Cerca dealer…" oninput="filterMarkers()">
+  <button id="ai-search-toggle" onclick="toggleAiSearch()" title="Ricerca AI">🤖 AI Search</button>
+  <div class="divider"></div>
+  <span class="tb-label">Tipo</span>
+  <button class="btn" style="font-size:10px;padding:3px 6px" onclick="selAllTypes()">✓</button>
+  <button class="btn" style="font-size:10px;padding:3px 6px" onclick="selNoneTypes()">✗</button>
+  <div id="type-filters" style="display:flex;gap:3px;flex-wrap:wrap"></div>
+  <div class="divider"></div>
+  <span class="tb-label">Rating</span>
+  <div id="rating-filters" style="display:flex;gap:3px;flex-wrap:nowrap"></div>
+</div>
+<div id="miss-bar" style="display:none"><span id="miss-text"></span><button onclick="downloadErrors()" style="font-size:10px;padding:2px 7px;border:1px solid #856404;border-radius:4px;background:#fff;color:#856404;cursor:pointer;white-space:nowrap">⬇ Scarica errori</button></div>
+<div id="map"></div>
+<!-- ON MY WAY BAR -->
+<div id="bottom-bar">
+  <span class="omw-label">🚗 On My Way</span>
+  <input type="text" id="omw-partenza" placeholder="Partenza…" value="">
+  <input type="text" id="omw-via" placeholder="Via… (opz.)" title="Passa per questo comune o concessionaria">
+  <input type="text" id="omw-arrivo" placeholder="Arrivo…" value="Gorle">
+  <select id="omw-km">
+    <option value="5" selected>± 5 km</option>
+    <option value="10">± 10 km</option>
+    <option value="15">± 15 km</option>
+    <option value="20">± 20 km</option>
+    <option value="30">± 30 km</option>
+    <option value="50">± 50 km</option>
+  </select>
+  <button id="omw-go" onclick="runOnMyWay()">🔍 Cerca</button>
+  <button id="omw-clear" onclick="clearRoute()">✕ Pulisci</button>
+  <button id="omw-export" onclick="exportUnified()">⬇ Export DOCX</button>
+  <button class="btn" style="background:#f5f5f0;padding:5px 8px;font-size:16px;line-height:1" onclick="locateMe()" title="Centra sulla mia posizione">📍</button>
+  <select id="nearme-km" onchange="searchNearMe()" style="border:1px solid #ccc;border-radius:6px;padding:5px 6px;font-size:12px;background:#fff;cursor:pointer">
+    <option value="">Vicino a me…</option>
+    <option value="5">± 5 km</option>
+    <option value="10">± 10 km</option>
+    <option value="15">± 15 km</option>
+    <option value="20">± 20 km</option>
+    <option value="30">± 30 km</option>
+    <option value="50">± 50 km</option>
+  </select>
+  <button class="btn" style="background:#f5f5f0;padding:5px 8px;font-size:13px;font-weight:700" onclick="zoomToVisible()" title="Zoom sui dealer visibili">⛶ Zoom</button>
+  <span style="margin-left:auto;font-size:13px;font-weight:700;color:#1a5cb8;white-space:nowrap" id="visible-count-bar">0</span>
 </div>
 
-<div id="body">
-  <div id="side">
-    <div class="sec">
-      <div class="sec-t">File dati</div>
-      <div class="frow">
-        <span class="flbl">Account</span>
-        <span class="fst ko" id="st-account">Non caricato</span>
-        <div class="file-input-wrap"><span class="fake-btn">Carica</span><input type="file" id="inp-account" accept=".csv,text/plain"></div>
-      </div>
-      <div class="frow">
-        <span class="flbl">Contatti</span>
-        <span class="fst ko" id="st-contact">Non caricato</span>
-        <div class="file-input-wrap"><span class="fake-btn">Carica</span><input type="file" id="inp-contact" accept=".csv,text/plain"></div>
-      </div>
-      <div class="frow">
-        <span class="flbl">Database</span>
-        <span class="fst ko" id="st-database">Non caricato</span>
-        <div class="file-input-wrap"><span class="fake-btn">Carica</span><input type="file" id="inp-database" accept=".csv,text/plain"></div>
-      </div>
-    </div>
-    <div class="sec">
-      <div class="sec-t">Filtri</div>
-      <div style="margin-bottom:6px">
-        <div style="font-size:10px;color:#888;margin-bottom:2px">Tipo</div>
-        <div class="fa-row"><button class="fa-btn" id="fa-type-all">tutti</button><button class="fa-btn" id="fa-type-none">nessuno</button></div>
-        <div id="f-type"></div>
-      </div>
-      <div style="margin-bottom:6px">
-        <div style="font-size:10px;color:#888;margin-bottom:2px">Regione</div>
-        <div class="fa-row"><button class="fa-btn" id="fa-region-all">tutti</button><button class="fa-btn" id="fa-region-none">nessuno</button></div>
-        <div id="f-region"></div>
-      </div>
-      <div style="margin-bottom:6px">
-        <div style="font-size:10px;color:#888;margin-bottom:2px">Provincia</div>
-        <div class="fa-row"><button class="fa-btn" id="fa-province-all">tutti</button><button class="fa-btn" id="fa-province-none">nessuno</button></div>
-        <div id="f-province"></div>
-      </div>
-      <div style="margin-bottom:6px">
-        <div style="font-size:10px;color:#888;margin-bottom:2px">Prodotti</div>
-        <div class="fa-row"><button class="fa-btn" id="fa-products-all">tutti</button><button class="fa-btn" id="fa-products-none">nessuno</button></div>
-        <div id="f-products"></div>
-      </div>
-      <div style="margin-bottom:6px">
-        <div style="font-size:10px;color:#888;margin-bottom:2px">Contatto</div>
-        <div id="f-contact"></div>
-      </div>
-    </div>
+<!-- RESULT PANEL -->
+<div id="omw-result-panel">
+  <div id="omw-panel-header">
+    <span id="omw-panel-title">Dealer lungo il percorso</span>
+    <button id="omw-panel-close" onclick="document.getElementById('omw-result-panel').style.display='none'">✕</button>
   </div>
+  <div id="omw-panel-list"></div>
+</div>
 
-  <div id="main">
-    <div id="rbar">
-      <span id="rcount">Carica i file per iniziare</span>
-      <button class="btn" id="btn-toggle-contacts">Nascondi contatti</button>
-      <button class="btn" id="btn-sel-all">&#10003; Tutti</button>
-      <button class="btn" id="btn-sel-none">&#10007; Nessuno</button>
-    </div>
-    <div id="list"></div>
-    <div id="msgp">
-      <div style="display:flex;justify-content:flex-end;margin-bottom:4px">
-        <button id="btn-expand-msg" onclick="toggleMsgPanel()" style="font-size:10px;padding:2px 8px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;color:#555">⤢ Espandi</button>
-      </div>
-      <div class="mrow">
-        <span class="mlbl">Template</span>
-        <select id="tpl-sel" style="width:140px">
-          <option value="">-- scegli --</option>
-          <option value="webinar">Invito webinar</option>
-          <option value="upgrade">Upgrade prodotto</option>
-          <option value="newprod">Nuovo prodotto</option>
-          <option value="news">Aggiornamento MotorK</option>
-        </select>
-
-        <button class="btn" id="ai-btn" style="white-space:nowrap;color:#9c27b0;border-color:#9c27b0">&#10024; AI</button>
-        <button class="btn" id="btn-test" style="white-space:nowrap;color:#e65100;border-color:#e65100">&#128236; Test</button>
-      </div>
-      <div id="ai-prompt-panel" style="display:none;background:#f3e5f5;border-radius:6px;padding:8px;margin-bottom:7px">
-        <div style="font-size:11px;color:#6a1b9a;font-weight:600;margin-bottom:5px">✨ Descrivi cosa vuoi comunicare</div>
-        <textarea id="ai-prompt-input" style="width:100%;height:55px;font-size:12px;border:1px solid #ce93d8;border-radius:4px;padding:5px;resize:none" placeholder="Es: vuoi proporre StockSparK a un dealer che usa già il sito ma non gestisce bene lo stock..."></textarea>
-        <button id="ai-run-btn" onclick="runGenAI()" style="margin-top:5px;background:#9c27b0;color:#fff;border:none;border-radius:4px;padding:4px 12px;font-size:11px;cursor:pointer">Genera</button>
-      </div>
-      <div class="mrow">
-        <span class="mlbl">Oggetto</span>
-        <input type="text" id="msg-sub" placeholder="Oggetto email...">
-      </div>
-      <div class="mrow">
-        <span class="mlbl">Testo</span>
-        <textarea id="msg-body" placeholder="Scrivi o genera con AI... usa {NOME} per il nome destinatario"></textarea>
-      </div>
-      <div id="actbar">
-        <button class="abtn" id="btn-drafts" style="background:#1a5cb8;color:#fff">&#128231; Crea bozze Gmail</button>
-        <button class="abtn" id="btn-wa" style="background:#25d366;color:#fff">&#128172; WhatsApp</button>
-        <button class="abtn" id="btn-wa-next" style="background:#128c7e;color:#fff;display:none">&#8594; Prossimo</button>
-        <span id="selcount" style="font-size:11px;color:#888"></span>
-        <span id="wa-progress" style="font-size:11px;color:#25d366;display:none"></span>
-      </div>
-    </div>
+<!-- AI SEARCH PANEL -->
+<div id="ai-search-panel">
+  <div id="ai-search-header">
+    <span>🤖 Ricerca AI Dealer</span>
+    <button id="ai-search-close" onclick="toggleAiSearch()">✕</button>
   </div>
-
-  <div id="links-panel">
-    <div class="lp-hdr">&#128206; Inserisci link</div>
-
-    <div class="lp-section">
-      <div class="lp-section-hdr">&#128202; Presentazioni <span class="lp-arrow">&#9660;</span></div>
-      <div class="lp-section-body">
-        <div class="lp-title">StockSparK</div>
-        <span class="lp-link" data-label="Presentazione StockSparK" data-url="https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing">Presentazione</span>
-        <span class="lp-link" data-label="Video StockSparK" data-url="https://drive.google.com/file/d/1QPbnEGNr75m9DQt7Phz742MQOc8cSH6C/view?usp=sharing">Video</span>
-        <span class="lp-link" data-label="Esempi rimozione sfondo" data-url="https://webspark-revolution-it.getwebspark.com/background-removal/">Rimozione sfondo</span>
-        <span class="lp-link" data-label="Esempi 360 e video AI" data-url="https://webspark-revolution-it.getwebspark.com/auto/?has360=1">360 e video AI</span>
-        <div class="lp-title">WebSparK Sales</div>
-        <span class="lp-link" data-label="Presentazione WebSparK" data-url="https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present">Presentazione</span>
-        <span class="lp-link" data-label="Video WebSparK" data-url="https://drive.google.com/file/d/1vqXYbaTJvkcRrmi-JYZE4orteje9dv6C/view?usp=sharing">Video</span>
-        <span class="lp-link" data-label="Demo WebSparK" data-url="https://webspark-revolution-it.getwebspark.com/">Demo</span>
-        <div class="lp-title">WebSparK Altri</div>
-        <span class="lp-link" data-label="WebSparK Noleggio" data-url="https://docs.google.com/presentation/d/1yrbghZDpe7prWrcvEmYbK0uKunI3qKf271J0oecz8WE/present">Noleggio pres.</span>
-        <span class="lp-link" data-label="Demo Noleggio" data-url="https://webspark-revolution-mobility.getwebspark.com/">Noleggio demo</span>
-        <span class="lp-link" data-label="WebSparK Truck" data-url="https://docs.google.com/presentation/d/196mZFXnlcAtrIFjWzBShXlJ8y08pZDMG5WUFR25tMAk/present">Truck pres.</span>
-        <span class="lp-link" data-label="Demo Truck" data-url="https://demo-truck-it.getwebspark.com/">Truck demo</span>
-        <span class="lp-link" data-label="Demo Moto" data-url="https://demo-moto.websparksite-it.dealerk.com/">Moto demo</span>
-        <span class="lp-link" data-label="Demo Postvendita" data-url="https://demo-service-it.getwebspark.com/">Postvendita demo</span>
-        <span class="lp-link" data-label="Demo B2B e Aste" data-url="https://demo-b2b-add.wsr74.dealerk.com/">B2B/Aste demo</span>
-        <div class="lp-title">LeadSparK</div>
-        <span class="lp-link" data-label="Presentazione LeadSparK" data-url="https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present">Presentazione</span>
-        <span class="lp-link" data-label="Video LeadSparK" data-url="https://drive.google.com/file/d/1WZ0Q6XxbC3nA8C4lrzuzdf-mds1tRWS7/view?usp=sharing">Video</span>
-        <div class="lp-title">CallSparK</div>
-        <span class="lp-link" data-label="Presentazione CallSparK" data-url="https://docs.google.com/presentation/d/185utUR8TkIl8lUsW3DkpNNW8RDtiVBHUIB_ghK8A2hk/present">Presentazione</span>
-        <span class="lp-link" data-label="Video CallSparK" data-url="https://drive.google.com/file/d/1lKySH6RiGnYN-tId7pWA3CKlQmgMgUZz/view?usp=sharing">Video</span>
-        <div class="lp-title">PredictSparK</div>
-        <span class="lp-link" data-label="Presentazione PredictSparK" data-url="https://docs.google.com/presentation/d/1LqHmmVMst3zOtl-KggSmUg0NWGezzIBG9qtFQ78RfqY/present">Presentazione</span>
-        <span class="lp-link" data-label="Video PredictSparK" data-url="https://drive.google.com/file/d/1-ssZ2Z14VGtd_vujQ5_7foxwF-lkSQ5v/view?usp=sharing">Video</span>
-        <div class="lp-title">FidSparK</div>
-        <span class="lp-link" data-label="Presentazione FidSparK" data-url="https://docs.google.com/presentation/d/1tKwQ8I8RfuCLswVCublwRyTGEnwUCwqAmaMzWxID7Is/present">Presentazione</span>
-        <span class="lp-link" data-label="Video FidSparK" data-url="https://drive.google.com/file/d/1r_p5cbM8kOhETjNmKgJKz5FbP5c8E8YC/view?usp=sharing">Video</span>
-        <div class="lp-title">SeoSparK</div>
-        <span class="lp-link" data-label="Presentazione SeoSparK" data-url="https://docs.google.com/presentation/d/1dj2zvXwHZLN9OkFHTjeJRXoZtXFjHFF5KCg7u6NLR2g/present">Presentazione</span>
-        <span class="lp-link" data-label="Guida SeoSparK" data-url="https://drive.google.com/file/d/1CgPEij_VY6rt1xjt76uYhU73VlW3p4aY/view?usp=sharing">Guida</span>
-        <div class="lp-title">AdSparK</div>
-        <span class="lp-link" data-label="Presentazione AdSparK" data-url="https://docs.google.com/presentation/d/1fQ6g4F2XHEdEYb2RsL7eAcI_n26x2xWXL0RO1ctsD2w/present">Presentazione</span>
-        <div class="lp-title">SellSparK</div>
-        <span class="lp-link" data-label="Video SellSparK" data-url="https://drive.google.com/file/d/150ttC-gOYnJMtf9FhUbmcWk76JB6b9Qz/view?usp=sharing">Video</span>
-        <div class="lp-title">Tutte</div>
-        <span class="lp-link" data-label="Cartella presentazioni SparK" data-url="https://drive.google.com/drive/folders/1Tgy8jJbUU-J1pszjwibIw2jWt0f20MWw?usp=sharing">Cartella Drive</span>
-      </div>
+  <div id="ai-search-body">
+    <textarea id="ai-search-input" placeholder="Es: concessionari Customer con WebSparK a Bergamo&#10;oppure: dealer senza LeadSparK in Piemonte con rating Hot"></textarea>
+    <div style="display:flex;gap:6px;align-items:center">
+      <button id="ai-search-btn" onclick="runAiSearch()">🔍 Cerca</button>
+      <span id="ai-search-status"></span>
     </div>
-
-    <div class="lp-section">
-      <div class="lp-section-hdr">&#127897; Webinar <span class="lp-arrow">&#9654;</span></div>
-      <div class="lp-section-body" style="display:none">
-        <span class="lp-link" data-label="Webinar Vantaggi piattaforma integrata" data-url="https://us02web.zoom.us/rec/component-page?hasValidToken=false&clusterId=us02&action=play&filePlayId=&componentName=recording-register&meetingId=yP0puelEte10r1oMUkMV4bPR88zIvURM41EadTMkukiuefxGMgB7v0oeB1SG5LLt.kQopJm0aI3eBShps">Vantaggi piattaforma</span>
-        <span class="lp-link" data-label="Webinar Customer Data Platform" data-url="https://motork-io.zoom.us/rec/component-page?accessLevel=meeting&hasValidToken=false&clusterId=us02&action=play&filePlayId=&componentName=recording-register&meetingId=9lFnDDTJkKz3zm7isGQmH4OFdkbmPg_iOuiB-aARgGwksY0-8Z9Rb4ObcUUamCBD.-4-O_An63Ih26-E5">Customer Data Platform</span>
-        <span class="lp-link" data-label="Webinar AgentSparK AI operativa" data-url="https://motork-io.zoom.us/rec/component-page?accessLevel=meeting&hasValidToken=false&clusterId=us02&action=play&filePlayId=&componentName=recording-register&meetingId=H65yJ0A4QncHNvjtVoY7wtYfQzm6cbZuFhsXOWGdvHWHJ7PMcit0qK4v-KSdQFSr.0N0fqQNmIOSQd9fj">AgentSparK AI operativa</span>
-        <span class="lp-link" data-label="Webinar PredictSparK marketing IA" data-url="https://motork-io.zoom.us/rec/component-page?accessLevel=meeting&hasValidToken=false&clusterId=us02&action=play&filePlayId=&componentName=recording-register&meetingId=TAOtazpeO5rTk9lMJoJxwYgyuZ23Cmq3MZZJPdXFE1qOa9dju2g9LgO1Qde5JWNW.1Ja0U5l4avr_ChQH">PredictSparK marketing IA</span>
-        <span class="lp-link" data-label="Webinar CallSparK CRM intelligente" data-url="https://motork-io.zoom.us/rec/component-page?accessLevel=meeting&hasValidToken=false&clusterId=us02&action=play&filePlayId=&componentName=recording-register&meetingId=IPGLilj65qFlys7NEgx8P0RvXGootNKy1bhncbCQr4LICYoQ49AaSAzHa7ywlg.0VZpH93yfrTb6dIo">CallSparK CRM intelligente</span>
-        <span class="lp-link" data-label="Webinar SEO aumenta il traffico" data-url="https://motork-io.zoom.us/rec/component-page?accessLevel=meeting&hasValidToken=false&clusterId=us02&action=play&filePlayId=&componentName=recording-register&meetingId=Ou_Qa5yF0MfCXhoD9zDOVnHV9VZK_pfD-39CTkoM84tEVX7gOUXvgKLwI7N8zVHy.yhkxEPAGt8ETNAU7">SEO aumenta traffico</span>
-        <span class="lp-link" data-label="Webinar AI Overview Google cambiato" data-url="https://motork-io.zoom.us/rec/component-page?accessLevel=meeting&hasValidToken=false&clusterId=us02&action=play&filePlayId=&componentName=recording-register&meetingId=jG3zuhwCMQSrg_AzuXTOn8ieKiyyJeouQDTbLw6dgRsEUKCGFn23a_Pt6e4y97h9.e9uAHIDEc3zQ_XYJ">AI Overview Google</span>
-        <span class="lp-link" data-label="Webinar WebSparK Elementor e ChatGPT" data-url="https://us02web.zoom.us/webinar/register/rec/WN_2wCD0PPCQnKtwkn2T2l91Q">WebSparK Elementor ChatGPT</span>
-        <span class="lp-link" data-label="Webinar FidSparK recensioni online" data-url="https://www.youtube.com/watch?v=5Ym-CZmiwuE">FidSparK recensioni</span>
-      </div>
-    </div>
-
-    <div class="lp-section">
-      <div class="lp-section-hdr">&#127908; Interventi ADD <span class="lp-arrow">&#9654;</span></div>
-      <div class="lp-section-body" style="display:none">
-        <span class="lp-link" data-label="ADD23 Artificial Intelligence" data-url="https://www.youtube.com/watch?v=hJCZT4UBKD0">ADD23 Artificial Intelligence</span>
-        <span class="lp-link" data-label="ADD24 Siamo davvero spaccIAti" data-url="https://vimeo.com/951018427/45e8f196f3?share=copy">ADD24 SpaccIAti</span>
-        <span class="lp-link" data-label="ADD25 AI-Evolution" data-url="https://www.youtube.com/live/sJxk1upap7w">ADD25 AI-Evolution</span>
-        <span class="lp-link" data-label="ADD26 La tua nuova strategia IA" data-url="https://vimeo.com/1195358972/dd2d5eb3d4?share=copy">ADD26 Strategia IA</span>
-      </div>
-    </div>
+    <div id="ai-search-results"></div>
   </div>
 </div>
+
 <div id="toast"></div>
 
-<!-- MODALE FOLLOW UP -->
-<div id="fu-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10001">
-  <div id="fu-modal-inner" style="background:#fff;border-radius:10px;width:420px;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.3)">
-    <div style="background:#ff6f00;color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <div style="font-size:11px;opacity:.7">MotorK SparK Outreach</div>
-        <div style="font-weight:700;font-size:15px">&#128172; Follow Up</div>
-      </div>
-      <button id="fu-modal-close" style="background:rgba(255,255,255,.15);border:none;border-radius:6px;color:#fff;padding:5px 11px;cursor:pointer;font-size:14px">&#10005;</button>
-    </div>
-    <div style="padding:18px">
-      <div style="font-size:12px;color:#555;margin-bottom:8px">Scrivi il nome dell'azienda:</div>
-      <input id="fu-search-input" type="text" placeholder="Es: Autoghinzani, Gozzini, 478..." style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none">
-      <div id="fu-suggestions" style="margin-top:6px;max-height:220px;overflow-y:auto"></div>
-    </div>
-  </div>
-</div>
-
-<!-- MODALE CARICA TXT -->
-<div id="txt-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;overflow-y:auto;padding:20px">
-  <div style="background:#fff;border-radius:10px;max-width:780px;margin:0 auto;padding:0;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.25)">
-    <div style="background:#1a5cb8;color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <div style="font-size:11px;opacity:.7">MotorK SparK Outreach</div>
-        <div style="font-weight:700;font-size:15px">&#128196; Genera email post-visita</div>
-      </div>
-      <button id="txt-modal-close" style="background:rgba(255,255,255,.15);border:none;border-radius:6px;color:#fff;padding:5px 11px;cursor:pointer;font-size:14px">&#10005;</button>
-    </div>
-    <div id="txt-modal-body" style="padding:16px">
-      <div id="txt-modal-loading" style="text-align:center;padding:30px;color:#888">Analisi aziende in corso...</div>
-    </div>
-    <div id="txt-modal-footer" style="padding:12px 16px;border-top:1px solid #eee;display:flex;gap:8px;align-items:center;justify-content:flex-end">
-      <span id="txt-modal-status" style="font-size:11px;color:#888;flex:1"></span>
-      <button id="txt-modal-gen" style="background:#9c27b0;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer">&#10024; Genera testo AI</button>
-      <button id="txt-modal-usa" style="background:#1a5cb8;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer">&#10003; Usa selezione</button>
-
-
-    </div>
-  </div>
-</div>
-
 <script>
-var PROD_MAP={
-  'webspark sales':'WS','ws revolution - core':'REV','ws revolution':'REV','ws - privacy policy':'WS','ws privacy':'WS','webspark accessibility':'WS','webspark add-on':'WS','webspark':'WS','sito web':'LIV','sito':'LIV',
-  'webspark rent':'RENT','webspark b2b':'B2B','ws b2b':'B2B','webspark servizi':'SERV','ws servizi':'SERV','webspark rent':'RENT','ws rent':'RENT','webspark servizi':'SERV','sellspark':'SELL',
-  'livespark':'LVS','creative pack':'CP','cloudflare':'CF','cloudfare':'CF',
-  'background removal':'BGR','ai video':'VIDEO','video':'VIDEO','revolution':'REV',
-  'stockspark app':'APP','stockspark advanced':'SSK BI','stockspark bi':'SSK BI','stockspark':'SSK',
-  'leadspark essential':'LS','ls - professional':'LS','ls - standard':'LS','ls - premium':'LS','ls - telephone':'LS','ls professional':'LS','ls standard':'LS','ls premium':'LS','ls essential':'LS','ls - essential':'LS','ls1':'LS','lse':'LS',
-  'ls - standard':'LS','ls - premium':'LS','ls - telephone':'LS','ls 1':'LS',
-  'leadspark revolution':'LSR','ls revolution':'LSR','ls 2':'LSR','ls2':'LSR',
-  'ls 2 - premium':'LSR','ls 2 - standard':'LSR','lsr':'LSR','leadspark':'LS',
-  'whatsapp business':'WAPP','whatsapp':'WAPP','tip report':'TIP','tip':'TIP',
-  'marketing automation':'M.AUT','marketing management fee':'MKTG','marketing tech fee':'MKTG','campaign budget':'MKTG','marketing management':'MKTG','marketing tech':'MKTG','fidspark':'FSK','predictspark':'PSK','callspark':'CSK',
-  'agentspark':'AGEN','customer data platform':'CDP','cdp':'CDP',
-  'seospark':'SEO','seo':'SEO','lead generation':'MKTG','adspark':'MKTG',
-  'gestionale auto':'GEST','gestionale dealer':'GEST','gestionale web':'GEST','gestionale':'GEST'
-};
-var PROD_LABELS={
-  'LIV':'Sito Web','WS':'WebSparK Sales','REV':'WS Revolution','CP':'Creative Pack',
-  'CF':'Cloudflare','RENT':'WebSparK Rent','SERV':'WebSparK Servizi','B2B':'WebSparK B2B',
-  'SELL':'SellSparK','LVS':'LiveSparK','SSK':'StockSparK','APP':'StockSparK App',
-  'BGR':'Background Removal','VIDEO':'AI Video','SSK BI':'StockSparK BI',
-  'MKTG':'Lead Generation','SEO':'SeoSparK','LS':'LeadSparK LS1','LSR':'LeadSparK LS2',
-  'WAPP':'WhatsApp Business','TIP':'TIP Report','FSK':'FidSparK','PSK':'PredictSparK',
-  'M.AUT':'Marketing Automation','CSK':'CallSparK','AGEN':'AgentSparK','CDP':'CDP',
-  'GEST':'Gestionale (basso spend.)'
-};
-function mapProds(str){
-  if(!str||!str.trim()) return [];
-  var res=new Set();
-  str.split(';').forEach(function(p){
-    var k=p.toLowerCase().trim();
-    if(PROD_MAP[k]){res.add(PROD_MAP[k]);return;}
-    var keys=Object.keys(PROD_MAP);
-    for(var i=0;i<keys.length;i++){if(k.indexOf(keys[i])!==-1){res.add(PROD_MAP[keys[i]]);return;}}
-  });
-  return [...res];
-}
+function toast(msg,duration){var t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(t._timer);t._timer=setTimeout(function(){t.style.display='none';},duration||2500);}
 
-var FIRMA="\n\n--\nPaolo Pesenti\nSenior Dealer Coach\nMobile Phone: +39 339 4581385\nEmail: paolo.pesenti@motork.io\n\nMotorK Italia SRL\nvia Ludovico d'Aragona 9, 20132 Milano";
-var LINKS_CATALOG='Link disponibili (usali come <a href=URL>testo</a> quando pertinenti):\n- Presentazione StockSparK: https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing\n- Demo WebSparK: https://webspark-revolution-it.getwebspark.com/\n- Presentazione WebSparK: https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present\n- Presentazione LeadSparK: https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present\n- Presentazione CallSparK: https://docs.google.com/presentation/d/185utUR8TkIl8lUsW3DkpNNW8RDtiVBHUIB_ghK8A2hk/present\n- Presentazione PredictSparK: https://docs.google.com/presentation/d/1LqHmmVMst3zOtl-KggSmUg0NWGezzIBG9qtFQ78RfqY/present\n- Presentazione FidSparK: https://docs.google.com/presentation/d/1tKwQ8I8RfuCLswVCublwRyTGEnwUCwqAmaMzWxID7Is/present\n- Presentazione SeoSparK: https://docs.google.com/presentation/d/1dj2zvXwHZLN9OkFHTjeJRXoZtXFjHFF5KCg7u6NLR2g/present\n- Presentazione AdSparK: https://docs.google.com/presentation/d/1fQ6g4F2XHEdEYb2RsL7eAcI_n26x2xWXL0RO1ctsD2w/present\n- Demo Noleggio: https://webspark-revolution-mobility.getwebspark.com/\n- Demo Truck: https://demo-truck-it.getwebspark.com/\n- Demo Moto: https://demo-moto.websparksite-it.dealerk.com/\n- Demo B2B: https://demo-b2b-add.wsr74.dealerk.com/';
+var DB='dealermap',ST='csv';
+function dbOpen(){return new Promise(function(res,rej){var r=indexedDB.open(DB,1);r.onupgradeneeded=function(e){e.target.result.createObjectStore(ST);};r.onsuccess=function(e){res(e.target.result);};r.onerror=function(e){rej(e);};});}
+function dbSave(text){dbOpen().then(function(db){db.transaction(ST,'readwrite').objectStore(ST).put(text,'last');}).catch(function(){});}
+function dbLoad(){return dbOpen().then(function(db){return new Promise(function(res){var r=db.transaction(ST,'readonly').objectStore(ST).get('last');r.onsuccess=function(e){res(e.target.result||null);};r.onerror=function(){res(null);};});}).catch(function(){return null;});}
+function dbClear(){return new Promise(function(res,rej){var r=indexedDB.deleteDatabase(DB);r.onsuccess=res;r.onerror=rej;r.onblocked=res;});}
 
-var DSM_DIRECTORY=[
-  {name:"Andrea Genova",email:"andrea.genova@motork.io"},
-  {name:"Andrea Parisi",email:"andrea.parisi@motork.io"},
-  {name:"Andrea Piana",email:"andrea.piana@motork.io"},
-  {name:"Dario Gambarè",email:"dario.gambare@motork.io"},
-  {name:"Elisabetta Palmiere",email:"elisabetta.palmiere@motork.io"},
-  {name:"Federica Bocchino",email:"federica.bocchino@motork.io"},
-  {name:"Francesco Crispi",email:"francesco.crispi@motork.io"},
-  {name:"Jacopo Zanini",email:"jacopo.zanini@motork.io"},
-  {name:"Jessica Campidell",email:"jessica.campidell@motork.io"},
-  {name:"Luca Golfrè Andreasi",email:"luca.golfre@motork.io"},
-  {name:"Matteo Provini",email:"matteo.provini@motork.io"},
-  {name:"Paola Padovani",email:"paola.padovani@motork.io"},
-  {name:"Sara Padovani",email:"sara.padovani@motork.io"},
-  {name:"Simona Mazza",email:"simona.mazza@motork.io"},
-  {name:"Valentina Cassano",email:"valentina.cassano@motork.io"},
+var CITIES={};
+(function(){
+var raw=[
+"agrate brianza,45.5763,9.3525","alba,44.7008,8.0360","alessandria,44.9124,8.6151",
+"alpignano,45.0997,7.5244","aosta,45.7372,7.3205","arcore,45.6297,9.3203",
+"arconate,45.5500,8.8500","arenzano,44.4017,8.6836","arona,45.7597,8.5569",
+"asti,44.9003,8.2069","bareggio,45.4667,8.9833","barge,44.7167,7.3167",
+"baveno,45.9000,8.5000","bergamo,45.6983,9.6773","biella,45.5628,8.0530",
+"binasco,45.3333,9.0833","bollate,45.5381,9.1147","borgomanero,45.6933,8.4672",
+"borgosesia,45.7167,8.2833","bra,44.7000,7.8500","brescia,45.5415,10.2118",
+"bresso,45.5333,9.1833","brugherio,45.5500,9.2833","buccinasco,45.4167,9.0667",
+"busto arsizio,45.6114,8.8519","cagliari,39.2238,9.1217","calco,45.7500,9.4333",
+"caluso,45.3000,7.8833","cameri,45.5000,8.6667","cantu,45.7333,9.1333",
+"capriate san gervasio,45.6833,9.5333","carate brianza,45.6833,9.2333",
+"carignano,44.9000,7.6833","carmagnola,44.8500,7.7167","carnago,45.7333,8.9000",
+"caronno pertusella,45.5833,9.0333","carpi,44.7833,10.8833",
+"casale monferrato,45.1333,8.4500","casalpusterlengo,45.1833,9.6500",
+"casatenovo,45.6833,9.3167","casorate sempione,45.6667,8.7333",
+"cassano dadda,45.5167,9.5167","cassano magnago,45.6667,8.8167",
+"cassina de pecchi,45.5167,9.3500","castellanza,45.6167,8.8833",
+"castelletto sopra ticino,45.7167,8.6333","castelnuovo don bosco,44.9833,8.0167",
+"castiglione delle stiviere,45.3833,10.4833","cernusco sul naviglio,45.5167,9.3333",
+"cernuscosulnaviglio,45.5167,9.3333","cesano boscone,45.4500,9.0833",
+"cesano maderno,45.6167,9.1500","chieri,45.0000,7.8167","chivasso,45.1833,7.8833",
+"cinisello balsamo,45.5500,9.2167","cirie,45.2333,7.6000","cislago,45.6833,8.9667",
+"cologno monzese,45.5333,9.2833","como,45.8103,9.0861","cormano,45.5500,9.1667",
+"corsico,45.4333,9.1000","cortemilia,44.5833,8.1833","cossato,45.5667,8.1833",
+"crema,45.3578,9.6886","cremona,45.1333,10.0167","cuneo,44.3903,7.5486",
+"cusano milanino,45.5500,9.2000","dalmine,45.6500,9.6167","desio,45.6167,9.2167",
+"domodossola,46.1167,8.2833","erba,45.8167,9.2167","fagnano olona,45.6667,8.8667",
+"ferno,45.6667,8.7500","ferrara,44.8361,11.6197","fino mornasco,45.7500,9.0500",
+"firenze,43.7696,11.2558","fossano,44.5500,7.7167","gallarate,45.6578,8.7906",
+"garbagnate milanese,45.5667,9.0667","garlasco,45.2000,8.9167","gattico,45.7000,8.5167",
+"genova,44.4056,8.9463","gessate,45.5333,9.4333","giussano,45.7000,9.2167",
+"grugliasco,45.0667,7.5500","imperia,43.8886,8.0264","inzago,45.5333,9.4833",
+"ivrea,45.4667,7.8667","la spezia,44.1025,9.8238","lainate,45.5667,9.0167",
+"laveno mombello,45.9167,8.6167","leini,45.1833,7.7167",
+"lentate sul seveso,45.6833,9.1167","lissone,45.6167,9.2333",
+"locate di triulzi,45.3667,9.2167","lodi,45.3142,9.5031","lomazzo,45.7000,9.0333",
+"luino,46.0000,8.7333","magenta,45.4667,8.8833","malnate,45.8000,8.9000",
+"mandello del lario,45.9167,9.3167","manerbio,45.3667,10.1500","mantova,45.1564,10.7914",
+"mariano comense,45.7000,9.1667","marnate,45.6500,8.9000","meda,45.6667,9.1500",
+"melegnano,45.3583,9.3236","melzo,45.4833,9.4167","merate,45.7000,9.4167",
+"milano,45.4654,9.1859","moncalieri,44.9983,7.6833","mondovi,44.3833,7.8167",
+"monza,45.5833,9.2667","morbegno,46.1333,9.5667","mornago,45.7667,8.7833",
+"mortara,45.2500,8.7333","muggio,45.5833,9.2167","napoli,40.8522,14.2681",
+"nerviano,45.5500,8.9833","nichelino,44.9833,7.6500","nizza monferrato,44.7667,8.3500",
+"nova milanese,45.5833,9.2000","novara,45.4489,8.6222","novate milanese,45.5333,9.1333",
+"novi ligure,44.7603,8.7936","oggiono,45.7833,9.3667","omegna,45.8667,8.4167",
+"opera,45.3833,9.2000","orbassano,45.0000,7.5333","origgio,45.5833,9.0167",
+"paderno dugnano,45.5500,9.1667","palermo,38.1157,13.3615","parabiago,45.5500,8.9500",
+"pavia,45.1847,9.1583","peschiera borromeo,45.4333,9.3167","piacenza,45.0522,9.6931",
+"pioltello,45.5000,9.3333","pisa,43.7228,10.4017","poirino,44.9167,7.8333",
+"pontecurone,44.9667,8.7667","prato,43.8808,11.0961","racconigi,44.7667,7.6833",
+"rho,45.5267,9.0408","rivarolo canavese,45.3333,7.7167","rivoli,45.0667,7.5167",
+"robecco sul naviglio,45.4333,8.8833","roma,41.8955,12.4823",
+"ronco scrivia,44.6000,8.9500","rozzano,45.3833,9.1500","saluzzo,44.6444,7.4889",
+"saronno,45.6264,9.0350","sassari,40.7259,8.5556","savona,44.3089,8.4811",
+"segrate,45.4833,9.3000","seregno,45.6500,9.2000","sesto calende,45.7333,8.6333",
+"sesto san giovanni,45.5333,9.2333","settimo torinese,45.1333,7.7667",
+"seveso,45.6500,9.1333","siziano,45.3167,9.1500","solaro,45.6167,9.0667",
+"somma lombardo,45.6833,8.7167","sondrio,46.1697,9.8719","torino,45.0703,7.6869",
+"tortona,44.8958,8.8639","tradate,45.7167,8.9167","trecate,45.4333,8.7333",
+"treviglio,45.5236,9.5886","trieste,45.6503,13.7703","varese,45.8206,8.8257",
+"venaria reale,45.1167,7.6333","venezia,45.4375,12.3358","verbania,45.9333,8.5500",
+"vercelli,45.3197,8.4197","verona,45.4386,10.9928","vigevano,45.3167,8.8667",
+"vignate,45.5000,9.3833","villa guardia,45.7667,9.0167","villanova dasti,44.9333,8.0000",
+"vimercate,45.6167,9.3667","vinovo,44.9500,7.6333","vimodrone,45.5000,9.2833",
+"voghera,44.9931,9.0100","volpiano,45.2000,7.7833","volvera,44.9333,7.5833",
+"fenegro,45.7167,9.0333","gambolo,45.2500,8.8667","beinasco,45.0167,7.5833",
+"canelli,44.7167,8.2833","gaglianico,45.5500,8.0833","goito,45.2500,10.6667",
+"castrezzato,45.5167,9.9833","bagnolo piemonte,44.5667,7.3167",
+"trezzano sul naviglio,45.4167,9.0500","martignana po,45.1500,9.9667",
+"pianfei,44.4000,7.6500","porto mantovano,45.1833,10.8000","nebbiuno,45.7833,8.5167",
+"ternate,45.7833,8.7000","vigano san martino,45.7167,9.4167",
+"badia pavese,45.1167,9.1333","san zeno naviglio,45.4833,10.2167",
+"san maurizio canavese,45.2167,7.6333","cimena,45.1667,7.8500",
+"pessano con bornago,45.5500,9.3667","rezzato,45.5167,10.3167",
+"montirone,45.4667,10.1833","faloppio,45.8333,9.0000","castelcovati,45.5000,9.9667",
+"peveragno,44.3333,7.6167","curtatone,45.1333,10.7167","ceva,44.3833,8.0333",
+"chiari,45.5333,9.9333","robecchetto con induno,45.5333,8.8667",
+"bonate sopra,45.7167,9.5667","legnano,45.5953,8.9142","pedrengo,45.7000,9.7333",
+"castelverde,45.2000,10.0167","verdellino,45.6167,9.6000","asso,45.8667,9.2667",
+"sovico,45.6500,9.2667","senago,45.5667,9.0833","colico,46.1333,9.3833",
+"pavone canavese,45.4167,7.8500","san paolo,45.3500,9.0333","concesio,45.6167,10.2167",
+"caravaggio,45.5000,9.6500","ventimiglia,43.7897,7.6081",
+"castiglione olona,45.7333,8.8667","sanremo,43.8167,7.7667",
+"darfo boario terme,45.8833,10.1833","costa volpino,45.8667,10.1000",
+"albavilla,45.7833,9.2333","suzzara,44.9833,10.7333","albino,45.7667,9.8000",
+"bellusco,45.6167,9.3833","rovetta,45.9000,9.9667","gavirate,45.8333,8.7167",
+"sarezzo,45.6500,10.2000","berlingo,45.5000,10.0333","pontoglio,45.5500,9.8500",
+"moglia,44.9333,10.9167","turbigo,45.5333,8.7333","san vittore olona,45.6000,8.9667",
+"orzinuovi,45.4000,9.9167","vizzolo predabissi,45.3667,9.3333",
+"arquata scrivia,44.6833,8.8833","colico piano,46.1333,9.3833",
+"vedano al lambro,45.6167,9.2500","malonno,46.1167,10.3167","barzano,45.7167,9.3000",
+"basaluzzo,44.7667,8.7000","villadossola,46.0667,8.2667",
+"castiglione dadda,45.2833,9.6833","vertova,45.8000,9.8667",
+"bizzarone,45.8333,9.0167","treviolo,45.6833,9.6500","lecco,45.8564,9.3939",
+"lallio,45.6667,9.6667","secugnago,45.2333,9.5500","oleggio,45.5833,8.6333",
+"torre boldone,45.7167,9.7500","cavaria con premezzo,45.6833,8.8000",
+"urgnano,45.6167,9.6833","caresanablot,45.3500,8.3333","paruzzaro,45.7500,8.5167",
+"quinzano doglio,45.3667,10.0167","besana brianza,45.7000,9.2833",
+"romano di lombardia,45.5167,9.7500","burolo,45.4333,7.9167",
+"almenno san salvatore,45.7333,9.5833","mozzo,45.7000,9.6667",
+"olgiate molgora,45.7500,9.3833","clusone,45.8833,9.9500","capo di ponte,46.0333,10.3500",
+"chiuduno,45.6667,9.8333","valmadrera,45.8333,9.3667","pisano,45.7833,8.5000",
+"borgo san dalmazzo,44.3333,7.4833","sarnico,45.6667,9.9667","gorlago,45.6667,9.8167",
+"cosseria,44.3833,8.1833","breno,45.9500,10.3000","villongo,45.6500,9.9333",
+"piossasco,44.9833,7.4667","cavernago,45.6500,9.7833","rondissone,45.2333,7.9667",
+"gravellona toce,45.9167,8.4667","iseo,45.6500,10.0500","nibionno,45.7500,9.3167",
+"grumello del monte,45.6333,9.8167","galbiate,45.8167,9.3667","parre,45.8833,9.9667",
+"varedo,45.5833,9.1667","san secondo pinerolo,44.8667,7.2833",
+"vanzaghello,45.5500,8.8000","san paolo dargon,45.7333,9.8167",
+"calusco dadda,45.7833,9.4667","chiavari,44.3167,9.3167","capriolo,45.6333,9.9333",
+"mongrando,45.5500,8.0667","marcallo con casone,45.5000,8.8667",
+"roe volciano,45.5667,10.4167","lerici,44.0667,9.9167","limbiate,45.6000,9.1167",
+"besozzo,45.8667,8.6667","albenga,44.0500,8.2167","isorella,45.3500,10.3667",
+"paitone,45.5333,10.4000","castagnole delle lanze,44.7500,8.1500",
+"gorle,45.7000,9.7167","coccaglio,45.5500,9.9500","cornegliano laudense,45.2833,9.5833",
+"stradella,45.0833,9.3000","rovato,45.5667,9.9833","nosate,45.5000,8.7833",
+"diano marina,43.9167,8.0667","luserna san giovanni,44.8000,7.2500",
+"abbiategrasso,45.4000,8.9167","brembate di sopra,45.7333,9.5667",
+"palosco,45.6167,9.8667","mesenzana,45.9667,8.7333","gianico,45.9333,10.2333",
+"castano primo,45.5500,8.7833","olgiate olona,45.6333,8.8833",
+"nuvolera,45.5333,10.3667","albano santlessandro,45.7000,9.7500",
+"dubino,46.1333,9.4667","rapallo,44.3500,9.2333","scanzorosciate,45.7167,9.7667",
+"bozzolo,45.1000,10.4833","verolanuova,45.3333,10.0667",
+"pogliano milanese,45.5333,9.0000","saltrio,45.8833,8.9333",
+"piedimulera,46.0167,8.2500","ospitaletto,45.5500,10.0500",
+"castelli calepio,45.6333,9.8833","robbiate,45.7333,9.4333",
+"castiglione torinese,45.1333,7.8000","osnago,45.7167,9.3833",
+"arsago seprio,45.6833,8.7333","paratico,45.6500,9.9333",
+"cosio valtellino,46.1167,9.6167","castagnito,44.7167,8.0167",
+"rivalta di torino,45.0167,7.5333","curno,45.6833,9.6167","montorfano,45.7833,9.2000",
+"giaveno,45.0333,7.3500","serravalle sesia,45.6833,8.3000","prevalle,45.5333,10.4167",
+"cairate,45.7000,8.9000","olgiate comasco,45.7833,9.0000",
+"casnate con bernate,45.7667,9.0667","villasanta,45.5833,9.3000",
+"borgo san giovanni,45.2667,9.5000","nembro,45.7500,9.7500","verdello,45.6000,9.6333",
+"calcinato,45.4500,10.4167","lumezzane,45.6333,10.2667","seriate,45.6833,9.7333",
+"sandigliano,45.5500,8.1167","pontida,45.7500,9.5333","martinengo,45.5667,9.7833",
+"ornago,45.5833,9.3667","savigliano,44.6500,7.6500","busca,44.5167,7.4833",
+"valbrembo,45.7333,9.6167","sannazzaro de burgondi,45.1167,8.9000",
+"dogliani,44.5333,7.9500","brembate,45.7000,9.5333","salo,45.6000,10.5167",
+"montano lucino,45.7833,9.0500","camporosso,43.7833,7.6333",
+"antegnate,45.5167,9.8000","gussago,45.5667,10.1333","roncadelle,45.5167,10.1667",
+"travagliato,45.5167,9.9667","castegnato,45.5500,10.0167","gonzaga,44.9500,10.8167",
+"masserano,45.6000,8.2167","passirano,45.5833,10.0333","gavardo,45.5833,10.4333",
+"desenzano del garda,45.4667,10.5333","trofarello,44.9667,7.7333",
+"bolzano,46.4983,11.3548","saluggia,45.2333,8.0333","montichiari,45.4167,10.3833",
+"barzago,45.7500,9.3500","san giuliano milanese,45.4000,9.2833",
+"bedizzole,45.5333,10.3833","inverigo,45.7167,9.2167","carcare,44.3500,8.1833",
+"albisola superiore,44.3333,8.5083","cirimido,45.7500,9.0333","cuveglio,45.9167,8.7167",
+"esine,45.9333,10.2500","scarmagno,45.4167,7.9667","sarzana,44.1167,9.9667",
+"erbusco,45.5833,9.9667","acqui terme,44.6833,8.4667","cerro maggiore,45.5833,8.9500",
+"ozegna,45.3333,7.7667","broni,45.0667,9.2667","casalmaggiore,44.9833,10.4167",
+"pieve emanuele,45.3667,9.1500","villanova di mondovi,44.3500,7.7833",
+"quistello,45.0000,10.9833","grassobbio,45.6500,9.7000",
+"lurago derba,45.7500,9.2000","liscate,45.4833,9.3833","ranica,45.7167,9.7333",
+"cittiglio,45.9333,8.7000","trenzano,45.4833,9.9667","caponago,45.5333,9.3333",
+"cavenago di brianza,45.5667,9.3833","lesmo,45.6500,9.3000","viadana,44.9333,10.5167",
+"livraga,45.2000,9.5500","calolziocorte,45.8000,9.4333","brandizzo,45.1667,7.8500",
+"casteggio,45.0167,9.1333","zanica,45.6167,9.6667",
+"boffalora sopra ticino,45.4833,8.8500","costa masnaga,45.7333,9.3000",
+"san martino in strada,45.2833,9.5167","grandate,45.7833,9.0667",
+"san francesco al campo,45.2000,7.6667","samolaco,46.2500,9.3833",
+"induno olona,45.8500,8.8833","codogno,45.1667,9.7000","bormio,46.4667,10.3667",
+"montecrestese,46.1667,8.3000","mappano,45.1500,7.6667","biassono,45.6167,9.2667",
+"canegrate,45.5667,8.9167","trivolzio,45.2500,9.0000","missaglia,45.7167,9.3333",
+"usmate velate,45.6333,9.3500","bussero,45.5167,9.3500","collegno,45.0833,7.5667",
+"gorla maggiore,45.6667,8.8833","mazzano,45.5333,10.3833",
+"borgaro torinese,45.1500,7.6500","orsenigo,45.8167,9.1500",
+"cura carpignano,45.2167,9.1500","odolo,45.6000,10.4167",
+"rivolta dadda,45.4833,9.5167","jerago con orago,45.6833,8.8167",
+"san martino siccomario,45.1667,9.1500","telgate,45.6333,9.8500","assago,45.4000,9.1333",
+"prato sesia,45.6500,8.3500","varazze,44.3583,8.5833","pero,45.5000,9.0833",
+"lavena ponte tresa,45.9667,8.8500","cornaredo,45.4833,9.0333",
+"cigliano,45.3000,8.0167","vermezzo,45.3833,9.0000",
+"sedriano,45.4833,8.9667","castello di annone,44.8833,8.3333",
+"verolavecchia,45.3167,10.1167","susa,45.1333,7.0500",
+"cairo montenotte,44.4000,8.2667","balangero,45.2667,7.5833",
+"nuvolento,45.5333,10.4000","gerenzano,45.6333,9.0000",
+"montagna in valtellina,46.1667,9.9167","montanaso lombardo,45.3000,9.5167",
+"piancogno,45.9667,10.3000","ghedi,45.4000,10.2833","chignolo po,45.1333,9.5500",
+"gardone val trompia,45.6833,10.1833","bariano,45.5500,9.7833",
+"talamona,46.1500,9.6167","sirone,45.7333,9.3333","torbole casaglia,45.5000,10.1833",
+"volta mantovana,45.3167,10.6500","narzole,44.5833,7.7833",
+"pecetto torinese,45.0000,7.7667","bernate ticino,45.5000,8.7833","varzi,44.8167,9.1833",
+"romagnano sesia,45.6333,8.3667","civate,45.8333,9.3500","albairate,45.4167,8.9333",
+"bianzone,46.2667,9.9500","san giorgio canavese,45.3333,7.8000",
+"almenno san bartolomeo,45.7333,9.5500","stezzano,45.6500,9.6667",
+"sermide,45.0000,11.3000","verano brianza,45.6167,9.2333",
+"cividate camuno,45.9667,10.3000","carnate,45.6333,9.3833","sovere,45.8333,9.9833",
+"san pellegrino terme,45.8333,9.6667","montello,45.6500,9.8500",
+"inveruno,45.5167,8.8500","carpenedolo,45.3667,10.4333",
+"rodengo saiano,45.5833,10.0833","solbiate olona,45.6333,8.8333",
+"robassomero,45.2167,7.5833","torre pellice,44.8167,7.2167",
+"monticello dalba,44.7333,7.9833","finale ligure,44.1667,8.3333",
+"guidizzolo,45.3167,10.5833","truccazzano,45.4833,9.4167","lavagna,44.3000,9.3500",
+"landriano,45.3167,9.2333","cuorgne,45.3833,7.6500","pantigliate,45.4333,9.3333",
+"uboldo,45.6167,9.0167","bernareggio,45.6333,9.3500","magnago,45.5667,8.8000",
+"valenza,45.0167,8.6500","alzate brianza,45.7667,9.1833","baranzate,45.5333,9.1167",
+"robbio,45.2833,8.5833","samarate,45.6333,8.7833",
+"berbenno di valtellina,46.2000,9.7833","cavour,44.7833,7.3667",
+"tavernerio,45.8000,9.1167","cardano al campo,45.6667,8.7333",
+"filago,45.6667,9.6000","mediglia,45.3833,9.3333","suno,45.6333,8.5500",
+"zibido san giacomo,45.3500,9.0833","cannobio,46.0667,8.7000","vergiate,45.7167,8.7000",
+"canale,44.7833,7.9833","azzate,45.8000,8.7500","mozzate,45.6833,8.9833",
+"bovisio masciago,45.6000,9.1500","rosta,45.0667,7.4500","ovada,44.6333,8.6333",
+"bernezzo,44.3833,7.5667","sabbioneta,44.9833,10.4833",
+"trescore balneario,45.6833,9.8500","gazzada schianno,45.8000,8.8000",
+"verbania trobaso,45.9167,8.5667","prata camportaccio,46.2333,9.4167",
+"arluno,45.5000,8.9333","dolzago,45.7833,9.3833","gavi,44.6833,8.8000",
+"taggia,43.8500,7.8500","dello,45.4500,10.1667","leno,45.3667,10.2167",
+"san gervasio bresciano,45.2333,10.2000","eupilio,45.8333,9.2500",
+"bisuschio,45.8833,8.8833","vaiano cremasco,45.3500,9.7167","olginate,45.8000,9.4167",
+"vestone,45.7167,10.4167","calcinate,45.6667,9.8000","casnigo,45.8167,9.8833",
+"savignone,44.5500,9.0000","rosate,45.3500,9.0500","poncarale,45.4833,10.2167",
+"crescentino,45.2000,8.1000","cambiano,44.9667,7.7833",
+"san giovanni bianco,45.8500,9.6667","zogno,45.7833,9.6833",
+"lacchiarella,45.3500,9.1333","vobarno,45.6333,10.4833","offlaga,45.3833,10.1167",
+"suisio,45.6833,9.5833","adro,45.6167,9.9667","frossasco,44.9167,7.3833",
+"pianezza,45.1000,7.5500","pinerolo,44.8833,7.3333","corbetta,45.4667,8.9167",
+"barlassina,45.6500,9.1333","serravalle scrivia,44.7333,8.8500",
+"strambino,45.3833,7.8833","castenedolo,45.4833,10.3167","sorisole,45.7500,9.7000",
+"pompiano,45.4333,10.0167","predosa,44.7667,8.6833","andora,43.9500,8.1333",
+"biandronno,45.8333,8.6833","bottanuco,45.7000,9.5500","molteno,45.7833,9.3333",
+"lonate pozzolo,45.6000,8.7500","varallo,45.8167,8.2667",
+"ardesio,45.9667,9.9500","gozzano,45.7500,8.4667","pandino,45.4000,9.5500",
+"artogne,45.9000,10.2500","cassago brianza,45.7167,9.2833",
+"brignano gera dadda,45.5333,9.6500","cherasco,44.7333,7.8500",
+"borgo san giacomo,45.4000,10.0167","pegognaga,44.9833,10.8333",
+"cadrezzate con osmate,45.8167,8.6333","centro valle intelvi,45.9833,9.0833",
+"brissago valtravaglia,46.0000,8.7167","san maurizio dopaglio,45.8000,8.4000",
+"lonato del garda,45.4667,10.5000","lonato,45.4667,10.5000",
+"avigliana,45.0833,7.3833","orio al serio,45.6667,9.7000","medolago,45.7000,9.5000",
+"lurate caccivio,45.7833,9.0333","fornovo san giovanni,45.5500,9.7833",
+"niardo,46.0000,10.2833","endine gaiano,45.8167,9.9833",
+"gazzaniga,45.8167,9.8000","polesine di pegognaga,44.9833,10.8333",
+"san germano vercellese,45.3667,8.2833","gozzolina,45.1167,10.8833",
+"unita produttiva,45.4654,9.1859","prosto,46.2833,9.7500",
+"vicomoscano,44.9833,10.4333","guarene,44.7333,8.0333","miano,45.1500,9.9667",
+"alessandria fraz san michele,44.9124,8.6151","ceto,46.0167,10.3667",
+"ospiate di bollate,45.5381,9.1147","genivolta,45.3167,9.8833",
+"longarone,46.2667,12.3000","brugnato,44.2333,9.7000","postalesio,46.1833,9.7333",
+"case lidora,45.2000,9.1000","fara olivana con sola,45.5000,9.7667",
+"prezzate,45.6667,9.8167","alme,45.7500,9.6167","molino dei torti,44.9333,8.8667",
+"grazie di curtatone,45.1333,10.7167","motta,45.2667,9.0500",
+"ubiale clanezzo,45.7833,9.5667","porlezza,46.0333,9.1333",
+"monticelli brusati,45.6000,10.0167","treiso,44.6833,8.1167",
+"terrazzano di rho,45.5267,9.0408","ticengo,45.3000,9.8167",
+"lanzo torinese,45.2667,7.4667","noviligure,44.7603,8.7936",
+"mornico al serio,45.6000,9.8500","isso,45.5667,9.8167","entratico,45.6833,9.8833",
+"brivio,45.7500,9.4500","songavazzo,45.9167,9.9500",
+"pozzolo formigaro,44.8167,8.8167","sesta godano,44.3000,9.6333",
+"montiglio monferrato,45.0500,8.1000","casone,45.1333,10.7167",
+"zelo surrigone,45.3833,9.0167","cadegliano viconago,45.9167,8.8500",
+"tavazzano con villavesco,45.3000,9.5000","senna comasco,45.7833,9.0500",
+"senna camasco,44.9333,8.4667","piamborno,45.9667,10.3000","vicolungo,45.4833,8.5000",
+"cremosano,45.3667,9.6833","cureggio,45.6667,8.4667","verrua savoia,45.1667,8.1167",
+"borgaretto di beinasco,45.0167,7.5833","banchette,45.4333,7.8667",
+"ceranova,45.2500,9.1000","cusago,45.4500,9.0333",
+"zingonia verdellino,45.6167,9.6000","casalzuigno,45.9333,8.7333",
+"frabosa sottana,44.2833,7.7833","bodio lomnago,45.8167,8.7167",
+"mandolossa,45.5833,10.1667","gallaratre,45.6578,8.7906",
+"gavardo brescia,45.5833,10.4333","valdaro,45.1333,10.8167",
+"calvatone,45.1000,10.4167","trezzo sulladda,45.5833,9.5333",
+"concorezzo,45.5833,9.3333","bricherasio,44.8333,7.2833","boves,44.3333,7.5500",
+"argegno,45.9333,9.1333","borgaretto,45.0167,7.5833","raffa,45.5167,10.5333",
+"rescaldina,45.6167,8.9500","giaglione,45.1333,6.9833",
+"torrazza coste,45.0000,9.1167","grantola,45.9500,8.7500",
+"vaprio dagogna,45.6833,8.5500","albissola marina,44.3289,8.5078",
+"brusnengo,45.5833,8.2500","madignano,45.3667,9.7167",
+"cisano bergamasco,45.7833,9.4833","lozza,45.8167,8.8000",
+"bassano bresciano,45.3167,10.2167","carpeneto,44.6833,8.6167",
+"fizzonasco,45.3500,9.1000","villanuova sul clisi,45.5833,10.4000",
+"castiraga vidardo,45.2833,9.5500","verbania fraz trobaso,45.9167,8.5667",
+"vellezzo bellini,45.2167,9.0833","arcene,45.6500,9.6167",
+"campospinoso,45.1000,9.2167","zibido san giacomo frazione badile,45.3500,9.0833",
+"20099,45.3583,9.3236","22090,45.7833,9.0500",
+"monta,44.7167,7.9833","beinette,44.3833,7.6333","sonico,46.1500,10.3500",
+"rivanazzano terme,44.9167,9.0000","bulgarograsso,45.7833,9.0500",
+"cambiago,45.5500,9.4000","cava manara,45.1500,9.1333",
+"albizzate,45.7500,8.8167","osio sopra,45.6833,9.6000","coazze,45.0333,7.3167",
+"cervere,44.6333,7.6667","marmirolo,45.2167,10.7500",
+"alzano lombardo,45.7333,9.7333","bulciago,45.7500,9.3167",
+"fara gera dadda,45.5500,9.5167","san giorgio bigarello,45.1500,10.9167",
+"madonna dolmo,44.3500,7.5500","madonna dellolmo,44.3500,7.5500",
+"mesanzana,45.9667,8.7333","orzivecchi,45.4167,10.0000",
+"cominetti,45.4654,9.1859","palazzolo sulloglio,45.5833,9.8833",
+"zona industriale di calcinato,45.4500,10.4167","hella,45.4654,9.1859",
+"localita produttiva mandolossa,45.5833,10.1667","isano bergamasco,45.7833,9.4833",
+"turate,45.6833,9.0333","carbonate,45.7333,9.0000","renate,45.7167,9.2167",
+"vado ligure,44.2833,8.4333","flero,45.4833,10.2000",
+"spinetta marengo,44.8833,8.6667","ispra,45.8333,8.6000",
+"rovasenda,45.5500,8.2333","mede,45.1000,8.7167","luni,44.0833,10.0167",
+"molinetto di mazzano,45.5333,10.3833","zona artigianale d3,45.4654,9.1859",
+"localita oriolo,45.4654,9.1859","margattino,45.4654,9.1859",
+"piano di valeriano bottagna,44.1000,9.8500","cisano bergamasco,45.7833,9.4833",
+"cernusco sul naviglio,45.5167,9.3333","cernuscosulnaviglio,45.5167,9.3333",
+"parma,44.8015,10.3279",
+"bologna,44.4949,11.3426",
+"modena,45.1372,10.9242",
+"reggio emilia,44.6989,10.6297",
+"reggio nell emilia,44.6989,10.6297",
+"massa,44.0355,10.1401",
+"carrara,44.0795,10.0986",
+"trento,46.0748,11.1217",
+"vicenza,45.5455,11.5354",
+"padova,45.4064,11.8768",
+"treviso,45.6669,12.2432",
+"udine,46.0637,13.2354",
+"livorno,43.5485,10.3106",
+"siena,43.3186,11.3307",
+"perugia,43.1121,12.3888",
+"ancona,43.6158,13.5189",
+"forli,44.2227,12.0407",
+"rimini,44.0678,12.5695",
+"ravenna,44.4184,12.2035",
+"cesena,44.1396,12.2463"
 ];
+raw.forEach(function(l){var p=l.split(',');if(p.length===3)CITIES[p[0].trim()]=[parseFloat(p[1]),parseFloat(p[2])];});
+})();
 
-var DATA={account:null,contact:null,database:null};
-var COMPANIES=[],FILTERED=[],SELECTED=new Set();
-var ACT={type:new Set(),region:new Set(),province:new Set(),products:new Set(),contact:new Set(['any'])};
-var WA_QUEUE=[],WA_IDX=0;
-var _linkMap=[];
-var TC={'Customer':'#1eb854','Customer GA':'#1eb854','Customer Prospect':'#f5c400','Ex Customer':'#9e9e9e','New':'#1a5cb8','New Prospect':'#f5c400','Prospect':'#f5c400','default':'#888'};
-var RM={'LOM':'Lombardia','PIE':'Piemonte','LIG':'Liguria','VDA':'Valle d Aosta','VEN':'Veneto','EMI':'Emilia Romagna','TOS':'Toscana','SAR':'Sardegna','TRE':'Trentino','FVG':'Friuli Venezia Giulia'};
-function tc(t){return TC[t]||TC.default;}
-function nr(r){return RM[r]||r||'';}
-
-
-
-
-
-
-function toast(m,d){var t=document.getElementById('toast');t.textContent=m;t.style.display='block';clearTimeout(t._x);t._x=setTimeout(function(){t.style.display='none';},d||2500);}
-
-function parseCSV(text,cb){
-  var l=text.split('\n')[0]||'';
-  var tabs=(l.match(/\t/g)||[]).length,commas=(l.match(/,/g)||[]).length,semis=(l.match(/;/g)||[]).length;
-  var delim=tabs>=commas&&tabs>=semis?'\t':commas>=semis?',':';';
-  Papa.parse(text,{header:true,skipEmptyLines:true,delimiter:delim,complete:function(r){
-    if(r.data&&r.data.length>0)cb(r.data);
-    else Papa.parse(text,{header:true,skipEmptyLines:true,complete:function(r2){cb(r2.data||[]);}});
-  }});
+function normalizeCity(c){
+  return (c||'').toLowerCase().trim()
+    .replace(/ã¹/g,'u').replace(/ã²/g,'o').replace(/ã /g,'a')
+    .replace(/ã¨/g,'e').replace(/ã¬/g,'i').replace(/ã©/g,'e')
+    .replace(/[àáâã]/g,'a').replace(/[èéêë]/g,'e')
+    .replace(/[ìíîï]/g,'i').replace(/[òóôõö]/g,'o')
+    .replace(/[ùúûü]/g,'u').replace(/[''`]/g,' ')
+    .replace(/-/g,' ').replace(/\s+/g,' ').trim();
 }
 
-function afterLoad(type){
-  var n=DATA[type]?DATA[type].length:0;
-  var el=document.getElementById('st-'+type);
-  el.textContent=n>0?n+' righe':'Errore';
-  el.className='fst '+(n>0?'ok':'ko');
-  if(DATA.account&&DATA.contact) merge();
+function getCityCoords(city){
+  if(!city) return null;
+  var k=normalizeCity(city);
+  if(CITIES[k]) return {lat:CITIES[k][0],lng:CITIES[k][1]};
+  var keys=Object.keys(CITIES),w=k.split(' ')[0];
+  for(var i=0;i<keys.length;i++)
+    if(keys[i].indexOf(w)===0&&Math.abs(keys[i].length-k.length)<5)
+      return {lat:CITIES[keys[i]][0],lng:CITIES[keys[i]][1]};
+  return null;
 }
 
-function setupInputs(){
-  [['inp-account','account'],['inp-contact','contact'],['inp-database','database']].forEach(function(pair){
-    var el=document.getElementById(pair[0]);
-    if(!el) return;
-    el.addEventListener('change',function(){
-      if(!el.files||!el.files[0]) return;
-      var fr=new FileReader();
-      fr.onload=function(e){var txt=e.target.result;parseCSV(txt,function(rows){DATA[pair[1]]=rows;afterLoad(pair[1]);});};
-      fr.readAsText(el.files[0],'UTF-8');
-      el.value='';
-    });
-  });
-}
-
-function norm(s){return(s||'').toLowerCase().trim().replace(/\s+/g,' ');}
-function fuzzy(a,b){
-  var na=norm(a),nb=norm(b);
-  if(na===nb) return true;
-  var strip=function(x){return x.replace(/\b(srl|spa|snc|sas|srls)\b/g,'').trim();};
-  return strip(na)===strip(nb)||na.startsWith(nb)||nb.startsWith(na);
-}
-
-function merge(){
-  var co={};
-  DATA.account.forEach(function(a){
-    if(!a.Name) return;
-    var dsmRaw=(a.DSM||'').trim();
-    var dsmContacts=[];
-    var dsmEmpty=!dsmRaw||dsmRaw==='-'||/^no\s*dsm$/i.test(dsmRaw)||/^nessuno$/i.test(dsmRaw);
-    // Mostra sempre la riga DSM (anche vuota), così l'utente può inserire l'email a mano
-    var dsmEmail='';
-    if(!dsmEmpty){
-      var parts=dsmRaw.toLowerCase()
-        .replace(/[àáâãäå]/g,'a').replace(/[èéêë]/g,'e')
-        .replace(/[ìíîï]/g,'i').replace(/[òóôõö]/g,'o').replace(/[ùúûü]/g,'u')
-        .replace(/[^a-z0-9 ]/g,'').trim().split(/\s+/);
-      dsmEmail=parts.length>=2
-        ? parts[0]+'.'+parts[parts.length-1]+'@motork.io'
-        : parts[0]+'@motork.io';
-    }
-    // Sempre un record DSM (email può essere vuota se No DSM — utente decide)
-    dsmContacts.push({name:dsmRaw||'DSM',first:'',email:dsmEmail,phone:'',role:'DSM',src:'dsm'});
-    co[norm(a.Name)]={name:a.Name,type:a.Customer_Type__c||'',rating:a.Rating||'',region:nr(a.Region_Area__c||''),province:(a.BillingState||'').toUpperCase(),products:a.Active_Products_List__c||'',mappedProds:mapProds(a.Active_Products_List__c||''),contacts:[],dsm:dsmContacts};
-  });
-  DATA.contact.forEach(function(c){
-    var an=c['Account.Name']||c.Account||'';if(!an) return;
-    var k=norm(an);
-    if(!co[k]){var ks=Object.keys(co);for(var i=0;i<ks.length;i++){if(fuzzy(an,ks[i])){k=ks[i];break;}}}
-    if(!co[k]) return;
-    var email=(c.Email||'').trim(),fn=(c.FirstName||'').trim(),ln=(c.LastName||'').trim();
-    if(!fn&&!ln&&!email) return;
-    co[k].contacts.push({name:(fn+' '+ln).trim()||ln||fn,first:fn,email:email,phone:'',role:'',src:'sf'});
-  });
-  if(DATA.database){
-    DATA.database.forEach(function(r){
-      var an=r['RAGIONE SOCIALE']||'';if(!an||an==='RAGIONE SOCIALE') return;
-      var fn=(r['NOME']||'').trim(),ln=(r['COGNOME']||'').trim();
-      if(fn==='XXX'||ln==='XXX') return;
-      var email=(r['MAIL']||'').trim(),phone=(r['CELLULARE']||'').trim(),role=(r['RUOLO']||'').trim();
-      var pv=(r['PV']||'').trim(),reg=(r['REG']||'').trim();
-      var k=norm(an);
-      if(!co[k]){var ks=Object.keys(co);for(var i=0;i<ks.length;i++){if(fuzzy(an,ks[i])){k=ks[i];break;}}}
-      if(!co[k]) co[k]={name:an,type:'',rating:'',region:nr(reg),province:pv.toUpperCase(),products:'',mappedProds:[],contacts:[],dsm:[]};
-      else{if(!co[k].province&&pv)co[k].province=pv.toUpperCase();if(!co[k].region&&reg)co[k].region=nr(reg);}
-      if(!email&&!phone) return; // azienda creata, ma non aggiungiamo un contatto vuoto
-      var ex=co[k].contacts.find(function(x){return x.email&&x.email===email;});
-      if(ex){if(phone&&!ex.phone)ex.phone=phone;if(role&&!ex.role)ex.role=role;}
-      else {
-        var contact={name:(fn+' '+ln).trim(),first:fn,email:email,phone:phone,role:role,src:'db'};
-        co[k].contacts.push(contact);
-      }
-    });
-  }
-  COMPANIES=Object.values(co);
-  buildFilters();applyFilters();
-}
-
-function buildFilters(){
-  var types=new Set(),regions=new Set(),provinces=new Set(),prods=new Set();
-  COMPANIES.forEach(function(c){
-    if(c.type)types.add(c.type);
-    if(c.region)regions.add(c.region);
-    if(c.province)provinces.add(c.province);
-    c.mappedProds.forEach(function(p){prods.add(p);});
-  });
-  ACT.type=new Set(types);ACT.region=new Set(regions);ACT.province=new Set(provinces);ACT.products=new Set(prods);
-  renderPills('f-type',[...types].sort(),ACT.type,tc,null);
-  renderPills('f-region',[...regions].sort(),ACT.region,function(){return '#1a5cb8';},null);
-  renderPills('f-province',[...provinces].sort(),ACT.province,function(){return '#666';},null);
-  renderPills('f-products',[...prods].sort(),ACT.products,function(){return '#0a9e6e';},PROD_LABELS);
-  renderContact();
-}
-
-function renderPills(id,vals,active,cfn,labels){
-  var el=document.getElementById(id);if(!el)return;el.innerHTML='';
-  vals.forEach(function(v){
-    var p=document.createElement('span');p.className='pill'+(active.has(v)?'':' off');
-    p.textContent=labels&&labels[v]?labels[v]:v;
-    var col=cfn(v);p.style.cssText='background:'+col+'22;border-color:'+col+';color:'+col;
-    p.dataset.val=v;
-    p.onclick=function(){if(active.has(v)){active.delete(v);p.classList.add('off');}else{active.add(v);p.classList.remove('off');}applyFilters();};
-    el.appendChild(p);
-  });
-}
-
-function renderContact(){
-  var el=document.getElementById('f-contact');el.innerHTML='';
-  [['any','Tutti'],['email','Solo email'],['phone','Con cellulare']].forEach(function(o){
-    var p=document.createElement('span');p.className='pill'+(ACT.contact.has(o[0])?'':' off');
-    p.textContent=o[1];p.style.cssText='background:#55555522;border-color:#555;color:#555';
-    p.onclick=function(){ACT.contact.clear();ACT.contact.add(o[0]);el.querySelectorAll('.pill').forEach(function(x){x.classList.add('off');});p.classList.remove('off');applyFilters();};
-    el.appendChild(p);
-  });
-}
-
-function faAll(key,elId){
-  document.getElementById(elId).querySelectorAll('.pill').forEach(function(p){ACT[key].add(p.dataset.val);p.classList.remove('off');});applyFilters();
-}
-function faNone(key,elId){
-  document.getElementById(elId).querySelectorAll('.pill').forEach(function(p){ACT[key].delete(p.dataset.val);p.classList.add('off');});applyFilters();
-}
-
-function applyFilters(){
-  FILTERED=COMPANIES.filter(function(c){
-    if(ACT.type.size&&!ACT.type.has(c.type)) return false;
-    if(ACT.region.size&&!ACT.region.has(c.region)) return false;
-    if(ACT.province.size&&!ACT.province.has(c.province)) return false;
-    if(ACT.products.size&&c.mappedProds.length>0&&!c.mappedProds.some(function(p){return ACT.products.has(p);})) return false;
-    if(ACT.contact.has('email')&&!c.contacts.some(function(x){return x.email;})) return false;
-    if(ACT.contact.has('phone')&&!c.contacts.some(function(x){return x.phone&&x.phone!=='-';})) return false;
-    return true;
-  });
-  SELECTED=new Set(FILTERED.map(function(c){return c.name;}));
-  renderList();updSel();
-}
-
-function syncPills(){
-  document.getElementById('f-type').querySelectorAll('.pill').forEach(function(p){p.classList.toggle('off',!ACT.type.has(p.dataset.val));});
-  document.getElementById('f-region').querySelectorAll('.pill').forEach(function(p){p.classList.toggle('off',!ACT.region.has(p.dataset.val));});
-  document.getElementById('f-province').querySelectorAll('.pill').forEach(function(p){p.classList.toggle('off',!ACT.province.has(p.dataset.val));});
-}
-
-function aiSearch(){
-  var query=document.getElementById('ai-search').value.trim();
-  if(!query) return;
-  var status=document.getElementById('ai-search-status');
-  status.textContent='Ricerca...';
-  var prodList=Object.entries(PROD_LABELS).map(function(e){return e[0]+':'+e[1];}).join(', ');
-  var prompt='Sei un assistente che filtra un database di concessionarie auto italiane.\n'
-    +'Prodotti disponibili (sigla:nome): '+prodList+'\n'
-    +'Tipi cliente disponibili: Customer, Customer GA, Customer Prospect, New, New Prospect, Ex Customer\n'
-    +'Mappatura linguaggio italiano: "cliente/clienti" = [Customer, Customer GA]; "ex cliente/ex clienti" = [Ex Customer]; "prospect" = [Customer Prospect, New Prospect]; "nuovo/nuovi" = [New, New Prospect]\n'
-    +'Query: "'+query+'"\n\n'
-    +'Rispondi SOLO con JSON valido, niente markdown:\n'
-    +'{"types":[],"regions":[],"provinces":[],"has_products":[],"not_products":[],"contact_filter":"any","explanation":""}';
-  fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:400,messages:[{role:'user',content:prompt}]})
-  }).then(function(r){return r.json();}).then(function(d){
+async function geocodeCitiesBatch(list){
+  var prompt='Sei un geocoder. Lista di città italiane. Rispondi SOLO con JSON valido, niente markdown. Formato: {"nome": [lat,lng]}. Città:\n'+list.join('\n');
+  try{
+    var r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:4000,messages:[{role:'user',content:prompt}]})});
+    var d=await r.json();
     var t=(d.content&&d.content[0]&&d.content[0].text)||'';
     t=t.replace(/```json|```/g,'').trim();
-    var f=JSON.parse(t);
-    if(f.types&&f.types.length) ACT.type=new Set(f.types);
-    if(f.regions&&f.regions.length) ACT.region=new Set(f.regions);
-    if(f.provinces&&f.provinces.length) ACT.province=new Set(f.provinces);
-    if(f.contact_filter) ACT.contact=new Set([f.contact_filter]);
-    var hasP=f.has_products||[],notP=f.not_products||[];
-    FILTERED=COMPANIES.filter(function(c){
-      if(ACT.type.size&&!ACT.type.has(c.type)) return false;
-      if(ACT.region.size&&!ACT.region.has(c.region)) return false;
-      if(ACT.province.size&&!ACT.province.has(c.province)) return false;
-      if(hasP.length&&!hasP.every(function(p){return c.mappedProds.indexOf(p)!==-1;})) return false;
-      if(notP.length&&notP.some(function(p){return c.mappedProds.indexOf(p)!==-1;})) return false;
-      if(ACT.contact.has('email')&&!c.contacts.some(function(x){return x.email;})) return false;
-      if(ACT.contact.has('phone')&&!c.contacts.some(function(x){return x.phone&&x.phone!=='-';})) return false;
-      return true;
-    });
-    SELECTED=new Set(FILTERED.map(function(c){return c.name;}));
-    renderList();updSel();syncPills();
-    status.textContent=FILTERED.length+' aziende'+(f.explanation?' - '+f.explanation:'');
-    setTimeout(function(){status.textContent='';},7000);
-  }).catch(function(){
-    // fallback ricerca locale
-    var terms=query.toLowerCase().split(/\s+/);
-    FILTERED=COMPANIES.filter(function(c){
-      var h=(c.name+' '+c.type+' '+c.province+' '+c.region+' '+c.products).toLowerCase();
-      return terms.every(function(t){return h.indexOf(t)!==-1;});
-    });
-    SELECTED=new Set(FILTERED.map(function(c){return c.name;}));
-    renderList();updSel();syncPills();
-    status.textContent=FILTERED.length+' aziende (ricerca locale)';
-    setTimeout(function(){status.textContent='';},5000);
+    var obj=JSON.parse(t);
+    Object.keys(obj).forEach(function(c){var v=obj[c];if(Array.isArray(v)&&v.length===2){var k=normalizeCity(c);CITIES[k]=[parseFloat(v[0]),parseFloat(v[1])];}});
+  }catch(e){}
+}
+
+var map,markerLayer,markers=[],activeTypes=new Set(),activeRatings=new Set();
+var TC={'Customer':'#1eb854','Customer GA':'#1eb854','Customer Prospect':'#f5c400','Ex Customer':'#9e9e9e','New':'#1a5cb8','New Prospect':'#f5c400','Prospect':'#f5c400','Cliente':'#1eb854','Lead':'#f5c400','Partner':'#1a5cb8','Competitor':'#9c27b0','default':'#888'};
+var RI={'Hot':{c:'#e53935',s:14},'Warm':{c:'#e6851a',s:12},'Cold':{c:'#4a90d9',s:10},'Important':{c:'#e53935',s:14},'Medium':{c:'#e6851a',s:12},'Not important':{c:'#4a90d9',s:10},'default':{c:'#aaa',s:10}};
+function tc(t){return TC[t]||TC.default;}
+function ri(r){return RI[r]||RI.default;}
+
+// Rimuovi zoom controls, aggiunge seleziona/deseleziona tipo
+function initMap(){
+  if(map) return;
+  map=L.map('map',{zoomControl:false}).setView([45.4,9.2],7);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(map);
+  markerLayer=L.layerGroup().addTo(map);
+  var labelDebounce=null;
+  map.on('moveend zoomend',function(){
+    clearTimeout(labelDebounce);
+    labelDebounce=setTimeout(updateSmartLabels,150);
   });
 }
 
-var _showContacts=true;
-function toggleContacts(){
-  _showContacts=!_showContacts;
-  document.getElementById('btn-toggle-contacts').textContent=_showContacts?'Nascondi contatti':'Mostra contatti';
-  document.getElementById('list').querySelectorAll('.crow').forEach(function(r){r.style.display=_showContacts?'':'none';});
+function makeIcon(d){
+  var col=tc(d.Customer_Type__c),r=ri(d.Rating),s=r.s;
+  var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+(s*2)+'" height="'+(s*2)+'" viewBox="0 0 '+(s*2)+' '+(s*2)+'">'
+    +'<circle cx="'+s+'" cy="'+s+'" r="'+(s-2)+'" fill="'+col+'" stroke="white" stroke-width="2"/>'
+    +'<circle cx="'+s+'" cy="'+s+'" r="'+Math.floor(s/3)+'" fill="white" opacity=".9"/>'
+    +'</svg>';
+  return L.divIcon({html:svg,className:'',iconSize:[s*2,s*2],iconAnchor:[s,s],popupAnchor:[0,-s]});
 }
 
-function renderList(){
-  var el=document.getElementById('list');el.innerHTML='';
-  document.getElementById('rcount').textContent=FILTERED.length+' aziende';
-  FILTERED.forEach(function(c){
-    var card=document.createElement('div');card.className='card';
-    var col=tc(c.type);var chk=SELECTED.has(c.name);
-    var h=document.createElement('div');h.className='card-h';
-    h.innerHTML='<input type="checkbox" '+(chk?'checked':'')+' style="flex-shrink:0"><span class="cname">'+c.name+'</span><span class="cbadge" style="background:'+col+'22;color:'+col+'">'+c.type+'</span><span class="cpv">'+c.province+'</span>';
-    var cb=h.querySelector('input');
-    cb.onchange=function(){if(cb.checked)SELECTED.add(c.name);else SELECTED.delete(c.name);updSel();};
-    h.onclick=function(e){if(e.target!==cb){cb.checked=!cb.checked;cb.onchange();}};
-    card.appendChild(h);
-    c.contacts.forEach(function(ct){
-      var row=document.createElement('div');row.className='crow';
-      if(!_showContacts) row.style.display='none';
-      var isTit=ct.role&&ct.role.toLowerCase().includes('titol');
-      row.innerHTML='<div class="cn2">'+ct.name+(ct.role?'<span class="rbadge '+(isTit?'rb-t':'rb-o')+'">'+ct.role+'</span>':'')+'</div>'+(ct.email?'<div class="ce">'+ct.email+'</div>':'')+(ct.phone&&ct.phone!=='-'?'<div class="cp">'+ct.phone+'</div>':'');
-      card.appendChild(row);
-    });
-    el.appendChild(card);
-  });
-}
-
-function updSel(){document.getElementById('selcount').textContent=SELECTED.size+' selezionate';}
-function selAll(){FILTERED.forEach(function(c){SELECTED.add(c.name);});renderList();updSel();}
-function selNone(){SELECTED.clear();renderList();updSel();}
-function getSel(){return FILTERED.filter(function(c){return SELECTED.has(c.name);});}
-
-function insertLink(label,url){
-  var ta=document.getElementById('msg-body');
-  _linkMap.push({label:label,url:url});
-  var start=ta.selectionStart,end=ta.selectionEnd;
-  var val=ta.value;
-  ta.value=val.substring(0,start)+label+val.substring(end);
-  ta.selectionStart=ta.selectionEnd=start+label.length;
-  ta.focus();
-  toast('Link inserito: '+label);
-}
-
-function bodyWithLinks(rawBody){
-  var html=rawBody.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
-  _linkMap.forEach(function(lk){
-    var escaped=lk.label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-    html=html.replace(new RegExp(escaped,'g'),'<a href="'+lk.url+'">'+lk.label+'</a>');
-  });
+function buildPopup(d){
+  var col=tc(d.Customer_Type__c);
+  var nav='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent((d.BillingStreet||'')+' '+(d.BillingCity||'')+' Italy');
+  var website=d.Website||d.Website__c||d.URL__c||'';
+  var websiteUrl=website ? (website.indexOf('http')===0?website:'https://'+website) : '';
+  var html='<div class="popup-title">'+d.Name+'</div>'
+    +'<div class="popup-row"><span class="popup-label">Città</span><span>'+(d.BillingCity||'—')+'</span></div>'
+    +'<div class="popup-row"><span class="popup-label">Tipo</span><span class="popup-badge" style="background:'+col+'22;color:'+col+';border:1px solid '+col+'44">'+(d.Customer_Type__c||'—')+'</span></div>'
+    +'<div class="popup-row"><span class="popup-label">Rating</span><span>'+(d.Rating||'—')+'</span></div>'
+    +'<div class="popup-row"><span class="popup-label">Azienda</span><span>'+(d.Company_type__c||'—')+'</span></div>'
+    +'<div class="popup-row"><span class="popup-label">Brand</span><span>'+(d.Official_brand__c||'—')+'</span></div>'
+    +'<div class="popup-row"><span class="popup-label">Provider</span><span>'+(d.Website_Provider__c||'—')+'</span></div>'
+    +'<div class="popup-row"><span class="popup-label">Prodotti</span><span style="max-width:160px;word-break:break-word">'+(d.Active_Products_List__c||'—')+'</span></div>';
+  if(website){
+    html+='<a class="popup-btn-web" href="'+websiteUrl+'" target="_blank">🌐 Vedi sito web</a>';
+  }
+  html+='<a class="popup-btn" href="'+nav+'" target="_blank">🗺 Naviga con Google Maps</a>';
   return html;
 }
 
-var TPLS={
-  webinar:{s:'Invito al prossimo webinar MotorK',b:'Gentile {NOME},\n\nLa invito al nostro prossimo webinar.\n\nData: [DATA] - Orario: [ORARIO]\nLink: [LINK]\n\nA presto,\nPaolo Pesenti\nMotorK | Senior Dealer Coach'},
-  upgrade:{s:'Novita per il tuo sito MotorK',b:'Gentile {NOME},\n\nHo novita per migliorare le performance del tuo sito.\n\n[DESCRIZIONE]\n\nPossiamo sentirci?\n\nA presto,\nPaolo Pesenti\nMotorK | Senior Dealer Coach'},
-  newprod:{s:'Una nuova soluzione MotorK per te',b:'Gentile {NOME},\n\nVolevo presentarti [PRODOTTO].\n\n[DESCRIZIONE]\n\nPosso farti una demo?\n\nA presto,\nPaolo Pesenti\nMotorK | Senior Dealer Coach'},
-  news:{s:'Aggiornamenti MotorK',b:'Gentile {NOME},\n\nEcco le ultime novita:\n\n- [NEWS 1]\n- [NEWS 2]\n\nA presto,\nPaolo Pesenti\nMotorK | Senior Dealer Coach'}
-};
-function applyTpl(){var v=document.getElementById('tpl-sel').value;if(!v)return;document.getElementById('msg-sub').value=TPLS[v].s;document.getElementById('msg-body').value=TPLS[v].b;_linkMap=[];}
-
-function toggleMsgPanel(){
-  var panel=document.getElementById('msgp');
-  var btn=document.getElementById('btn-expand-msg');
-  var ta=document.getElementById('msg-body');
-  if(!panel||!btn||!ta) return;
-  if(panel.dataset.expanded==='1'){
-    panel.dataset.expanded='0';
-    panel.style.position='';panel.style.bottom='';panel.style.left='';
-    panel.style.right='';panel.style.zIndex='';panel.style.background='';
-    panel.style.boxShadow='';panel.style.borderRadius='';panel.style.padding='';
-    ta.style.height='90px';btn.textContent='⤢ Espandi';
-  } else {
-    panel.dataset.expanded='1';
-    panel.style.position='fixed';panel.style.bottom='0';panel.style.left='260px';
-    panel.style.right='210px';panel.style.zIndex='5000';panel.style.background='#fff';
-    panel.style.boxShadow='0 -4px 20px rgba(0,0,0,.15)';panel.style.borderRadius='10px 10px 0 0';
-    panel.style.padding='12px';panel.style.maxHeight='80vh';panel.style.overflowY='auto';
-    ta.style.height='300px';btn.textContent='⤡ Riduci';
-  }
-}
-
-function genAI(){
-  var panel=document.getElementById('ai-prompt-panel');
-  if(!panel) return;
-  panel.style.display=panel.style.display==='none'?'block':'none';
-}
-function runGenAI(){
-  var p=document.getElementById('ai-prompt-input').value.trim();
-  if(!p){toast('Scrivi cosa vuoi comunicare');return;}
-  var btn=document.getElementById('ai-run-btn');if(btn)btn.textContent='...';btn.disabled=true;
-  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:'Sei Paolo Pesenti, Senior Dealer Coach di MotorK. Scrivi una email professionale in italiano per dealer auto. '+p+' Se menzioni prodotti MotorK inserisci il link pertinente come <a href=URL>testo</a>. '+LINKS_CATALOG+' Rispondi SOLO con JSON: {"s":"oggetto","b":"corpo"}. Usa {NOME} come placeholder. Niente trattini, usa virgole. Niente emoji.'}]})})
-  .then(function(r){return r.json();}).then(function(d){
-    var t=(d.content&&d.content[0]&&d.content[0].text)||'';
-    t=t.replace(/```json|```/g,'').trim();var obj=JSON.parse(t);
-    document.getElementById('msg-sub').value=obj.s||'';
-    document.getElementById('msg-body').value=obj.b||'';
-    _linkMap=[];
-    document.getElementById('ai-prompt-panel').style.display='none';
-    toast('Testo generato!');
-  }).catch(function(){toast('Errore AI');});
-  if(btn){btn.textContent='Genera';btn.disabled=false;}
-}
-
-function sendTestMail(){
-  var sub=document.getElementById('msg-sub').value||'(nessun oggetto)';
-  var body=document.getElementById('msg-body').value||'';
-  if(!body.trim()){toast('Scrivi un messaggio prima');return;}
-  var btn=document.getElementById('btn-test');btn.textContent='Invio...';btn.disabled=true;
-  var bodyFilled=bodyWithLinks(body.replace(/{NOME}/g,'Paolo'));
-  doDraft({to:'paolo.pesenti@motork.io',cc:[],subject:'[TEST] '+sub,body:bodyFilled})
-  .then(function(){toast('Bozza test creata in Gmail!');})
-  .catch(function(err){toast('Errore test: '+err.message);})
-  .finally(function(){btn.textContent='📨 Test';btn.disabled=false;});
-}
-
-
-
-var skippedCompanies=[];
-var skippedBtn=null;
-
-function downloadSkipped(){
-  if(!skippedCompanies.length){toast('Nessuna azienda saltata');return;}
-  var lines=['Azienda,Nome,Cognome,Motivo'];
-  skippedCompanies.forEach(function(s){
-    if(s.contacts&&s.contacts.length){
-      s.contacts.forEach(function(ct){
-        lines.push('"'+s.name+'","'+(ct.first||'')+'","'+(ct.last||ct.name||'')+'","'+s.reason+'"');
-      });
-    } else {
-      lines.push('"'+s.name+'","","","'+s.reason+'"');
-    }
+function buildFilters(dealers){
+  var types=[...new Set(dealers.map(function(d){return d.Customer_Type__c;}).filter(Boolean))].sort();
+  var ratings=[...new Set(dealers.map(function(d){return d.Rating;}).filter(Boolean))].sort();
+  activeTypes=new Set(types);activeRatings=new Set(ratings);
+  var tf=document.getElementById('type-filters');tf.innerHTML='';
+  types.forEach(function(t){
+    var p=document.createElement('span');p.className='pill';p.textContent=t;
+    p.style.cssText='background:'+tc(t)+'22;border-color:'+tc(t)+';color:'+tc(t);
+    p.onclick=function(){if(activeTypes.has(t)){activeTypes.delete(t);p.classList.add('off');}else{activeTypes.add(t);p.classList.remove('off');}filterMarkers();};
+    tf.appendChild(p);
   });
-  var csv=lines.join('\n');
-  try {
-    var blob=new Blob([csv],{type:'text/csv'});
-    var url=window.URL.createObjectURL(blob);
-    var a=document.createElement('a');a.href=url;a.download='aziende_senza_mail.csv';
-    document.body.appendChild(a);a.click();
-    setTimeout(function(){window.URL.revokeObjectURL(url);document.body.removeChild(a);},100);
-  } catch(e) {
-    alert('Aziende senza email:\n\n'+skippedCompanies.map(function(s){return s.name;}).join('\n'));
-  }
-}
-
-function cleanCompanyName(name){
-  return name.replace(/\b(srl|spa|snc|sas|srls|s\.r\.l\.|s\.p\.a\.)\b/gi,'').replace(/\s+/g,' ').trim();
-}
-
-var SKIP_NAMES=/^(invoicing|fatturazione|azienda|info|amministrazione|segreteria|contabilita|contabilità|billing|noreply|no.reply|office|reception|xxx)$/i;
-
-function isPersonalName(name){
-  if(!name||name.trim().length<2) return false;
-  var first=(name.split(' ')[0]||'').toLowerCase();
-  return !SKIP_NAMES.test(first) && /^[a-zàáèéìíòóùú]/i.test(first);
-}
-
-function buildSaluto(contacts,companyName){
-  var personal=contacts.filter(function(c){
-    var first=c.first||(c.name?c.name.split(' ')[0]:'');
-    return isPersonalName(first);
-  });
-  var n=personal.length;
-  if(n===0) return {saluto:'Ciao,',plurale:contacts.length>1};
-  if(n===1){var nome=personal[0].first||personal[0].name.split(' ')[0]||'';return {saluto:'Ciao '+nome+',',plurale:false};}
-  if(n===2){var n1=personal[0].first||personal[0].name.split(' ')[0]||'';var n2=personal[1].first||personal[1].name.split(' ')[0]||'';return {saluto:'Ciao '+n1+' e '+n2+',',plurale:true};}
-  return {saluto:'Ciao team '+cleanCompanyName(companyName)+',',plurale:true};
-}
-
-function buildPayload(item,sub,body){
-  var c=item.c;var txState=item.txState;
-  var toList=[],cc=[],emailContacts=[];
-
-  if(txState){
-    var toEmail=txState.toEmail||'';
-    cc=(txState.ccEmails||[]).filter(function(e){return e&&e!==toEmail;});
-    (txState.dsm||[]).forEach(function(d){if(d.email&&cc.indexOf(d.email)===-1&&d.email!==toEmail)cc.push(d.email);});
-    if(toEmail) toList=[toEmail];
-    else if(cc.length){toList=[cc.shift()];}
-    if(!toList.length){var ac=c.contacts.find(function(x){return x.email;});if(ac)toList=[ac.email];}
-    emailContacts=c.contacts.filter(function(x){return toList.indexOf(x.email)!==-1;});
-    if(!emailContacts.length) emailContacts=c.contacts.filter(function(x){return x.email;}).slice(0,1);
-  } else {
-    var cts=c.contacts.filter(function(x){return x.email;});
-    if(!cts.length){var sCts=c.contacts.map(function(ct){var p2=(ct.name||'').split(' ');return {first:ct.first||p2[0]||'',last:p2.slice(1).join(' ')||''};});skippedCompanies.push({name:c.name,reason:'Nessuna email disponibile',contacts:sCts});return null;}
-    if(cts.length===1){toList=[cts[0].email];emailContacts=[cts[0]];}
-    else if(cts.length===2){toList=[cts[0].email,cts[1].email];emailContacts=cts.slice(0,2);}
-    else{toList=cts.map(function(x){return x.email;});emailContacts=cts;}
-    // DSM in CC se presente (lista diretta senza modale)
-    if(c.dsm&&c.dsm[0]&&c.dsm[0].email){
-      var dsmE=c.dsm[0].email;
-      if(toList.indexOf(dsmE)===-1&&cc.indexOf(dsmE)===-1) cc.push(dsmE);
-    }
-  }
-
-  if(!toList.length){var sCts=c.contacts.map(function(ct){var p2=(ct.name||'').split(' ');return {first:ct.first||p2[0]||'',last:p2.slice(1).join(' ')||''};});skippedCompanies.push({name:c.name,reason:'Nessuna email disponibile',contacts:sCts});return null;}
-
-  var salutoObj=buildSaluto(emailContacts,c.name);
-  var cSub=txState&&txState.subject?txState.subject:sub;
-  var cBody=txState&&txState.body?txState.body:body;
-  var nome=emailContacts[0]?emailContacts[0].first||emailContacts[0].name.split(' ')[0]||'':c.name;
-  var bodyText=cBody.replace(/{NOME}/g,nome);
-  bodyText=bodyText.replace(/^Ciao[^,\n]*,/,salutoObj.saluto);
-  var bFilled=bodyWithLinks(bodyText);
-  return {to:toList[0],cc:toList.slice(1).concat(cc),subject:cSub,body:bFilled};
-}
-
-function doDraft(payload){
-  return fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1024,
-      tools:[{name:'create_draft',description:'Creates a Gmail draft',input_schema:{type:'object',properties:{to:{type:'string'},cc:{type:'string'},subject:{type:'string'},body:{type:'string'},mimeType:{type:'string'}},required:['to','subject','body']}}],
-      tool_choice:{type:'any'},
-      messages:[{role:'user',content:'Crea bozza Gmail. TO:'+payload.to+(payload.cc.length?' CC:'+payload.cc.join(','):'')+' OGGETTO:'+payload.subject+' CORPO HTML:'+payload.body}],
-      mcp_servers:[{type:'url',url:'https://gmailmcp.googleapis.com/mcp/v1',name:'gmail'}]
-    })
-  }).then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error('HTTP '+r.status);});return r.json();});
-}
-
-function createDrafts(){
-  var cos=getSel();if(!cos.length){toast('Nessuna azienda selezionata');return;}
-  var sub=document.getElementById('msg-sub').value||'(nessun oggetto)';
-  var body=document.getElementById('msg-body').value||'';
-  if(!body.trim()){toast('Scrivi un messaggio prima');return;}
-  var btn=document.getElementById('btn-drafts');
-  if(cos.length>5&&!confirm('Stai per creare '+cos.length+' bozze Gmail. Procedere?')){return;}
-  btn.textContent='Creo...';btn.disabled=true;
-  var total=cos.length;var ok=0;
-  skippedCompanies=[];
-  var queue=cos.map(function(c){
-    var txState=TXT_STATE.companies.find(function(s){return norm(s.name)===norm(c.name)||fuzzy(s.name,c.name);});
-    return {c:c,txState:txState||null};
-  });
-  // Process in batches of 3 for speed
-  var BATCH=3;
-  var batches=[];
-  for(var b=0;b<queue.length;b+=BATCH) batches.push(queue.slice(b,b+BATCH));
-  var chain=Promise.resolve();
-  batches.forEach(function(batch){
-    chain=chain.then(function(){
-      var promises=batch.map(function(item){
-        var p=buildPayload(item,sub,body);
-        if(!p){return Promise.resolve();}
-        return doDraft(p).then(function(){
-          ok++;btn.textContent=ok+'/'+total;
-        }).catch(function(err){
-          toast('Errore '+item.c.name+': '+err.message.substring(0,40));
-        });
-      });
-      return Promise.all(promises).then(function(){
-        return new Promise(function(r){setTimeout(r,500);});
-      });
-    });
-  });
-  chain.then(function(){
-    btn.textContent='Crea bozze Gmail';btn.disabled=false;
-    var msg=ok+' bozze create';
-    if(skippedCompanies.length) msg+=' · '+skippedCompanies.length+' saltate';
-    toast(msg,4000);
-    if(skippedCompanies.length){
-      if(skippedBtn&&document.body.contains(skippedBtn)) document.body.removeChild(skippedBtn);
-      skippedBtn=document.createElement('button');
-      skippedBtn.textContent='⬇ Scarica aziende senza email ('+skippedCompanies.length+')';
-      skippedBtn.style.cssText='position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:#e53935;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;z-index:9999;box-shadow:0 2px 8px rgba(0,0,0,.3)';
-      skippedBtn.onclick=function(){downloadSkipped();if(document.body.contains(skippedBtn))document.body.removeChild(skippedBtn);skippedBtn=null;};
-      document.body.appendChild(skippedBtn);
-    }
+  var rf=document.getElementById('rating-filters');rf.innerHTML='';
+  ratings.forEach(function(r){
+    var info=ri(r);var p=document.createElement('span');p.className='pill';p.textContent=r;
+    p.style.cssText='background:'+info.c+'22;border-color:'+info.c+';color:'+info.c;
+    p.onclick=function(){if(activeRatings.has(r)){activeRatings.delete(r);p.classList.add('off');}else{activeRatings.add(r);p.classList.remove('off');}filterMarkers();};
+    rf.appendChild(p);
   });
 }
 
-function startWA(){
-  var cos=getSel();if(!cos.length){toast('Nessuna azienda selezionata');return;}
-  var body=document.getElementById('msg-body').value||'';
-  if(!body.trim()){toast('Scrivi un messaggio prima');return;}
-  WA_QUEUE=[];
-  cos.forEach(function(c){
-    c.contacts.filter(function(x){return x.phone&&x.phone!=='-';}).forEach(function(ct){WA_QUEUE.push({company:c.name,contact:ct,body:body});});
-  });
-  if(!WA_QUEUE.length){toast('Nessun contatto con cellulare');return;}
-  WA_IDX=0;document.getElementById('btn-wa-next').style.display='inline-block';openWA(0);
-}
-
-function openWA(idx){
-  if(idx>=WA_QUEUE.length){document.getElementById('btn-wa-next').style.display='none';document.getElementById('wa-progress').style.display='none';toast('Tutti i WhatsApp completati!');return;}
-  var item=WA_QUEUE[idx];var ct=item.contact;
-  var ph=ct.phone.replace(/\s/g,'').replace(/^00/,'+');
-  if(!ph.startsWith('+'))ph='+39'+ph;
-  var nome=ct.first||ct.name.split(' ')[0]||item.company;
-  var msg=item.body.replace(/{NOME}/g,nome);
-  window.open('https://wa.me/'+ph.replace('+','')+'?text='+encodeURIComponent(msg),'_blank');
-  var prog=document.getElementById('wa-progress');
-  prog.style.display='inline';prog.textContent=(idx+1)+'/'+WA_QUEUE.length+' - '+item.company;
-  document.getElementById('btn-wa-next').textContent=idx+1<WA_QUEUE.length?'Prossimo':'Fine';
-}
-function nextWA(){WA_IDX++;openWA(WA_IDX);}
-
-function clearCache(){
-  if(!confirm('Svuotare la cache?'))return;
-  DATA={account:null,contact:null,database:null};COMPANIES=[];FILTERED=[];SELECTED=new Set();
-  ['account','contact','database'].forEach(function(t){var e=document.getElementById('st-'+t);e.textContent='Non caricato';e.className='fst ko';});
-  document.getElementById('list').innerHTML='';
-  document.getElementById('rcount').textContent='Carica i file per iniziare';
-  toast('Cache svuotata');
-}
-
-// ============================================================
-// CARICA TXT – MODALE POST-VISITA
-// ============================================================
-var TXT_STATE={companies:[],generated:null};
-
-var PROD_DEMO_LINKS={
-  'WS':'<a href="https://webspark-revolution-it.getwebspark.com/">Demo WebSparK</a>',
-  'REV':'<a href="https://webspark-revolution-it.getwebspark.com/">Demo WebSparK Revolution</a>',
-  'SSK':'<a href="https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing">Presentazione StockSparK</a>',
-  'LS':'<a href="https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present">Presentazione LeadSparK</a>',
-  'LSR':'<a href="https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present">Presentazione LeadSparK Revolution</a>',
-  'CSK':'<a href="https://docs.google.com/presentation/d/185utUR8TkIl8lUsW3DkpNNW8RDtiVBHUIB_ghK8A2hk/present">Presentazione CallSparK</a>',
-  'PSK':'<a href="https://docs.google.com/presentation/d/1LqHmmVMst3zOtl-KggSmUg0NWGezzIBG9qtFQ78RfqY/present">Presentazione PredictSparK</a>',
-  'FSK':'<a href="https://docs.google.com/presentation/d/1tKwQ8I8RfuCLswVCublwRyTGEnwUCwqAmaMzWxID7Is/present">Presentazione FidSparK</a>',
-  'SEO':'<a href="https://docs.google.com/presentation/d/1dj2zvXwHZLN9OkFHTjeJRXoZtXFjHFF5KCg7u6NLR2g/present">Presentazione SeoSparK</a>',
-  'MKTG':'<a href="https://docs.google.com/presentation/d/1fQ6g4F2XHEdEYb2RsL7eAcI_n26x2xWXL0RO1ctsD2w/present">Presentazione AdSparK</a>',
-  'AGEN':'<a href="https://motork-io.zoom.us/rec/component-page?accessLevel=meeting&hasValidToken=false&clusterId=us02&action=play&filePlayId=&componentName=recording-register&meetingId=H65yJ0A4QncHNvjtVoY7wtYfQzm6cbZuFhsXOWGdvHWHJ7PMcit0qK4v-KSdQFSr.0N0fqQNmIOSQd9fj">Webinar AgentSparK</a>',
-  'CDP':'<a href="https://motork-io.zoom.us/rec/component-page?accessLevel=meeting&hasValidToken=false&clusterId=us02&action=play&filePlayId=&componentName=recording-register&meetingId=9lFnDDTJkKz3zm7isGQmH4OFdkbmPg_iOuiB-aARgGwksY0-8Z9Rb4ObcUUamCBD.-4-O_An63Ih26-E5">Webinar CDP</a>',
-  'WAPP':'<a href="https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present">Presentazione WhatsApp Business</a>',
-  'BGR':'<a href="https://webspark-revolution-it.getwebspark.com/background-removal/">Esempi Background Removal</a>',
-  'VIDEO':'<a href="https://webspark-revolution-it.getwebspark.com/video-ai/">Esempi AI Video</a>'
-};
-
-var PROD_BENEFITS={
-  'WS':'sito professionale sempre aggiornato, più lead qualificati e presenza digitale forte',
-  'REV':'sito di nuova generazione con AI integrata, massima autonomia operativa senza tecnici',
-  'SSK':'stock sempre aggiornato e pubblicato automaticamente su tutti i portali, risparmio di ore di lavoro',
-  'LS':'tutti i lead in un unico posto, nessun contatto perso, preventivi veloci e reportistica chiara',
-  'LSR':'CRM evoluto con AI, campagne predittive e marketing automation inclusi',
-  'CSK':'ogni lead viene chiamato subito dall\'AI, tasso di appuntamento in forte aumento',
-  'PSK':'campagne AI sul tuo database clienti, riattivi chi non viene da mesi senza sforzo',
-  'FSK':'più recensioni positive in automatico, reputazione web gestita senza pensarci',
-  'SEO':'più traffico organico dal tuo sito, meno dipendenza dai portali a pagamento',
-  'MKTG':'campagne Google e Meta ottimizzate con AI, costo per lead più basso',
-  'AGEN':'agente AI che gestisce lead e appuntamenti H24, anche la domenica sera',
-  'CDP':'tutti i dati dei tuoi clienti unificati, campagne mirate su chi è veramente pronto a comprare',
-  'WAPP':'comunicazione diretta su WhatsApp, tasso di apertura altissimo',
-  'BGR':'foto stock sempre professionali con sfondo coordinato in automatico',
-  'VIDEO':'video vettura generati in pochi secondi, contenuti social sempre pronti'
-};
-
-// ============================================================
-// FOLLOW UP – RICERCA AZIENDA PER NOME
-// ============================================================
-function openFollowUp(){
-  if(!COMPANIES.length){toast('Carica prima i file Account e Contatti');return;}
-  document.getElementById('fu-search-input').value='';
-  document.getElementById('fu-suggestions').innerHTML='';
-  document.getElementById('fu-modal').style.display='flex';
-  setTimeout(function(){document.getElementById('fu-search-input').focus();},100);
-}
-
-function fuSearch(query){
-  var el=document.getElementById('fu-suggestions');
-  if(!query||query.length<2){el.innerHTML='';return;}
-  var q=norm(query);
-  // Score: exact > starts with > contains > fuzzy char match
-  var results=COMPANIES.map(function(c){
-    var cn=norm(c.name);
-    var score=0;
-    if(cn===q) score=100;
-    else if(cn.startsWith(q)) score=80;
-    else if(cn.indexOf(q)!==-1) score=60;
-    else {
-      // partial word match
-      var words=q.split(/\s+/);
-      var matched=words.filter(function(w){return cn.indexOf(w)!==-1;});
-      score=matched.length/words.length*40;
-    }
-    return {company:c,score:score};
-  }).filter(function(r){return r.score>0;})
-    .sort(function(a,b){return b.score-a.score;})
-    .slice(0,8);
-
-  if(!results.length){
-    el.innerHTML='<div style="color:#aaa;font-size:12px;padding:8px">Nessuna corrispondenza trovata</div>';
+function filterMarkers(){
+  var q=document.getElementById('search').value.toLowerCase().trim();
+  markerLayer.clearLayers();
+  var visible=0;
+  // Se c'è una rotta attiva, ricalcola i dealer nel range rispettando i filtri correnti
+  if(routeLayer && omwDealers.length > 0){
+    refreshOmwWithFilters(q);
     return;
   }
-  el.innerHTML='';
-  results.forEach(function(r){
-    var c=r.company;
-    var col=tc(c.type);
-    var div=document.createElement('div');
-    div.style.cssText='padding:8px 10px;border:1px solid #eee;border-radius:6px;margin-bottom:4px;cursor:pointer;display:flex;align-items:center;gap:8px';
-    div.innerHTML='<span style="font-size:13px;font-weight:600;flex:1">'+c.name+'</span>'
-      +'<span style="font-size:10px;padding:1px 6px;border-radius:4px;background:'+col+'22;color:'+col+'">'+c.type+'</span>'
-      +'<span style="font-size:11px;color:#aaa">'+c.province+'</span>';
-    div.onmouseover=function(){this.style.background='#f5f5f0';};
-    div.onmouseout=function(){this.style.background='';};
-    (function(company){
-      div.addEventListener('mousedown', function(e){
-        e.preventDefault();
-        e.stopPropagation();
-      });
-      div.addEventListener('click', function(e){
-        e.preventDefault();
-        e.stopPropagation();
-        try {
-          document.getElementById('fu-modal').style.display='none';
-          renderTxtModal([{input:company.name,company:company}],[]);
-        } catch(err) {
+  markers.forEach(function(o){
+    var d=o.dealer;
+    if((q ? d.Name.toLowerCase().includes(q) : (activeTypes.size>0&&activeRatings.size>0&&activeTypes.has(d.Customer_Type__c)&&activeRatings.has(d.Rating)))){
+      markerLayer.addLayer(o.marker);
+      visible++;
+    }
+  });
+  updateVisibleCount(visible);
+  // Se il pannello mappa è aperto, aggiorna la lista laterale
+  if(mapPanelOpen) refreshMapPanel();
+}
+
+function refreshOmwWithFilters(q){
+  if(!routeLayer) return;
+  var kmRange=parseInt(document.getElementById('omw-km').value);
+  // Rileggo i punti della polyline
+  var routePoints=[];
+  routeLayer.getLatLngs().forEach(function(ll){
+    if(Array.isArray(ll)) ll.forEach(function(p){routePoints.push({lat:p.lat,lng:p.lng});});
+    else routePoints.push({lat:ll.lat,lng:ll.lng});
+  });
+  if(!q) q='';
+  // Ricalcola omwDealers con filtri correnti
+  omwDealers=[];
+  markers.forEach(function(o){
+    var d=o.dealer;
+    if((!d.Customer_Type__c||activeTypes.has(d.Customer_Type__c))&&
+       (!d.Rating||activeRatings.has(d.Rating))&&
+       (!q||d.Name.toLowerCase().includes(q))){
+      var latlng=o.marker.getLatLng();
+      var dist=distFromRoute(latlng.lat,latlng.lng,routePoints);
+      if(dist<=kmRange) omwDealers.push({o:o,dist:dist});
+    }
+  });
+  // Ri-evidenzia
+  var normalSet=new Set(omwDealers.map(function(x){return x.o;}));
+  markers.forEach(function(o){
+    var d=o.dealer;
+    if((!d.Customer_Type__c||activeTypes.has(d.Customer_Type__c))&&
+       (!d.Rating||activeRatings.has(d.Rating))&&
+       (!q||d.Name.toLowerCase().includes(q))){
+      var col=tc(d.Customer_Type__c),r=ri(d.Rating),s=r.s;
+      var isMatch=normalSet.has(o);
+      if(isMatch) s=s+4;
+      var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+(s*2)+'" height="'+(s*2)+'" viewBox="0 0 '+(s*2)+' '+(s*2)+'">'
+        +'<circle cx="'+s+'" cy="'+s+'" r="'+(s-2)+'" fill="'+col+'" stroke="'+(isMatch?'#ffe600':'white')+'" stroke-width="'+(isMatch?3:2)+'" opacity="'+(isMatch?1:.25)+'"/>'
+        +'<circle cx="'+s+'" cy="'+s+'" r="'+Math.floor(s/3)+'" fill="white" opacity="'+(isMatch?.9:.15)+'"/>'
+        +'</svg>';
+      var icon=L.divIcon({html:svg,className:'',iconSize:[s*2,s*2],iconAnchor:[s,s],popupAnchor:[0,-s]});
+      o.marker.setIcon(icon);
+      markerLayer.addLayer(o.marker);
+    }
+  });
+  // Aggiorna pannello
+  document.getElementById('omw-panel-title').textContent=omwDealers.length+' dealer entro '+kmRange+' km dal percorso';
+  var list=document.getElementById('omw-panel-list');
+  list.innerHTML='';
+  if(omwDealers.length===0){
+    list.innerHTML='<div style="padding:16px;color:#888;font-size:13px;text-align:center">Nessun dealer trovato</div>';
+  } else {
+    omwDealers.forEach(function(item,idx){
+      var d=item.o.dealer;
+      var col=tc(d.Customer_Type__c);
+      var el=document.createElement('div');
+      el.className='omw-item';
+      el.innerHTML='<div class="omw-item-name">'+(idx+1)+'. '+d.Name+'</div>'
+        +'<div class="omw-item-meta" style="color:'+col+';font-weight:600">'+(d.Customer_Type__c||'—')+'</div>'
+        +'<div class="omw-item-meta">📍 '+(d.BillingCity||'—')+' · '+(d.Rating||'—')+'</div>'
+        +'<div class="omw-item-meta" style="color:#555">'+(d.Active_Products_List__c||'—')+'</div>'
+        +'<div class="omw-item-dist">~'+item.dist.toFixed(1)+' km dalla strada</div>';
+      el.onclick=(function(o){return function(){map.setView(o.marker.getLatLng(),13);o.marker.openPopup();};})(item.o);
+      list.appendChild(el);
+    });
+  }
+  updateVisibleCount(markerLayer.getLayers().length);
+}
+
+function refreshMapPanel(){
+  var q=document.getElementById('search').value.toLowerCase().trim();
+  var visibleList=[];
+  markers.forEach(function(o){
+    var d=o.dealer;
+    if((!d.Customer_Type__c||activeTypes.has(d.Customer_Type__c))&&
+       (!d.Rating||activeRatings.has(d.Rating))&&
+       (!q||d.Name.toLowerCase().includes(q))){
+      visibleList.push({o:o,dist:null});
+    }
+  });
+  document.getElementById('omw-panel-title').textContent=visibleList.length+' dealer visibili sulla mappa';
+  var list=document.getElementById('omw-panel-list');
+  list.innerHTML='';
+  visibleList.forEach(function(item,idx){
+    var d=item.o.dealer;
+    var col=tc(d.Customer_Type__c);
+    var el=document.createElement('div');
+    el.className='omw-item';
+    el.innerHTML='<div class="omw-item-name">'+(idx+1)+'. '+d.Name+'</div>'
+      +'<div class="omw-item-meta" style="color:'+col+';font-weight:600">'+(d.Customer_Type__c||'—')+'</div>'
+      +'<div class="omw-item-meta">📍 '+(d.BillingCity||'—')+' · '+(d.Rating||'—')+'</div>'
+      +'<div class="omw-item-meta" style="color:#555">'+(d.Active_Products_List__c||'—')+'</div>';
+    el.onclick=(function(o){return function(){map.setView(o.marker.getLatLng(),13);o.marker.openPopup();};})(item.o);
+    list.appendChild(el);
+  });
+}
+
+function updateVisibleCount(visible){
+  var el=document.getElementById('visible-count-bar');
+  if(!el) return;
+  el.textContent=visible;
+  updateSmartLabels();
+}
+
+function updateSmartLabels(){
+  var visibleMarkers=[];
+  markerLayer.eachLayer(function(m){ if(m.getLatLng) visibleMarkers.push(m); });
+
+  // Sopra 30 dealer: nascondi tutte le label permanenti (troppo affollato)
+  if(visibleMarkers.length===0 || visibleMarkers.length>30){
+    markers.forEach(function(o){
+      if(o.marker.isTooltipOpen && o.marker.isTooltipOpen()) o.marker.closeTooltip();
+    });
+    return;
+  }
+
+  // Sotto 30: mostra le label, scegliendo direzione per minimizzare sovrapposizioni
+  // Converte lat/lng in pixel schermo per stimare collisioni
+  var points=visibleMarkers.map(function(m){
+    var p=map.latLngToLayerPoint(m.getLatLng());
+    return {marker:m, x:p.x, y:p.y};
+  });
+
+  // Per ogni marker calcola la direzione migliore guardando i vicini
+  points.forEach(function(pt){
+    var neighborsRight=0, neighborsLeft=0, neighborsAbove=0, neighborsBelow=0;
+    points.forEach(function(other){
+      if(other===pt) return;
+      var dx=other.x-pt.x, dy=other.y-pt.y;
+      var dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist>120) return; // troppo lontano per influire
+      if(dx>0) neighborsRight++;
+      if(dx<0) neighborsLeft++;
+      if(dy<0) neighborsAbove++;
+      if(dy>0) neighborsBelow++;
+    });
+
+    // Scegli la direzione con meno vicini (meno probabilità di sovrapposizione)
+    var dir='right', offset=[10,0];
+    var min=neighborsRight;
+    if(neighborsLeft<min){min=neighborsLeft;dir='left';offset=[-10,0];}
+    if(neighborsAbove<min){min=neighborsAbove;dir='top';offset=[0,-8];}
+    if(neighborsBelow<min){min=neighborsBelow;dir='bottom';offset=[0,8];}
+
+    pt.marker.unbindTooltip();
+    pt.marker.bindTooltip(pt.marker._dealerName||'',{permanent:true,direction:dir,className:'dealer-label',offset:offset});
+    pt.marker.openTooltip();
+  });
+}
+
+function zoomToVisible(){
+  var latlngs=[];
+  markerLayer.eachLayer(function(m){if(m.getLatLng)latlngs.push(m.getLatLng());});
+  if(latlngs.length===0){toast('Nessun dealer visibile');return;}
+  if(latlngs.length===1){map.setView(latlngs[0],13);return;}
+  var bounds=L.latLngBounds(latlngs);
+  map.fitBounds(bounds,{padding:[0,0],maxZoom:18});
+  // Forza zoom massimo possibile sui bounds reali
+  setTimeout(function(){
+    var z=map.getBoundsZoom(bounds,false);
+    map.setView(bounds.getCenter(),z);
+  },50);
+}
+
+function placeMarker(d,coords){
+  var jlat=(Math.random()-0.5)*0.025,jlng=(Math.random()-0.5)*0.025;
+  var m=L.marker([coords.lat+jlat,coords.lng+jlng],{icon:makeIcon(d)});
+  m.bindPopup(buildPopup(d),{maxWidth:260});
+  m._dealerName=d.Name;
+  m.bindTooltip(d.Name,{permanent:false,direction:'right',className:'dealer-label',offset:[8,0]});
+  markers.push({marker:m,dealer:d});
+  if(activeTypes.size>0&&activeRatings.size>0&&activeTypes.has(d.Customer_Type__c)&&activeRatings.has(d.Rating))
+    markerLayer.addLayer(m);
+}
+
+var _missedCities=[];
+function showMissBar(missed){
+  _missedCities=missed;
+  var mb=document.getElementById('miss-bar');
+  document.getElementById('miss-text').textContent='⚠ '+missed.length+' dealer non posizionati: '+missed.slice(0,5).join(', ')+(missed.length>5?'…':'');
+  mb.style.display='flex';
+  clearTimeout(mb._timer);
+  mb._timer=setTimeout(function(){mb.style.display='none';},10000);
+}
+function downloadErrors(){
+  var blob=new Blob([_missedCities.join('\n')],{type:'text/plain'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='dealer_non_posizionati.txt';
+  a.click();
+}
+function selAllTypes(){
+  activeTypes=new Set([...document.getElementById('type-filters').querySelectorAll('.pill')].map(function(p){var v=p.textContent.trim();activeTypes.add(v);p.classList.remove('off');return v;}));
+  filterMarkers();
+}
+function selNoneTypes(){
+  document.getElementById('type-filters').querySelectorAll('.pill').forEach(function(p){activeTypes.delete(p.textContent.trim());p.classList.add('off');});
+  filterMarkers();
+}
+
+async function processCSVText(csvText){
+  markers=[];activeTypes=new Set();activeRatings=new Set();
+  if(markerLayer) markerLayer.clearLayers();
+  document.getElementById('type-filters').innerHTML='';
+  document.getElementById('rating-filters').innerHTML='';
+  document.getElementById('miss-bar').style.display='none';
+  document.getElementById('status').textContent='Elaborazione…';
+  Papa.parse(csvText,{header:true,skipEmptyLines:true,complete:async function(res){
+    var dealers=res.data.filter(function(d){return d.Name&&d.BillingCity;});
+    buildFilters(dealers);
+    var toGeocode=[];
+    dealers.forEach(function(d){var c=getCityCoords(d.BillingCity);if(c)placeMarker(d,c);else toGeocode.push(d);});
+    document.getElementById('status').textContent=markers.length+' dealer';
+    updateVisibleCount(markers.length);
+    if(markers.length>0){var g=L.featureGroup(markers.map(function(o){return o.marker;}));map.fitBounds(g.getBounds().pad(.1));}
+    var stillMissed=[];
+    if(toGeocode.length>0){
+      var uniq=[...new Set(toGeocode.map(function(d){return d.BillingCity;}))];
+      for(var i=0;i<uniq.length;i+=80){await geocodeCitiesBatch(uniq.slice(i,i+80));await sleep(200);}
+      toGeocode.forEach(function(d){var c=getCityCoords(d.BillingCity);if(c)placeMarker(d,c);else stillMissed.push(d.BillingCity);});
+      filterMarkers();
+      document.getElementById('status').textContent=markers.length+' dealer';
+      updateVisibleCount(markers.length);
+      if(markers.length>0){var g2=L.featureGroup(markers.map(function(o){return o.marker;}));map.fitBounds(g2.getBounds().pad(.1));}
+    }
+    var mb=document.getElementById('miss-bar');
+    if(stillMissed.length>0){var uniqM=[...new Set(stillMissed)];mb.style.display='block';mb.textContent='⚠ '+stillMissed.length+' dealer non posizionati: '+uniqM.join(', ');}
+    else mb.style.display='none';
+  }});
+}
+
+document.getElementById('csv-input').addEventListener('change',function(e){
+  if(!e.target.files[0]) return;
+  var reader=new FileReader();
+  reader.onload=async function(ev){var text=ev.target.result;dbSave(text);await processCSVText(text);toast('✅ CSV caricato');};
+  reader.readAsText(e.target.files[0],'UTF-8');
+  e.target.value='';
+});
+
+window.clearCache=async function(){
+  var btn=document.getElementById('clear-btn');btn.textContent='⏳';btn.disabled=true;
+  try{await dbClear();if(markerLayer)markerLayer.clearLayers();markers=[];document.getElementById('type-filters').innerHTML='';document.getElementById('rating-filters').innerHTML='';document.getElementById('miss-bar').style.display='none';document.getElementById('status').textContent='Cache svuotata';toast('✅ Cache svuotata');}
+  catch(ex){toast('⚠ Errore: '+ex.message);}
+  btn.textContent='🗑 Svuota cache';btn.disabled=false;
+};
+
+var _myPosition = null;
+
+window.locateMe=function(){
+  if(!navigator.geolocation){alert('Geolocalizzazione non supportata');return;}
+  navigator.geolocation.getCurrentPosition(function(pos){
+    _myPosition = {lat: pos.coords.latitude, lng: pos.coords.longitude};
+    map.setView([pos.coords.latitude,pos.coords.longitude],11);
+    if(window._myMarker) map.removeLayer(window._myMarker);
+    window._myMarker = L.circleMarker([pos.coords.latitude,pos.coords.longitude],{radius:8,color:'#1a5cb8',fillColor:'#4a90d9',fillOpacity:1,weight:3}).addTo(map).bindPopup('📍 Sei qui').openPopup();
+  },function(){alert('Impossibile rilevare la posizione');});
+};
+
+window.searchNearMe=function(){
+  var kmRange = parseInt(document.getElementById('nearme-km').value);
+  if(!kmRange) return;
+
+  if(_myPosition){
+    runRadarFromCoords(_myPosition, kmRange, 'te');
+  } else {
+    if(!navigator.geolocation){alert('Geolocalizzazione non supportata');return;}
+    toast('🔄 Rilevamento posizione…');
+    navigator.geolocation.getCurrentPosition(function(pos){
+      _myPosition = {lat: pos.coords.latitude, lng: pos.coords.longitude};
+      runRadarFromCoords(_myPosition, kmRange, 'te');
+    },function(){
+      alert('Impossibile rilevare la posizione');
+      document.getElementById('nearme-km').value = '';
+    });
+  }
+};
+
+var DRIVE_ACCOUNT='https://docs.google.com/spreadsheets/d/18vIfwCnBM9PWgDL8_vk5SxvSRsbXC7w8Ouu4G90greo/export?format=csv&gid=1412554961';
+
+window.addEventListener('DOMContentLoaded',async function(){
+  initMap();
+  document.getElementById('status').textContent='🔄 Caricamento da Google Drive…';
+  try{
+    var r=await fetch(DRIVE_ACCOUNT);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    var text=await r.text();
+    dbSave(text);
+    toast('✅ Dati aggiornati da Google Drive');
+    await processCSVText(text);
+  }catch(e){
+    // fallback cache
+    var saved=await dbLoad();
+    if(saved){
+      toast('Drive non raggiungibile — uso dati salvati',3000);
+      await processCSVText(saved);
+    } else {
+      document.getElementById('status').textContent='⚠ Nessun dato. Carica CSV manualmente.';
+    }
+  }
+});
+
+// ===== ON MY WAY =====
+var routeLayer = null;
+var mapPanelOpen = false;
+var omwMarkers = [];
+var omwDealers = [];
+
+function latLng(city) {
+  var c = getCityCoords(city);
+  if (c) return {lat: c.lat, lng: c.lng};
+  return null;
+}
+
+// Distanza punto-segmento in km (haversine approssimata)
+function haversine(lat1, lng1, lat2, lng2) {
+  var R = 6371;
+  var dLat = (lat2 - lat1) * Math.PI / 180;
+  var dLng = (lng2 - lng1) * Math.PI / 180;
+  var a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+    Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function pointToSegmentDist(px, py, ax, ay, bx, by) {
+  var dx = bx - ax, dy = by - ay;
+  if (dx === 0 && dy === 0) return haversine(px, py, ax, ay);
+  var t = ((px - ax)*dx + (py - ay)*dy) / (dx*dx + dy*dy);
+  t = Math.max(0, Math.min(1, t));
+  var nx = ax + t*dx, ny = ay + t*dy;
+  return haversine(px, py, nx, ny);
+}
+
+// Calcola distanza minima da un punto a tutti i segmenti della polyline
+function distFromRoute(lat, lng, routePoints) {
+  var minDist = Infinity;
+  for (var i = 0; i < routePoints.length - 1; i++) {
+    var d = pointToSegmentDist(lat, lng,
+      routePoints[i].lat, routePoints[i].lng,
+      routePoints[i+1].lat, routePoints[i+1].lng);
+    if (d < minDist) minDist = d;
+  }
+  return minDist;
+}
+
+function clearRoute() {
+  if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
+  if (window._radarCircle) { map.removeLayer(window._radarCircle); window._radarCircle = null; }
+  omwMarkers.forEach(function(m) { map.removeLayer(m); });
+  omwMarkers = [];
+  omwDealers = [];
+  document.getElementById('omw-result-panel').style.display = 'none';
+  document.getElementById('omw-clear').style.display = 'none';
+  document.getElementById('nearme-km').value = '';
+  document.getElementById('omw-panel-list').innerHTML = '';
+  filterMarkers();
+}
+
+async function runOnMyWay() {
+  var partenzaRaw = document.getElementById('omw-partenza').value.trim();
+  var arrivoRaw = document.getElementById('omw-arrivo').value.trim();
+  var kmRange = parseInt(document.getElementById('omw-km').value);
+
+  if (!partenzaRaw || !arrivoRaw) { toast('⚠ Inserisci partenza e arrivo'); return; }
+
+  var partenzaNorm = normalizeCity(partenzaRaw);
+  var arrivoNorm = normalizeCity(arrivoRaw);
+
+  var pCoords = latLng(partenzaRaw);
+  var aCoords = latLng(arrivoRaw);
+
+  // se non trovato, prova geocode AI
+  if (!pCoords || !aCoords) {
+    toast('🔄 Geolocalizzazione comuni…');
+    var toGeo = [];
+    if (!pCoords) toGeo.push(partenzaRaw);
+    if (!aCoords) toGeo.push(arrivoRaw);
+    await geocodeCitiesBatch(toGeo);
+    if (!pCoords) pCoords = latLng(partenzaRaw);
+    if (!aCoords) aCoords = latLng(arrivoRaw);
+  }
+
+  if (!pCoords) { toast('⚠ Comune di partenza non trovato: ' + partenzaRaw); return; }
+  if (!aCoords) { toast('⚠ Comune di arrivo non trovato: ' + arrivoRaw); return; }
+
+  clearRoute();
+  toast('🔄 Calcolo percorso…');
+
+  // Usa OSRM (routing gratuito, no API key)
+  var viaRaw = document.getElementById('omw-via').value.trim();
+  var vCoords = null;
+  if (viaRaw) {
+    // prova prima come comune
+    vCoords = latLng(viaRaw);
+    if (!vCoords) {
+      // prova come nome concessionaria nei dati caricati
+      var viaLow = viaRaw.toLowerCase();
+      markers.forEach(function(o) {
+        if (!vCoords && o.dealer.Name.toLowerCase().includes(viaLow)) {
+          var ll = o.marker.getLatLng();
+          vCoords = {lat: ll.lat, lng: ll.lng};
         }
       });
-    })(c);
-    el.appendChild(div);
+    }
+    if (!vCoords) {
+      // geocode via AI
+      await geocodeCitiesBatch([viaRaw]);
+      vCoords = latLng(viaRaw);
+    }
+    if (!vCoords) { toast('⚠ Waypoint "' + viaRaw + '" non trovato — uso percorso diretto'); }
+  }
+
+  var waypointStr = vCoords ? (';' + vCoords.lng + ',' + vCoords.lat) : '';
+  var url = 'https://router.project-osrm.org/route/v1/driving/'
+    + pCoords.lng + ',' + pCoords.lat
+    + waypointStr + ';'
+    + aCoords.lng + ',' + aCoords.lat
+    + '?overview=full&geometries=geojson';
+
+  var routePoints = [];
+  try {
+    var resp = await fetch(url);
+    var data = await resp.json();
+    if (data.routes && data.routes.length > 0) {
+      var coords = data.routes[0].geometry.coordinates;
+      routePoints = coords.map(function(c) { return {lat: c[1], lng: c[0]}; });
+      var latlngs = routePoints.map(function(p) { return [p.lat, p.lng]; });
+      routeLayer = L.polyline(latlngs, {color: '#e53935', weight: 5, opacity: 0.8}).addTo(map);
+      map.fitBounds(routeLayer.getBounds().pad(0.1));
+    } else {
+      throw new Error('no route');
+    }
+  } catch(e) {
+    // fallback: linea retta
+    routePoints = [pCoords, aCoords];
+    routeLayer = L.polyline([[pCoords.lat, pCoords.lng],[aCoords.lat, aCoords.lng]],
+      {color:'#e53935',weight:5,opacity:.8,dashArray:'10,8'}).addTo(map);
+    map.fitBounds(routeLayer.getBounds().pad(0.1));
+    toast('⚠ OSRM non raggiunto — uso linea retta', 3000);
+  }
+
+  // Filtro marker attivi (rispetta filtri tipo+rating+search)
+  var visibleDealers = [];
+  var q = document.getElementById('search').value.toLowerCase().trim();
+  markers.forEach(function(o) {
+    var d = o.dealer;
+    if ((!d.Customer_Type__c || activeTypes.has(d.Customer_Type__c))
+      && (!d.Rating || activeRatings.has(d.Rating))
+      && (!q || d.Name.toLowerCase().includes(q))) {
+      visibleDealers.push(o);
+    }
   });
+
+  // Calcola distanza dal percorso per ogni dealer
+  omwDealers = [];
+  visibleDealers.forEach(function(o) {
+    var latlng = o.marker.getLatLng();
+    var dist = distFromRoute(latlng.lat, latlng.lng, routePoints);
+    if (dist <= kmRange) {
+      omwDealers.push({o: o, dist: dist});
+    }
+  });
+
+  // Ordina per distanza dalla partenza (proiezione sul percorso)
+  omwDealers.sort(function(a, b) {
+    var dA = haversine(pCoords.lat, pCoords.lng, a.o.marker.getLatLng().lat, a.o.marker.getLatLng().lng);
+    var dB = haversine(pCoords.lat, pCoords.lng, b.o.marker.getLatLng().lat, b.o.marker.getLatLng().lng);
+    return dA - dB;
+  });
+
+  // Evidenzia i marker trovati
+  markerLayer.clearLayers();
+  var normalSet = new Set(omwDealers.map(function(x){return x.o;}));
+  markers.forEach(function(o) {
+    if (normalSet.has(o)) {
+      // marker evidenziato (bordo giallo, più grande)
+      var d = o.dealer;
+      var col = tc(d.Customer_Type__c), r = ri(d.Rating), s = r.s + 4;
+      var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+(s*2)+'" height="'+(s*2)+'" viewBox="0 0 '+(s*2)+' '+(s*2)+'">'
+        +'<circle cx="'+s+'" cy="'+s+'" r="'+(s-2)+'" fill="'+col+'" stroke="#ffe600" stroke-width="3"/>'
+        +'<circle cx="'+s+'" cy="'+s+'" r="'+Math.floor(s/3)+'" fill="white" opacity=".9"/>'
+        +'</svg>';
+      var icon = L.divIcon({html:svg,className:'',iconSize:[s*2,s*2],iconAnchor:[s,s],popupAnchor:[0,-s]});
+      o.marker.setIcon(icon);
+      markerLayer.addLayer(o.marker);
+    } else {
+      // marker dimmed
+      var d2 = o.dealer;
+      var col2 = tc(d2.Customer_Type__c), r2 = ri(d2.Rating), s2 = r2.s;
+      var svg2 = '<svg xmlns="http://www.w3.org/2000/svg" width="'+(s2*2)+'" height="'+(s2*2)+'" viewBox="0 0 '+(s2*2)+' '+(s2*2)+'">'
+        +'<circle cx="'+s2+'" cy="'+s2+'" r="'+(s2-2)+'" fill="'+col2+'" stroke="white" stroke-width="2" opacity=".25"/>'
+        +'<circle cx="'+s2+'" cy="'+s2+'" r="'+Math.floor(s2/3)+'" fill="white" opacity=".15"/>'
+        +'</svg>';
+      var icon2 = L.divIcon({html:svg2,className:'',iconSize:[s2*2,s2*2],iconAnchor:[s2,s2],popupAnchor:[0,-s2]});
+      o.marker.setIcon(icon2);
+      markerLayer.addLayer(o.marker);
+    }
+  });
+
+  // Pannello laterale
+  var panel = document.getElementById('omw-result-panel');
+  var list = document.getElementById('omw-panel-list');
+  document.getElementById('omw-panel-title').textContent =
+    omwDealers.length + ' dealer entro ' + kmRange + ' km dal percorso';
+  list.innerHTML = '';
+
+  if (omwDealers.length === 0) {
+    list.innerHTML = '<div style="padding:16px;color:#888;font-size:13px;text-align:center">Nessun dealer trovato<br>nel range selezionato</div>';
+  } else {
+    omwDealers.forEach(function(item, idx) {
+      var d = item.o.dealer;
+      var col = tc(d.Customer_Type__c);
+      var el = document.createElement('div');
+      el.className = 'omw-item';
+      el.innerHTML = '<div class="omw-item-name">' + (idx+1) + '. ' + d.Name + '</div>'
+        + '<div class="omw-item-meta" style="color:'+col+';font-weight:600">'+(d.Customer_Type__c||'—')+'</div>'
+        + '<div class="omw-item-meta">📍 ' + (d.BillingCity||'—') + ' · ' + (d.Rating||'—') + '</div>'
+        + '<div class="omw-item-meta" style="color:#555">' + (d.Active_Products_List__c||'—') + '</div>'
+        + '<div class="omw-item-dist">~' + item.dist.toFixed(1) + ' km dalla strada</div>';
+      el.onclick = (function(o){ return function(){ map.setView(o.marker.getLatLng(), 13); o.marker.openPopup(); }; })(item.o);
+      list.appendChild(el);
+    });
+  }
+
+  panel.style.display = 'flex';
+  document.getElementById('omw-clear').style.display = 'inline-block';
+  if (omwDealers.length > 0) 
+  toast('✅ ' + omwDealers.length + ' dealer trovati lungo il percorso');
 }
 
-function loadTxt(text){
-  // Estrae nomi azienda dal formato DOCX dealer map:
-  // "1. Autoghinzani Srl, Calusco d'Adda · Customer Prospect · ..."
-  var lines=text.split('\n').map(function(l){return l.trim();}).filter(Boolean);
-  if(!lines.length){toast('File DOCX vuoto');return;}
+function exportDOCX(customList, customTitle, customFilename) {
+  if (!window.docx) { toast('⚠ Libreria DOCX non caricata, riprova'); return; }
 
-  // Parole/pattern che indicano righe da ignorare (intestazioni, label, brief prodotti)
-  var NOISE=[
-    /^DEALER VISIBILI/i,/^DEALER LUNGO/i,/^28\//,/^\d{1,2}\/\d{1,2}\/\d{4}/,
-    /^PRODOTTI ATTIVI/i,/^OPPORTUNIT/i,/^UPSELL/i,/^Important/i,
-    /^WS /i,/^WebSparK/i,/^LeadSparK/i,/^StockSparK/i,/^CallSparK/i,
-    /^FidSparK/i,/^SeoSparK/i,/^PredictSparK/i,/^AdSparK/i,/^AgentSparK/i,
-    /^CDP/i,/^WhatsApp/i,/^LS /i,/^SSK/i,
-    /—/,/\.{3}/,/^Customer/i,/^New/i,/^Ex /i,/^Prospect/i,
-    /^[A-Z ]{6,}$/,  // righe tutto maiuscolo (intestazioni)
-    /km dalla strada/i,/^\d+ dealer/i
+  var dealerList = customList || omwDealers;
+  if (!dealerList || dealerList.length === 0) { toast('⚠ Nessun dealer da esportare'); return; }
+
+  var partenza = customTitle || (document.getElementById('omw-partenza').value.trim() + ' → ' + document.getElementById('omw-arrivo').value.trim());
+  var km       = document.getElementById('omw-km').value;
+  var today    = new Date().toLocaleDateString('it-IT');
+  var filename = customFilename || ('percorso_' + document.getElementById('omw-partenza').value.trim().replace(/\s+/g,'_') + '.docx');
+
+  var EXCLUDE = ['iubenda','accessibility','add-on','facebook feed','xml feed',
+    'livespark','sellspark','carspark','keyloop','cloudflare','ai creative studio',
+    'trainspark','training','onboarding','gestionale'];
+
+  var UPSELL = [
+    {needs:'webspark',  miss:'leadspark',   label:'LeadSparK',          brief:' — Cattura ogni lead dal sito in un unico CRM.'},
+    {needs:'webspark',  miss:'seospark',    label:'SeoSparK',           brief:' — Più traffico organico, meno dipendenza dai portali.'},
+    {needs:'leadspark', miss:'callspark',   label:'CallSparK',          brief:' — Nessuna telefonata/lead persa, analisi AI di ogni chiamata.'},
+    {needs:'leadspark', miss:'whatsapp',    label:'WhatsApp Business',  brief:' — Gestisci lead via WhatsApp dal CRM.'},
+    {needs:'leadspark', miss:'agentspark',  label:'AgentSparK',         brief:' — AI H24 che risponde ai lead anche fuori orario.'},
+    {needs:'leadspark', miss:'predictspark',label:'PredictSparK',       brief:' — Intercetta clienti in scadenza per upsell aftersales.'},
+    {needs:'leadspark', miss:'fidspark',    label:'FidSparK',           brief:' — Gestione recensioni e reputazione integrata nel CRM.'},
+    {needs:'stockspark',miss:'bgremoval',   label:'Rimozione Sfondo',   brief:' — Foto auto professionali in automatico.'},
+    {needs:'stockspark',miss:'aivideo',     label:'AI Video',           brief:' — Video auto generati da AI in secondi.'},
+    {needs:'stockspark',miss:'stockapp',    label:'StockSparK App',     brief:' — Fotografa e pubblica le auto dal piazzale in 2 minuti.'},
+    {needs:'stockspark',miss:'adspark',     label:'AdSparK',            brief:' — Campagne Meta/Google sincronizzate con lo stock reale.'},
+    {needs:'webspark_no_stock',miss:'stockspark',label:'StockSparK',    brief:' — Pubblica lo stock su tutti i portali automaticamente.'},
+    {needs:'adspark',   miss:'predictspark',label:'PredictSparK',       brief:' — Campagne predittive sull\'aftersales sui clienti giusti.'},
+    {needs:'cdp',       miss:'callspark',   label:'CallSparK',          brief:' — Profilo cliente completo prima di rispondere al telefono.'},
+    {needs:'cdp',       miss:'agentspark',  label:'AgentSparK',         brief:' — Agente AI personalizzato sui dati CDP H24.'},
   ];
 
-  var names=[];
-  lines.forEach(function(line){
-    // Salta righe rumore
-    if(NOISE.some(function(r){return r.test(line);})) return;
-    // Formato DOCX mappa: "N. Nome Azienda, Città · ..."
-    var m=line.match(/^(\d+)\.\s+(.+?)(?:,\s*.+)?(?:\s*[·•].+)?$/);
-    if(m){
-      var name=m[2].trim();
-      // ulteriore pulizia: taglia da · o • in poi
-      name=name.split(/[·•]/)[0].trim();
-      // taglia da virgola+città (parola maiuscola) in poi
-      name=name.replace(/,\s*[A-Za-zÀ-ÿ].+$/,'').trim();
-      if(name&&name.length>2) names.push(name);
+  var MACRO = {
+    webspark:   ['webspark','ws revolution','ws - advanced','ws - premium','ws - core'],
+    webspark_no_stock: ['webspark service','webspark rent','ws - service','ws - rent','webspark revolution - service','webspark revolution - rent','webspark revolution - mobility'],
+    leadspark:  ['leadspark','ls - premium','ls - professional','ls - lead manager'],
+    stockspark: ['stockspark'],
+    callspark:  ['callspark'],
+    agentspark: ['agentspark'],
+    fidspark:   ['fidspark'],
+    predictspark:['predictspark'],
+    seospark:   ['seospark'],
+    adspark:    ['adspark','campaign budget'],
+    cdp:        ['cdp','full platform'],
+    whatsapp:   ['whatsapp'],
+    bgremoval:  ['background removal'],
+    aivideo:    ['ai video','ai videos'],
+    stockapp:   ['stockspark app'],
+  };
+
+  function hasMacro(prods, key) {
+    var p = prods.toLowerCase();
+    return MACRO[key] && MACRO[key].some(function(kw){ return p.indexOf(kw) >= 0; });
+  }
+
+  function getActive(prods) {
+    if (!prods || prods === '—') return [];
+    return prods.split(';').map(function(s){ return s.trim(); }).filter(function(s){
+      var sl = s.toLowerCase();
+      return !EXCLUDE.some(function(ex){ return sl.indexOf(ex) >= 0; }) && s.length > 2;
+    });
+  }
+
+  function getOpps(prods) {
+    var seen = {}, result = [];
+    UPSELL.forEach(function(r){
+      if (hasMacro(prods, r.needs) && !hasMacro(prods, r.miss) && !seen[r.label]) {
+        seen[r.label] = true;
+        result.push(r);
+      }
+    });
+    return result;
+  }
+
+  var D = window.docx;
+  var BorderStyle = D.BorderStyle, WidthType = D.WidthType, ShadingType = D.ShadingType;
+  var border = {style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC'};
+  var borders = {top:border,bottom:border,left:border,right:border};
+  var cm = {top:80,bottom:80,left:120,right:120};
+
+  function p(runs, opts) {
+    return new D.Paragraph(Object.assign({children: Array.isArray(runs)?runs:[runs]}, opts||{}));
+  }
+  function tr(txt, opts) {
+    return new D.TextRun(Object.assign({text:txt, font:'Arial'}, opts||{}));
+  }
+  function cell(children, w, fill) {
+    return new D.TableCell({borders:borders, width:{size:w,type:WidthType.DXA}, margins:cm,
+      shading: fill ? {fill:fill,type:ShadingType.CLEAR} : undefined,
+      children: Array.isArray(children)?children:[children]});
+  }
+
+  var allBlocks = [];
+
+  // Header
+  allBlocks.push(p(tr(partenza.toUpperCase(), {bold:true,size:36,color:'1A5CB8'}), {spacing:{before:0,after:120}}));
+  allBlocks.push(p(tr(today + (customList ? ('  ·  ' + dealerList.length + ' dealer') : ('  ·  Range: ±' + km + ' km  ·  ' + dealerList.length + ' dealer')), {size:20,color:'666666'}), {spacing:{before:0,after:200}}));
+  allBlocks.push(p([], {spacing:{before:0,after:300}, border:{bottom:{style:BorderStyle.SINGLE,size:6,color:'1A5CB8',space:1}}}));
+
+  dealerList.forEach(function(item, idx) {
+    var d    = item.o.dealer;
+    var prods = d.Active_Products_List__c || '—';
+    var active = getActive(prods);
+    var opps   = getOpps(prods);
+    var hasMkt = prods.toLowerCase().indexOf('campaign budget') >= 0;
+    var isLast = idx === dealerList.length - 1;
+
+    allBlocks.push(p(tr((idx+1) + '. ' + (d.Name||'—'), {bold:true,size:26,color:'1A5CB8'}), {spacing:{before:280,after:60}}));
+    allBlocks.push(p([
+      tr((d.BillingCity||'—') + '  ·  ' + (d.Customer_Type__c||'—') + '  ·  ' + (d.Rating||'—'), {size:18,color:'666666'}),
+      item.dist != null ? tr('  ·  ~' + item.dist.toFixed(1) + ' km dalla strada', {size:18,color:'999999'}) : tr('', {size:18})
+    ], {spacing:{before:0,after:hasMkt?60:80}}));
+
+    if (hasMkt) {
+      allBlocks.push(p(tr('Fa marketing con MotorK (Campaign Budget attivo)', {size:18,bold:true,color:'388E3C'}), {spacing:{before:0,after:80}}));
+    }
+
+    var leftItems  = active.length ? active : ['Nessun prodotto SparK attivo'];
+    var maxRows    = Math.max(leftItems.length, opps.length||1);
+    var rows = [];
+
+    rows.push(new D.TableRow({children:[
+      cell(p(tr('PRODOTTI ATTIVI', {bold:true,size:18,color:'1A5CB8'})), 4400, 'D6E4F7'),
+      cell(p(tr('OPPORTUNITÀ UPSELL', {bold:true,size:18,color:'E65100'})), 4600, 'FFF3E0')
+    ]}));
+
+    for (var i=0; i<maxRows; i++) {
+      var lText = leftItems[i] || '';
+      var rOpp  = opps[i] || null;
+      rows.push(new D.TableRow({children:[
+        cell(p(tr(lText, {size:18})), 4400),
+        cell(rOpp
+          ? p([tr(rOpp.label, {bold:true,size:18,color:'E65100'}), tr(rOpp.brief, {size:18})])
+          : p(tr(opps.length===0?'Nessuna opportunità rilevata':'', {size:18,color:'999999'})), 4600)
+      ]}));
+    }
+
+    allBlocks.push(new D.Table({width:{size:9000,type:WidthType.DXA}, columnWidths:[4400,4600], rows:rows}));
+    if (!isLast) {
+      allBlocks.push(p([], {spacing:{before:160,after:0}, border:{bottom:{style:BorderStyle.SINGLE,size:3,color:'EEEEEE',space:1}}}));
     }
   });
 
-  // Deduplicazione
-  names=names.filter(function(n,i){return names.indexOf(n)===i;});
-
-  if(!names.length){toast('Nessun nome azienda trovato nel DOCX');return;}
-
-  // Solo nomi che matchano nel DB vanno in found; gli altri vengono silenziosamente ignorati
-  // (sono testo del documento, non aziende mancanti)
-  var found=[];
-  names.forEach(function(name){
-    var match=COMPANIES.length?COMPANIES.find(function(c){return fuzzy(c.name,name);}):null;
-    if(match) found.push({input:name,company:match});
-    // nomi non trovati: ignora silenziosamente (non sono aziende reali del DB)
+  var doc = new D.Document({
+    styles:{default:{document:{run:{font:'Arial',size:22}}}},
+    sections:[{
+      properties:{page:{size:{width:11906,height:16838},margin:{top:800,right:800,bottom:800,left:800}}},
+      children:allBlocks
+    }]
   });
 
-  if(!found.length){
-    document.getElementById('txt-modal-body').innerHTML=
-      '<div style="color:#888;text-align:center;padding:30px">Nessuna azienda del DOCX trovata nel database.<br><span style="font-size:11px">Assicurati di aver caricato i file Account e Contatti.</span></div>';
-    return;
-  }
-  renderTxtModal(found,[]);
+  D.Packer.toBlob(doc).then(function(blob){
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    toast('✅ DOCX scaricato (' + dealerList.length + ' dealer)');
+  }).catch(function(e){ toast('⚠ Errore DOCX: ' + e.message); });
 }
 
-function renderTxtModal(found,notFound){
-  var allProds=Object.keys(PROD_LABELS);
-  var bodyEl=document.getElementById('txt-modal-body');
-  var html='';
+function exportDOCXVisible() {
+  if (!window.docx) { toast('⚠ Libreria DOCX non caricata'); return; }
+  if (markers.length === 0) { toast('⚠ Nessun dato caricato'); return; }
 
-  if(notFound.length){
-    html+='<div style="background:#fff3e0;border:1px solid #ffe082;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:#e65100">'+
-      '<strong>Aziende non trovate nel database</strong> (verifica la scrittura):<br>'+notFound.join(', ')+'</div>';
+  // Apri pannello e attiva aggiornamento live
+  mapPanelOpen = true;
+  var panel = document.getElementById('omw-result-panel');
+  panel.style.display = 'flex';
+  refreshMapPanel();
+
+  // Aggiorna il bottone chiudi per resettare anche il flag
+  document.getElementById('omw-panel-close').onclick = function(){
+    panel.style.display = 'none';
+    mapPanelOpen = false;
+  };
+
+  toast('📋 Pannello aperto — filtra e poi clicca di nuovo per scaricare il DOCX');
+}
+
+function downloadMapDOCX() {
+  if (!window.docx) { toast('⚠ Libreria DOCX non caricata'); return; }
+  var q = document.getElementById('search').value.toLowerCase().trim();
+  var visibleList = [];
+  markers.forEach(function(o){
+    var d = o.dealer;
+    if((!d.Customer_Type__c || activeTypes.has(d.Customer_Type__c)) &&
+       (!d.Rating || activeRatings.has(d.Rating)) &&
+       (!q || d.Name.toLowerCase().includes(q))){
+      visibleList.push({o: o, dist: null});
+    }
+  });
+  if (visibleList.length === 0) { toast('⚠ Nessun dealer visibile'); return; }
+  exportDOCX(visibleList, 'Dealer visibili sulla mappa', 'dealer_mappa_visibili.docx');
+}
+
+// ===== AI SEARCH =====
+var aiSearchOpen = false;
+
+function toggleAiSearch() {
+  aiSearchOpen = !aiSearchOpen;
+  var panel = document.getElementById('ai-search-panel');
+  panel.style.display = aiSearchOpen ? 'flex' : 'none';
+  document.getElementById('ai-search-results').innerHTML = '';
+  document.getElementById('ai-search-status').textContent = '';
+}
+
+function parseQuery(q) {
+  var filters = { hasProd:[], notProd:[], type:null, rating:null, city:null, province:null };
+
+  var PRODS = ['webspark ultra','webspark classic','webspark','leadspark','callspark',
+               'stockspark','reportspark','fidspark','predictspark','adspark',
+               'agentspark','seospark','cdp','datastudio'];
+
+  var qLow = q.toLowerCase();
+  var notKws = ['senza ','non ','privi di ','che non hanno ','ma non '];
+
+  PRODS.forEach(function(p) {
+    var idx = qLow.indexOf(p.toLowerCase());
+    if (idx < 0) return;
+    var before = qLow.substring(0, idx);
+    var isNot = false;
+    notKws.forEach(function(kw) { if (before.lastIndexOf(kw) >= 0) isNot = true; });
+    if (isNot) { filters.notProd.push(p); }
+    else { filters.hasProd.push(p); }
+  });
+
+  var TYPES = ['customer','prospect','new','ex','ex-cliente','multimarche','ufficiale'];
+  // Sinonimi italiani
+  var TYPE_SYNONYMS = {
+    'clienti attivi':'customer','cliente attivo':'customer','clienti':'customer',
+    'ex clienti':'ex','ex-clienti':'ex','ex cliente':'ex',
+    'prospect':'prospect','nuovi':'new','nuovo':'new',
+    'ufficiali':'ufficiale','multimarca':'multimarche'
+  };
+  Object.keys(TYPE_SYNONYMS).forEach(function(k){ if(qLow.indexOf(k)>=0) filters.type=TYPE_SYNONYMS[k]; });
+  TYPES.forEach(function(t) { if (qLow.indexOf(t) >= 0 && !filters.type) filters.type = t; });
+
+  var RATINGS = ['hot','warm','cold','important','medium'];
+  RATINGS.forEach(function(r) { if (qLow.indexOf(r) >= 0) filters.rating = r; });
+
+  // Mappa nome provincia → sigla
+  var PROV_MAP = {
+    'bergamo':'bg','milano':'mi','torino':'to','genova':'ge','varese':'va',
+    'como':'co','lecco':'lc','sondrio':'so','brescia':'bs','monza':'mb',
+    'lodi':'lo','cremona':'cr','mantova':'mn','pavia':'pv','novara':'no',
+    'vercelli':'vc','biella':'bi','verbania':'vb','alessandria':'al',
+    'asti':'at','cuneo':'cn','savona':'sv','imperia':'im','la spezia':'sp',
+    'aosta':'ao','piacenza':'pc','parma':'pr','bologna':'bo','modena':'mo',
+    'reggio emilia':'re','ferrara':'fe','ravenna':'ra','trento':'tn',
+    'verona':'vr','vicenza':'vi','padova':'pd','venezia':'ve','treviso':'tv',
+    'udine':'ud','trieste':'ts','pordenone':'pn','gorizia':'go'
+  };
+
+  var provDiMatch = qLow.match(/provincia\s+(?:di\s+)?([a-zà-ü\s]{3,}?)(?:\s|$)/i);
+  var cityMatch = qLow.match(/(?:a|in)\s+([a-zà-ü\s]{3,}?)(?:\s*(?:con|senza|che|$))/i);
+  var extracted = provDiMatch ? provDiMatch[1].trim() : (cityMatch ? cityMatch[1].trim() : null);
+
+  if (extracted) {
+    var isComune = qLow.indexOf('comune di') >= 0 || qLow.indexOf('citta di') >= 0 || qLow.indexOf('città di') >= 0;
+    if (isComune) {
+      // cerca solo nella città esatta
+      filters.city = extracted;
+    } else if (PROV_MAP[extracted]) {
+      // nome di provincia noto → usa sigla su BillingState
+      filters.province = PROV_MAP[extracted];
+      filters.city = null;
+    } else {
+      // comune generico → cerca in BillingCity
+      filters.city = extracted;
+    }
   }
-  if(!found.length){
-    bodyEl.innerHTML=html+'<p style="color:#888;text-align:center;padding:20px">Nessuna azienda trovata. Carica prima i file Account e Contatti.</p>';
+
+  var provMatch = q.match(/([A-Z]{2})/);
+  if (provMatch) filters.province = provMatch[1].toLowerCase();
+
+  return filters;
+}
+
+function matchDealer(d, f) {
+  var prods = (d.Active_Products_List__c || '').toLowerCase();
+  var type  = (d.Customer_Type__c || '').toLowerCase();
+  var rating = (d.Rating || '').toLowerCase();
+  var city  = (d.BillingCity || '').toLowerCase();
+  var prov  = (d.BillingState || '').toLowerCase();
+
+  function hasProduct(prodField, term) { return prodField.indexOf(term.toLowerCase()) >= 0; }
+
+  for (var i=0; i<f.hasProd.length; i++) {
+    if (!hasProduct(prods, f.hasProd[i])) return false;
+  }
+  for (var j=0; j<f.notProd.length; j++) {
+    if (hasProduct(prods, f.notProd[j])) return false;
+  }
+  if (f.type) {
+    var typeMap = {'customer':'customer','prospect':'prospect','new':'prospect',
+      'ex':'ex','ex-cliente':'ex','multimarche':'multimarche','ufficiale':'ufficiale'};
+    var mapped = typeMap[f.type] || f.type;
+    if (type.indexOf(mapped) < 0) return false;
+  }
+  if (f.rating && rating.indexOf(f.rating) < 0) return false;
+  if (f.city) {
+    if (city.indexOf(f.city) < 0) return false;
+  }
+  if (f.province && prov.indexOf(f.province) < 0) return false;
+  return true;
+}
+
+function buildMatchReason(d, f) {
+  var parts = [];
+  if (f.hasProd.length) parts.push('Ha: ' + f.hasProd.join(', '));
+  if (f.notProd.length) parts.push('Senza: ' + f.notProd.join(', '));
+  if (f.type) parts.push('Tipo: ' + (d.Customer_Type__c || f.type));
+  if (f.rating) parts.push('Rating: ' + f.rating);
+  if (f.city) parts.push('Città: ' + (d.BillingCity || f.city));
+  return parts.join(' · ') || 'Corrisponde alla ricerca';
+}
+
+function runAiSearch() {
+  var query = document.getElementById('ai-search-input').value.trim();
+  if (!query) return;
+  if (!markers || markers.length === 0) {
+    document.getElementById('ai-search-status').textContent = '⚠ Nessun dato caricato';
     return;
   }
 
-  // Store state
-  TXT_STATE.companies=found.map(function(f){
-    var c=f.company;
-    var notActive=allProds.filter(function(p){return !c.mappedProds.includes(p);});
-    // Resolve DSM: match by email against directory
-    var dsmArr=(c.dsm||[]).slice();
-    // Se dsm vuoto o email mancante, prova a costruire email dal nome raw
-    if((!dsmArr.length||!dsmArr[0].email)&&c.dsm&&c.dsm[0]&&c.dsm[0].name){
-      var rawDsm=c.dsm[0].name;
-      var dsmParts=rawDsm.toLowerCase()
-        .replace(/[àáâãäå]/g,'a').replace(/[èéêë]/g,'e')
-        .replace(/[ìíîï]/g,'i').replace(/[òóôõö]/g,'o').replace(/[ùúûü]/g,'u')
-        .replace(/[^a-z0-9 ]/g,'').trim().split(/\s+/);
-      var builtEmail=dsmParts.length>=2?dsmParts[0]+'.'+dsmParts[dsmParts.length-1]+'@motork.io':dsmParts[0]+'@motork.io';
-      dsmArr=[{name:rawDsm,email:builtEmail,role:'DSM',src:'dsm'}];
-    }
-    // Canonicalizza nome dal directory se match per email
-    if(dsmArr.length&&dsmArr[0].email){
-      var dirMatch=DSM_DIRECTORY.find(function(d){return d.email===dsmArr[0].email;});
-      if(dirMatch) dsmArr=[{name:dirMatch.name,email:dirMatch.email,role:'DSM',src:'dsm'}];
-    }
-    // Ultimo tentativo: match per nome nel directory
-    if(dsmArr.length&&!dsmArr[0].email){
-      var rawN=(dsmArr[0].name||'').toLowerCase().trim();
-      var dirN=DSM_DIRECTORY.find(function(d){
-        var dn=d.name.toLowerCase();
-        return dn===rawN||dn.indexOf(rawN)!==-1||rawN.indexOf(dn)!==-1||
-          dn.split(' ').some(function(w){return w===rawN&&w.length>3;})||
-          rawN.split(' ').some(function(w){return dn.indexOf(w)!==-1&&w.length>3;});
+  document.getElementById('ai-search-status').textContent = 'Ricerca in corso…';
+  document.getElementById('ai-search-results').innerHTML = '';
+
+  var f = parseQuery(query);
+  var results = [];
+
+  markers.forEach(function(o) {
+    var d = o.dealer;
+    if (matchDealer(d, f)) {
+      results.push({
+        name: d.Name,
+        city: d.BillingCity || '',
+        type: d.Customer_Type__c || '',
+        rating: d.Rating || '',
+        products: d.Active_Products_List__c || '',
+        matchReason: buildMatchReason(d, f),
+        _marker: o
       });
-      if(dirN) dsmArr=[{name:dirN.name,email:dirN.email,role:'DSM',src:'dsm'}];
-    }
-    return {
-      name:c.name,
-      contacts:c.contacts,
-      dsm:dsmArr,
-      products:c.mappedProds,
-      notActive:notActive,
-      // default: tutti in CC, nessuno in A — l'utente sceglie
-      toEmail: '',
-      ccEmails: [],
-      excluded: [],
-      proposedProds: []
-    };
-  });
-  // Init CC: contatti dealer tutti in CC, DSM in CC se ha email
-  TXT_STATE.companies.forEach(function(state){
-    var all=state.contacts.filter(function(x){return x.email;});
-    state.ccEmails=all.map(function(x){return x.email;});
-    // DSM: se email mancante ma nome matcha directory, precompila
-    if(state.dsm&&state.dsm[0]&&!state.dsm[0].email&&state.dsm[0].name){
-      var raw=state.dsm[0].name.toLowerCase().trim();
-      var found=DSM_DIRECTORY.find(function(d){
-        var dn=d.name.toLowerCase();
-        return dn===raw||dn.indexOf(raw)!==-1||raw.indexOf(dn)!==-1||
-          dn.split(' ').some(function(w){return w===raw;})||
-          raw.split(' ').some(function(w){return dn.indexOf(w)!==-1&&w.length>3;});
-      });
-      if(found){state.dsm[0].email=found.email;state.dsm[0].name=found.name;}
-    }
-    // DSM: automaticamente in CC se c'è l'email
-    if(state.dsm&&state.dsm[0]&&state.dsm[0].email){
-      if(state.ccEmails.indexOf(state.dsm[0].email)===-1) state.ccEmails.push(state.dsm[0].email);
     }
   });
 
-  html+='<div id="txt-companies-wrap">';
-  TXT_STATE.companies.forEach(function(state,idx){
-    var c=found[idx].company;
-    var hasProd=state.products.length?state.products.map(function(p){return '<span style="background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;margin-right:2px">'+(PROD_LABELS[p]||p)+'</span>';}).join(''):'<span style="color:#aaa;font-size:11px">nessun prodotto attivo</span>';
-
-    html+='<div class="txt-co-card" data-idx="'+idx+'" style="border:1px solid #e0e0d8;border-radius:8px;margin-bottom:14px;overflow:hidden">';
-    html+='<div style="background:#f5f5f0;padding:10px 14px;display:flex;align-items:center;gap:8px">';
-    html+='<span style="font-size:14px;font-weight:700;flex:1">'+state.name+'</span>';
-    html+='<span style="font-size:10px;color:#888">Prodotti attivi: </span>'+hasProd;
-    html+='</div>';
-
-    // CONTATTI
-    html+='<div style="padding:10px 14px">';
-    html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
-    html+='<div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;flex:1">Contatti</div>';
-    html+='<button onclick="excludeAll('+idx+')" style="font-size:10px;padding:2px 8px;border:1px solid #e53935;border-radius:4px;background:#fff;color:#e53935;cursor:pointer">✕ Escludi tutti</button>';
-    html+='</div>';
-    if(!state.contacts.filter(function(x){return x.email;}).length){
-      html+='<div style="color:#aaa;font-size:11px">Nessun contatto con email</div>';
-    } else {
-      state.contacts.filter(function(x){return x.email;}).forEach(function(ct){
-        var cid='co'+idx+'_'+ct.email.replace(/[@.]/g,'_');
-        html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:12px">';
-        html+='<span style="min-width:160px;font-weight:500">'+ct.name+(ct.role?' <span style="font-size:9px;background:#fff3e0;color:#e65100;border-radius:3px;padding:1px 4px">'+ct.role+'</span>':'')+'</span>';
-        html+='<span style="color:#666;flex:1">'+ct.email+'</span>';
-        html+='<select id="role_'+cid+'" data-idx="'+idx+'" data-email="'+ct.email+'" onchange="updateContact(this)" title="Scegli liberamente chi mettere in A, CC o escludere" style="font-size:11px;padding:2px 6px;border:1px solid #ddd;border-radius:4px;width:90px">';
-        var sel=state.toEmail===ct.email&&ct.email!==''?'A':(state.excluded.indexOf(ct.email)!==-1?'Escludi':'CC');
-        ['A','CC','Escludi'].forEach(function(opt){html+='<option'+(sel===opt?' selected':'')+'>'+opt+'</option>';});
-        html+='</select></div>';
-      });
-    }
-    html+='</div>';
-
-    // DSM MOTORK
-    html+='<div style="padding:0 14px 10px;border-top:1px solid #f0f0e8">';
-    html+='<div style="font-size:10px;font-weight:700;color:#1a5cb8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">&#127970; DSM MotorK</div>';
-    var dsm0=state.dsm&&state.dsm[0]?state.dsm[0]:{name:'',email:''};
-
-    var dsmId='dsm_'+idx+'_0';
-    html+='<div style="display:flex;align-items:center;gap:6px;font-size:12px;background:#f0f4ff;border-radius:5px;padding:6px 8px">';
-    html+='<select id="dsmsel_'+idx+'" data-idx="'+idx+'" onchange="pickDsmFromDir(this)" style="font-size:11px;padding:2px 4px;border:1px solid #c5d5f5;border-radius:4px;color:#333;min-width:120px">';
-    html+='<option value="">-- scegli DSM --</option>';
-    DSM_DIRECTORY.forEach(function(d){
-      var raw=(dsm0.name||'').toLowerCase().trim();
-      var dn=d.name.toLowerCase();
-      var emailMatch=!!(dsm0.email&&d.email&&dsm0.email.trim()===d.email.trim());
-      var nameMatch=!!(raw&&(dn===raw||dn.indexOf(raw)!==-1||raw.indexOf(dn)!==-1||
-        dn.split(' ').some(function(w){return w===raw;})||
-        raw.split(' ').some(function(w){return dn.indexOf(w)!==-1&&w.length>3;})));
-      var isMatch=emailMatch||nameMatch;
-      html+='<option value="'+d.email+'" '+(isMatch?'selected':'')+'>'+d.name+'</option>';
-    });
-    html+='</select>';
-    html+='<input id="'+dsmId+'" type="text" value="'+dsm0.email+'" data-idx="'+idx+'" data-di="0" onchange="updateDsmEmail(this)" placeholder="nessun DSM — lascia vuoto per non inviare" style="flex:1;font-size:11px;padding:2px 6px;border:1px solid #c5d5f5;border-radius:4px;color:#1a5cb8;min-width:0">';
-    html+='<span style="font-size:10px;'+(dsm0.email?'background:#1a5cb8;color:#fff':'background:#eee;color:#999')+';border-radius:3px;padding:1px 6px;white-space:nowrap;flex-shrink:0">'+(dsm0.email?'CC':'—')+'</span>';
-    html+='</div>';
-    html+='</div>';
-
-    // PRODOTTI DA PROPORRE
-    html+='<div style="padding:0 14px 12px">';
-    html+='<div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Prodotti da proporre (non ancora attivi)</div>';
-    var notActLabels=state.notActive.filter(function(p){return PROD_LABELS[p];});
-    if(!notActLabels.length){
-      html+='<div style="color:#aaa;font-size:11px">Ha già tutto il catalogo principale</div>';
-    } else {
-      html+='<div style="display:flex;flex-wrap:wrap;gap:4px">';
-      notActLabels.forEach(function(p){
-        var pid='prod_co'+idx+'_'+p;
-        html+='<label style="display:flex;align-items:center;gap:4px;cursor:pointer;background:#f0f4ff;border:1px solid #c5d5f5;border-radius:5px;padding:3px 8px;font-size:11px">';
-        html+='<input type="checkbox" id="'+pid+'" data-idx="'+idx+'" data-prod="'+p+'" onchange="updateProd(this)">';
-        html+=(PROD_LABELS[p]||p)+'</label>';
-      });
-      html+='</div>';
-    }
-    html+='</div>';
-    html+='</div>'; // end card
-  });
-  html+='</div>'; // end wrap
-
-  // Note field
-  html+='<div style="margin-top:8px">';
-  html+='<div style="font-size:11px;font-weight:600;color:#555;margin-bottom:4px">&#128221; Note per l\'AI (cosa è emerso in visita, contesto, ecc.)</div>';
-  html+='<textarea id="txt-visit-notes" style="width:100%;height:70px;border:1px solid #ddd;border-radius:6px;padding:7px;font-size:12px;resize:vertical" placeholder="Es: interesse a migliorare il CRM, lamentela sui portali, budget limitato, visitati con Camilla..."></textarea>';
-  html+='</div>';
-
-  bodyEl.innerHTML=html;
-  document.getElementById('txt-modal').style.display='block';
+  document.getElementById('ai-search-status').textContent = results.length + ' risultati';
+  renderAiResults(results);
+  highlightAiResults(results);
 }
 
-function updateContact(sel){
-  var idx=parseInt(sel.dataset.idx);
-  var email=sel.dataset.email;
-  var val=sel.value;
-  var state=TXT_STATE.companies[idx];
-  if(val==='A'){
-    state.toEmail=email;
-    state.ccEmails=state.contacts.filter(function(x){return x.email&&x.email!==email&&state.excluded.indexOf(x.email)===-1;}).map(function(x){return x.email;});
-    state.excluded=state.excluded.filter(function(e){return e!==email;});
-    // update all selects for this company
-    var card=document.querySelector('.txt-co-card[data-idx="'+idx+'"]');
-    if(card) card.querySelectorAll('select[data-idx="'+idx+'"]').forEach(function(s){
-      if(s.dataset.email!==email) s.value=state.excluded.indexOf(s.dataset.email)!==-1?'Escludi':'CC';
+function renderAiResults(results) {
+  var container = document.getElementById('ai-search-results');
+  container.innerHTML = '';
+  if (results.length === 0) {
+    container.innerHTML = '<div style="padding:16px;color:#888;font-size:13px;text-align:center">Nessun dealer trovato</div>';
+    return;
+  }
+  results.forEach(function(r) {
+    var matchedMarker = null;
+    markers.forEach(function(o) {
+      if (!matchedMarker && o.dealer.Name === r.name) matchedMarker = o;
     });
-  } else if(val==='CC'){
-    if(state.toEmail===email){state.toEmail='';} // deselect TO
-    state.ccEmails=state.ccEmails.filter(function(e){return e!==email;});
-    if(state.ccEmails.indexOf(email)===-1) state.ccEmails.push(email);
-    state.excluded=state.excluded.filter(function(e){return e!==email;});
+    var col = matchedMarker ? tc(matchedMarker.dealer.Customer_Type__c) : '#888';
+    var el = document.createElement('div');
+    el.className = 'ai-item';
+    el.innerHTML = '<div class="ai-item-name">' + r.name + '</div>'
+      + '<div class="ai-item-meta"><span class="ai-item-badge" style="background:' + col + ';color:#fff">' + (r.type||'—') + '</span>'
+      + (r.city ? '📍 ' + r.city : '') + ' · ' + (r.rating||'—') + '</div>'
+      + '<div class="ai-item-meta" style="margin-top:3px;color:#555">' + (r.products||'—') + '</div>'
+      + '<div class="ai-item-meta" style="margin-top:4px;background:#f3e5f5;border-radius:4px;padding:3px 6px;color:#6a1b9a;font-style:italic">' + (r.matchReason||'') + '</div>';
+    if (matchedMarker) {
+      el.onclick = (function(o){ return function(){
+        map.setView(o.marker.getLatLng(), 13);
+        o.marker.openPopup();
+      }; })(matchedMarker);
+    }
+    container.appendChild(el);
+  });
+}
+
+function highlightAiResults(results) {
+  var matchNames = new Set(results.map(function(r){ return r.name; }));
+  markerLayer.clearLayers();
+  markers.forEach(function(o) {
+    var d = o.dealer;
+    var isMatch = matchNames.has(d.Name);
+    var col = tc(d.Customer_Type__c), r = ri(d.Rating), s = r.s;
+    if (isMatch) s = s + 4;
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+(s*2)+'" height="'+(s*2)+'" viewBox="0 0 '+(s*2)+' '+(s*2)+'">'
+      +'<circle cx="'+s+'" cy="'+s+'" r="'+(s-2)+'" fill="'+col+'" stroke="'+(isMatch?'#ce93d8':'white')+'" stroke-width="'+(isMatch?3:2)+'" opacity="'+(isMatch?1:.25)+'"/>'
+      +'<circle cx="'+s+'" cy="'+s+'" r="'+Math.floor(s/3)+'" fill="white" opacity="'+(isMatch?.9:.15)+'"/>'
+      +'</svg>';
+    var icon = L.divIcon({html:svg,className:'',iconSize:[s*2,s*2],iconAnchor:[s,s],popupAnchor:[0,-s]});
+    o.marker.setIcon(icon);
+    markerLayer.addLayer(o.marker);
+  });
+}
+// ===== END AI SEARCH =====
+
+async function runRadar(comuneRaw, kmRange) {
+  var pCoords = latLng(comuneRaw);
+  if (!pCoords) {
+    toast('🔄 Geolocalizzazione comune…');
+    await geocodeCitiesBatch([comuneRaw]);
+    pCoords = latLng(comuneRaw);
+  }
+  if (!pCoords) { toast('⚠ Comune non trovato: ' + comuneRaw); return; }
+  runRadarFromCoords(pCoords, kmRange, comuneRaw);
+}
+
+function runRadarFromCoords(pCoords, kmRange, labelText) {
+  clearRoute();
+  toast('🔄 Ricerca dealer nel raggio di ' + kmRange + ' km…');
+
+  // Cerchio visivo sulla mappa
+  if (window._radarCircle) map.removeLayer(window._radarCircle);
+  window._radarCircle = L.circle([pCoords.lat, pCoords.lng], {
+    radius: kmRange * 1000,
+    color: '#e53935', weight: 2, opacity: 0.7,
+    fillColor: '#e53935', fillOpacity: 0.06
+  }).addTo(map);
+  map.fitBounds(window._radarCircle.getBounds().pad(0.05));
+
+  // Trova dealer nel raggio
+  var q = document.getElementById('search').value.toLowerCase().trim();
+  omwDealers = [];
+  markers.forEach(function(o) {
+    var d = o.dealer;
+    if((!d.Customer_Type__c || activeTypes.has(d.Customer_Type__c)) &&
+       (!d.Rating || activeRatings.has(d.Rating)) &&
+       (!q || d.Name.toLowerCase().includes(q))) {
+      var ll = o.marker.getLatLng();
+      var dist = haversine(pCoords.lat, pCoords.lng, ll.lat, ll.lng);
+      if (dist <= kmRange) omwDealers.push({o: o, dist: dist});
+    }
+  });
+
+  omwDealers.sort(function(a, b) { return a.dist - b.dist; });
+
+  // Evidenzia marker
+  markerLayer.clearLayers();
+  var matchSet = new Set(omwDealers.map(function(x){ return x.o; }));
+  markers.forEach(function(o) {
+    var d = o.dealer;
+    var isMatch = matchSet.has(o);
+    var col = tc(d.Customer_Type__c), r = ri(d.Rating), s = r.s;
+    if (isMatch) s = s + 4;
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+(s*2)+'" height="'+(s*2)+'" viewBox="0 0 '+(s*2)+' '+(s*2)+'">'
+      +'<circle cx="'+s+'" cy="'+s+'" r="'+(s-2)+'" fill="'+col+'" stroke="'+(isMatch?'#ffe600':'white')+'" stroke-width="'+(isMatch?3:2)+'" opacity="'+(isMatch?1:.25)+'"/>'
+      +'<circle cx="'+s+'" cy="'+s+'" r="'+Math.floor(s/3)+'" fill="white" opacity="'+(isMatch?.9:.15)+'"/>'
+      +'</svg>';
+    var icon = L.divIcon({html:svg,className:'',iconSize:[s*2,s*2],iconAnchor:[s,s],popupAnchor:[0,-s]});
+    o.marker.setIcon(icon);
+    markerLayer.addLayer(o.marker);
+  });
+
+  // Pannello
+  var panel = document.getElementById('omw-result-panel');
+  var list = document.getElementById('omw-panel-list');
+  document.getElementById('omw-panel-title').textContent = omwDealers.length + ' dealer entro ' + kmRange + ' km da ' + labelText;
+  list.innerHTML = '';
+  if (omwDealers.length === 0) {
+    list.innerHTML = '<div style="padding:16px;color:#888;font-size:13px;text-align:center">Nessun dealer trovato<br>nel raggio selezionato</div>';
   } else {
-    state.excluded=state.excluded.filter(function(e){return e!==email;});
-    state.excluded.push(email);
-    state.ccEmails=state.ccEmails.filter(function(e){return e!==email;});
-    if(state.toEmail===email) state.toEmail='';
-  }
-}
-
-function excludeAll(idx){
-  var state=TXT_STATE.companies[idx];
-  if(!state) return;
-  state.toEmail='';
-  state.ccEmails=[];
-  state.excluded=state.contacts.filter(function(x){return x.email;}).map(function(x){return x.email;});
-  // update selects
-  var card=document.querySelector('.txt-co-card[data-idx="'+idx+'"]');
-  if(card) card.querySelectorAll('select[data-idx="'+idx+'"]').forEach(function(s){s.value='Escludi';});
-}
-
-function genTxtAI(){
-  var btn=document.getElementById('txt-modal-gen');
-  var notes=document.getElementById('txt-visit-notes')?document.getElementById('txt-visit-notes').value:'';
-  btn.textContent='Genero...';btn.disabled=true;
-  var statusEl=document.getElementById('txt-modal-status');
-  var companiesInfo=TXT_STATE.companies.map(function(s){
-    var activeNames=s.products.map(function(p){return PROD_LABELS[p]||p;});
-    var proposedNames=s.proposedProds.length?s.proposedProds.map(function(p){return PROD_LABELS[p]||p;}):[];
-    var toName=s.contacts.find(function(x){return x.email===s.toEmail;})||(s.contacts[0]||{});
-    return 'Azienda: '+s.name+'\nDestinatario: '+(toName.first||toName.name||'{NOME}')+'\nProdotti attivi: '+(activeNames.length?activeNames.join(', '):'nessuno')+(proposedNames.length?'\nProdotti da proporre: '+proposedNames.join(', '):'');
-  }).join('\n\n');
-  var prompt='Sei Paolo Pesenti, Senior Dealer Coach di MotorK. Hai appena visitato questi dealer.\n\n'
-    +companiesInfo+'\n\n'
-    +(notes?'Note dalla visita: '+notes+'\n\n':'')
-    +'Scrivi una email in italiano per ogni azienda. Tono colloquiale e amichevole, ciao non Gentile, stile post-visita. '
-    +'Usa virgole al posto dei trattini. Niente emoji. Usa {NOME} come placeholder del nome. '
-    +'Per ogni prodotto proposto cita brevemente il vantaggio concreto e inserisci il link pertinente come <a href=URL>testo cliccabile</a> se disponibile. Non URL per esteso. '+LINKS_CATALOG+' Rispondi SOLO con JSON array: [{"azienda":"nome","oggetto":"...","corpo":"..."}]. Corpo in testo piano con newline \\n.';
-  fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:3000,messages:[{role:'user',content:prompt}]})
-  }).then(function(r){return r.json();}).then(function(d){
-    var t=(d.content&&d.content[0]&&d.content[0].text)||'[]';
-    t=t.replace(/```json|```/g,'').trim();
-    var arr;try{arr=JSON.parse(t);}catch(e){arr=[];}
-    var genHtml='<div style="margin-top:12px"><div style="font-size:13px;font-weight:700;color:#1a5cb8;margin-bottom:10px">&#10024; Testi generati</div>';
-    arr.forEach(function(item,i){
-      genHtml+='<div style="border:1px solid #e0e0d8;border-radius:7px;margin-bottom:10px;overflow:hidden">';
-      genHtml+='<div style="background:#f5f5f0;padding:8px 12px;font-weight:600;font-size:13px">'+item.azienda+'</div>';
-      genHtml+='<div style="padding:10px 12px">';
-      genHtml+='<div style="font-size:10px;color:#888;margin-bottom:2px">OGGETTO</div>';
-      genHtml+='<div style="font-size:12px;font-weight:600;background:#f0f4ff;padding:5px 8px;border-radius:4px;margin-bottom:8px" id="gen-sub-'+i+'">'+item.oggetto+'</div>';
-      genHtml+='<div style="font-size:10px;color:#888;margin-bottom:2px">TESTO</div>';
-      genHtml+='<textarea id="gen-body-'+i+'" data-azienda="'+item.azienda+'" style="width:100%;height:140px;font-size:12px;border:1px solid #ddd;border-radius:4px;padding:6px;resize:vertical">'+item.corpo+'</textarea>';
-      
-      genHtml+='</div></div>';
+    omwDealers.forEach(function(item, idx) {
+      var d = item.o.dealer;
+      var col = tc(d.Customer_Type__c);
+      var el = document.createElement('div');
+      el.className = 'omw-item';
+      el.innerHTML = '<div class="omw-item-name">' + (idx+1) + '. ' + d.Name + '</div>'
+        + '<div class="omw-item-meta" style="color:'+col+';font-weight:600">' + (d.Customer_Type__c||'—') + '</div>'
+        + '<div class="omw-item-meta">📍 ' + (d.BillingCity||'—') + ' · ' + (d.Rating||'—') + '</div>'
+        + '<div class="omw-item-meta" style="color:#555">' + (d.Active_Products_List__c||'—') + '</div>'
+        + '<div class="omw-item-dist">~' + item.dist.toFixed(1) + ' km dal centro</div>';
+      el.onclick = (function(o){ return function(){ map.setView(o.marker.getLatLng(),13); o.marker.openPopup(); }; })(item.o);
+      list.appendChild(el);
     });
-    genHtml+='</div>';
-    var existing=document.getElementById('txt-gen-output');
-    if(existing) existing.remove();
-    var div=document.createElement('div');div.id='txt-gen-output';div.innerHTML=genHtml;
-    document.getElementById('txt-modal-body').appendChild(div);
-    statusEl.textContent=arr.length+' testi generati';
-    btn.textContent='&#10024; Rigenera';btn.disabled=false;
-  }).catch(function(err){
-    statusEl.textContent='Errore: '+err.message;
-    btn.textContent='&#10024; Genera testo AI';btn.disabled=false;
-  });
-}
-
-function syncGenText(el){
-  var azienda=el.dataset.azienda;
-  var state=TXT_STATE.companies.find(function(s){return norm(s.name)===norm(azienda);});
-  if(!state) return;
-  var idx=parseInt(el.dataset.idx);
-  var subEl=document.getElementById('gen-sub-'+idx);
-  var bodyEl=document.getElementById('gen-body-'+idx);
-  if(subEl) state.subject=subEl.value;
-  if(bodyEl) state.body=bodyEl.value;
-}
-
-function applyOneTxt(i){
-  var subEl=document.getElementById('gen-sub-'+i);
-  var bodyEl=document.getElementById('gen-body-'+i);
-  if(!subEl||!bodyEl) return;
-  document.getElementById('msg-sub').value=subEl.textContent;
-  document.getElementById('msg-body').value=bodyEl.value;
-  _linkMap=[];
-  document.getElementById('txt-modal').style.display='none';
-  toast('Testo applicato!');
-}
-
-function testMailFromModal(){
-  var firstState=TXT_STATE.companies[0];
-  if(!firstState){toast('Nessuna azienda nella modale');return;}
-  var sub=firstState.subject||document.getElementById('msg-sub').value||'(nessun oggetto)';
-  var body=firstState.body||document.getElementById('msg-body').value||'';
-  if(!body.trim()){toast('Genera prima il testo');return;}
-  var nome=firstState.contacts[0]?firstState.contacts[0].first||firstState.contacts[0].name.split(' ')[0]||'':'Paolo';
-  var bodyText=body.replace(/{NOME}/g,nome);
-  bodyText=bodyText.replace(/^Ciao[^,\n]*,/,buildSaluto(firstState.contacts.filter(function(x){return x.email;}),firstState.name).saluto);
-  var bFilled=bodyWithLinks(bodyText);
-  doDraft({to:'paolo.pesenti@motork.io',cc:[],subject:'[TEST] '+sub,body:bFilled})
-  .then(function(){toast('Bozza test creata in Gmail!');})
-  .catch(function(err){toast('Errore: '+err.message);});
-}
-
-function usaSelezione(){
-  // Raccoglie tutte le aziende con almeno un contatto A o CC
-  var parts=[];
-  var toEmail='',ccEmails=[];
-
-  TXT_STATE.companies.forEach(function(state){
-    // Destinatari
-    if(state.toEmail&&toEmail==='') toEmail=state.toEmail;
-    state.ccEmails.forEach(function(e){if(ccEmails.indexOf(e)===-1) ccEmails.push(e);});
-    state.dsm.forEach(function(d){if(d.email&&ccEmails.indexOf(d.email)===-1) ccEmails.push(d.email);});
-
-    // Costruisce riga prodotti per questa azienda
-    if(state.proposedProds.length){
-      var names=state.proposedProds.map(function(p){return PROD_LABELS[p]||p;});
-      parts.push(state.name+': '+names.join(', '));
-    }
-  });
-
-  // Oggetto
-  var nAz=TXT_STATE.companies.length;
-  var sub=nAz===1
-    ? 'A seguito della nostra visita, '+TXT_STATE.companies[0].name
-    : 'A seguito delle nostre visite';
-  document.getElementById('msg-sub').value=sub;
-
-  // Corpo base
-  var nome='{NOME}';
-  var body='Ciao '+nome+',\n\n';
-  body+='a seguito della mia recente visita volevo condividere alcune idee che potrebbero fare al caso tuo.\n\n';
-
-  if(parts.length){
-    body+='In base a quello che già utilizzi, ti propongo:\n\n';
-    parts.forEach(function(p){body+='• '+p+'\n';});
-    body+='\n';
   }
 
-  // Link demo per i prodotti selezionati
-  var allProds=[];
-  TXT_STATE.companies.forEach(function(state){
-    state.proposedProds.forEach(function(p){if(allProds.indexOf(p)===-1) allProds.push(p);});
-  });
-  if(allProds.length){
-    body+='Trovi qui i link per approfondire:\n';
-    allProds.forEach(function(p){
-      var label=PROD_LABELS[p]||p;
-      body+='• '+label+'\n';
-    });
-    body+='\n';
+  panel.style.display = 'flex';
+  document.getElementById('omw-clear').style.display = 'inline-block';
+  if (omwDealers.length > 0) 
+  toast('✅ ' + omwDealers.length + ' dealer entro ' + kmRange + ' km da ' + labelText);
+  updateVisibleCount(omwDealers.length);
+}
+
+
+function exportUnified() {
+  if (!window.docx) { toast('⚠ Libreria DOCX non caricata'); return; }
+  if (!markers || markers.length === 0) { toast('⚠ Nessun dato caricato'); return; }
+
+  // Se c'è rotta o radar attivi → usa quelli
+  if (omwDealers && omwDealers.length > 0) {
+    var title = document.getElementById('omw-panel-title').textContent || 'Dealer selezionati';
+    exportDOCX(omwDealers, title, 'dealer_export.docx');
+    return;
   }
 
-  body+='Fammi sapere se ti va di sentirci per un approfondimento.\n\nA presto,';
-
-  document.getElementById('msg-body').value=body;
-
-  // Aggiorna _linkMap con i link demo dei prodotti selezionati
-  _linkMap=[];
-  allProds.forEach(function(p){
-    var demoLink=PROD_DEMO_LINKS[p];
-    if(demoLink){
-      var label=PROD_LABELS[p]||p;
-      // estrai url dal tag <a href="...">
-      var m=demoLink.match(/href="([^"]+)"/);
-      if(m) _linkMap.push({label:label,url:m[1]});
+  // Altrimenti prendi i dealer visibili sulla mappa
+  var q = document.getElementById('search').value.toLowerCase().trim();
+  var visibleList = [];
+  markers.forEach(function(o) {
+    var d = o.dealer;
+    var passa = false;
+    if (q) {
+      passa = d.Name.toLowerCase().indexOf(q) >= 0;
+    } else {
+      passa = activeTypes.size > 0 && activeRatings.size > 0 && activeTypes.has(d.Customer_Type__c) && activeRatings.has(d.Rating);
     }
+    if (passa) visibleList.push({o: o, dist: null});
   });
 
-  // Sostituisci i nomi prodotto nel body con i link
-  var bodyEl=document.getElementById('msg-body');
-  allProds.forEach(function(p){
-    var label=PROD_LABELS[p]||p;
-    var m2=(PROD_DEMO_LINKS[p]||'').match(/href="([^"]+)"/);
-    if(m2){
-      bodyEl.value=bodyEl.value.replace(
-        new RegExp('(• )'+label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'),
-        '$1'+label+' → '+m2[1]
-      );
-    }
-  });
+  if (visibleList.length === 0) { toast('⚠ Nessun dealer visibile'); return; }
 
-  // Filtra la lista principale mostrando SOLO le aziende della modale
-  var modalNames=TXT_STATE.companies.map(function(s){return norm(s.name);});
-  FILTERED=COMPANIES.filter(function(c){return modalNames.indexOf(norm(c.name))!==-1;});
-  SELECTED=new Set(FILTERED.map(function(c){return c.name;}));
-  renderList();updSel();
-  document.getElementById('txt-modal').style.display='none';
-  toast(TXT_STATE.companies.length+' aziend'+(TXT_STATE.companies.length===1?'a':'e')+' — scrivi il testo e crea le bozze!');
-}
-
-function pickDsmFromDir(sel){
-  var idx=parseInt(sel.dataset.idx);
-  var email=sel.value;
-  var state=TXT_STATE.companies[idx];
-  if(!state) return;
-  if(!state.dsm||!state.dsm.length) state.dsm=[{name:'',email:'',role:'DSM',src:'dsm'}];
-  var oldEmail=state.dsm[0].email;
-  var name=sel.options[sel.selectedIndex].text;
-  state.dsm[0].email=email;
-  state.dsm[0].name=name;
-  var inp=document.getElementById('dsm_'+idx+'_0');
-  if(inp) inp.value=email;
-  // Aggiorna CC: rimuovi vecchia, aggiungi nuova se presente
-  if(oldEmail) state.ccEmails=state.ccEmails.filter(function(e){return e!==oldEmail;});
-  if(email&&state.ccEmails.indexOf(email)===-1) state.ccEmails.push(email);
-}
-
-
-
-function updateDsmEmail(input){
-  var idx=parseInt(input.dataset.idx);
-  var di=parseInt(input.dataset.di);
-  var newEmail=input.value.trim();
-  var state=TXT_STATE.companies[idx];
-  if(!state||!state.dsm[di]) return;
-  var oldEmail=state.dsm[di].email;
-  state.dsm[di].email=newEmail;
-  if(oldEmail) state.ccEmails=state.ccEmails.filter(function(e){return e!==oldEmail;});
-  if(newEmail&&state.ccEmails.indexOf(newEmail)===-1) state.ccEmails.push(newEmail);
-}
-
-function updateProd(chk){
-  var idx=parseInt(chk.dataset.idx);
-  var p=chk.dataset.prod;
-  var state=TXT_STATE.companies[idx];
-  if(chk.checked){if(state.proposedProds.indexOf(p)===-1) state.proposedProds.push(p);}
-  else state.proposedProds=state.proposedProds.filter(function(x){return x!==p;});
-}
-
-
-
-function syncGenText(el){
-  var azienda=el.dataset.azienda;
-  var state=TXT_STATE.companies.find(function(s){return norm(s.name)===norm(azienda);});
-  if(!state) return;
-  var idx=parseInt(el.dataset.idx);
-  var subEl=document.getElementById('gen-sub-'+idx);
-  var bodyEl=document.getElementById('gen-body-'+idx);
-  if(subEl) state.subject=subEl.value;
-  if(bodyEl) state.body=bodyEl.value;
-}
-
-function applyOneTxt(i){
-  var subEl=document.getElementById('gen-sub-'+i);
-  var bodyEl=document.getElementById('gen-body-'+i);
-  if(!subEl||!bodyEl) return;
-  document.getElementById('msg-sub').value=subEl.textContent;
-  document.getElementById('msg-body').value=bodyEl.value;
-  _linkMap=[];
-  // select the company
-  var azienda=(bodyEl.dataset.azienda||'').toLowerCase().trim();
-  var match=COMPANIES.find(function(c){return norm(c.name)===azienda||fuzzy(c.name,azienda);});
-  if(match){SELECTED.clear();SELECTED.add(match.name);applyFilters();}
-  document.getElementById('txt-modal').style.display='none';
-  toast('Oggetto e testo applicati!');
-}
-
-function applyAllTxt(){
-  // Apply first generated text
-  if(TXT_STATE.generated&&TXT_STATE.generated.length){
-    applyOneTxt(0);
-  }
-  document.getElementById('txt-modal').style.display='none';
-}
-
-window.addEventListener('DOMContentLoaded',function(){
-  setupInputs();
-  document.getElementById('btn-drafts').addEventListener('click',createDrafts);
-  document.getElementById('btn-wa').addEventListener('click',startWA);
-  document.getElementById('btn-wa-next').addEventListener('click',nextWA);
-
-  document.getElementById('btn-sel-all').addEventListener('click',selAll);
-  document.getElementById('btn-sel-none').addEventListener('click',selNone);
-  document.getElementById('btn-toggle-contacts').addEventListener('click',toggleContacts);
-  document.getElementById('btn-cache').addEventListener('click',clearCache);
-  if(document.getElementById('btn-refresh-drive')) document.getElementById('btn-refresh-drive').addEventListener('click',function(){toast('Drive non disponibile in locale - carica i file manualmente');});
-  document.getElementById('ai-btn').addEventListener('click',genAI);
-  // TXT modal
-  document.getElementById('btn-followup').addEventListener('click',openFollowUp);
-  document.getElementById('fu-modal-close').addEventListener('click',function(){document.getElementById('fu-modal').style.display='none';});
-  document.getElementById('fu-modal').addEventListener('click',function(e){
-    if(e.target===document.getElementById('fu-modal')) document.getElementById('fu-modal').style.display='none';
-  });
-  document.getElementById('fu-modal-inner').addEventListener('click',function(e){e.stopPropagation();});
-  document.getElementById('fu-search-input').addEventListener('input',function(){fuSearch(this.value.trim());});
-  document.getElementById('fu-search-input').addEventListener('keydown',function(e){
-    if(e.key==='Enter'){
-      var first=document.getElementById('fu-suggestions').querySelector('div[style*="cursor:pointer"]');
-      if(first) first.click();
-    }
-  });
-  document.getElementById('btn-load-txt').addEventListener('change',function(e){
-    var f=e.target.files&&e.target.files[0];if(!f)return;
-    var fr=new FileReader();
-    fr.onload=function(ev){
-      document.getElementById('txt-modal-body').innerHTML='<div style="text-align:center;padding:30px;color:#888">&#128196; Lettura DOCX in corso...</div>';
-      document.getElementById('txt-modal').style.display='block';
-      mammoth.extractRawText({arrayBuffer: ev.target.result})
-        .then(function(result){
-          setTimeout(function(){loadTxt(result.value);},100);
-        })
-        .catch(function(){
-          document.getElementById('txt-modal-body').innerHTML='<div style="color:#c62828;padding:20px;text-align:center">Errore lettura DOCX. Assicurati che il file sia un .docx valido.</div>';
-        });
+  // Apri pannello se non aperto
+  if (!mapPanelOpen) {
+    mapPanelOpen = true;
+    var panel = document.getElementById('omw-result-panel');
+    panel.style.display = 'flex';
+    document.getElementById('omw-panel-close').onclick = function() {
+      panel.style.display = 'none';
+      mapPanelOpen = false;
     };
-    fr.readAsArrayBuffer(f);
-    e.target.value='';
-  });
-  document.getElementById('txt-modal-close').addEventListener('click',function(){document.getElementById('txt-modal').style.display='none';});
-  var _el_txt_modal_gen=document.getElementById('txt-modal-gen');if(_el_txt_modal_gen) _el_txt_modal_gen.addEventListener('click',genTxtAI);
-  var _el_txt_modal_test=document.getElementById('txt-modal-test');if(_el_txt_modal_test) _el_txt_modal_test.addEventListener('click',testMailFromModal);
-  var _el_txt_modal_usa=document.getElementById('txt-modal-usa');if(_el_txt_modal_usa) _el_txt_modal_usa.addEventListener('click',usaSelezione);
+    refreshMapPanel();
+  }
 
+  toast('📋 Export ' + visibleList.length + ' dealer in corso…');
+  exportDOCX(visibleList, 'Dealer visibili sulla mappa', 'dealer_mappa_visibili.docx');
+}
 
-  document.getElementById('txt-modal').addEventListener('click',function(e){if(e.target===document.getElementById('txt-modal'))document.getElementById('txt-modal').style.display='none';});
-  document.getElementById('tpl-sel').addEventListener('change',applyTpl);
-  var _el_btn_test=document.getElementById('btn-test');if(_el_btn_test) _el_btn_test.addEventListener('click',sendTestMail);
-  document.getElementById('ai-search').addEventListener('keydown',function(e){if(e.key==='Enter')aiSearch();});
-  var _el_fa_type_all=document.getElementById('fa-type-all');if(_el_fa_type_all) _el_fa_type_all.addEventListener('click',function(){faAll('type','f-type');});
-  var _el_fa_type_none=document.getElementById('fa-type-none');if(_el_fa_type_none) _el_fa_type_none.addEventListener('click',function(){faNone('type','f-type');});
-  var _el_fa_region_all=document.getElementById('fa-region-all');if(_el_fa_region_all) _el_fa_region_all.addEventListener('click',function(){faAll('region','f-region');});
-  var _el_fa_region_none=document.getElementById('fa-region-none');if(_el_fa_region_none) _el_fa_region_none.addEventListener('click',function(){faNone('region','f-region');});
-  var _el_fa_province_all=document.getElementById('fa-province-all');if(_el_fa_province_all) _el_fa_province_all.addEventListener('click',function(){faAll('province','f-province');});
-  var _el_fa_province_none=document.getElementById('fa-province-none');if(_el_fa_province_none) _el_fa_province_none.addEventListener('click',function(){faNone('province','f-province');});
-  var _el_fa_products_all=document.getElementById('fa-products-all');if(_el_fa_products_all) _el_fa_products_all.addEventListener('click',function(){faAll('products','f-products');});
-  var _el_fa_products_none=document.getElementById('fa-products-none');if(_el_fa_products_none) _el_fa_products_none.addEventListener('click',function(){faNone('products','f-products');});
-
-  // Sezioni collassabili
-  document.querySelectorAll('.lp-section-hdr').forEach(function(hdr){
-    hdr.addEventListener('click',function(){
-      var body=hdr.nextElementSibling;
-      var arrow=hdr.querySelector('.lp-arrow');
-      var open=body.style.display!=='none';
-      body.style.display=open?'none':'block';
-      arrow.innerHTML=open?'&#9654;':'&#9660;';
-    });
-  });
-
-  // Link panel
-  document.querySelectorAll('.lp-link').forEach(function(el){
-    el.addEventListener('click',function(){
-      insertLink(el.dataset.label,el.dataset.url);
-    });
-  });
-
-  document.getElementById('rcount').textContent='Carica i file dalla sidebar';
-});
 </script>
 </body>
 </html>
