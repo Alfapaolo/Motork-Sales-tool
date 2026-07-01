@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Analisi Web — MotorK</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700;800&display=swap');
+
+  :root{
+    --mk-red:#F90032;
+    --mk-dark:#1b1c1f;
+    --mk-grey:#6b6f76;
+    --mk-line:#e7e7ea;
+    --mk-bg:#fafafa;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Figtree', Arial, sans-serif;
+    background:var(--mk-bg);
+    color:var(--mk-dark);
+  }
+  .wrap{max-width:840px;margin:0 auto;padding:32px 24px 64px;}
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+  .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--mk-red);}
+  .brand span{font-weight:800;letter-spacing:.5px;color:var(--mk-dark);font-size:14px;text-transform:uppercase;}
+  h1{font-size:26px;font-weight:800;margin:6px 0 4px;}
+  .sub{color:var(--mk-grey);font-size:14px;margin-bottom:28px;}
+
+  .card{background:#fff;border:1px solid var(--mk-line);border-radius:14px;padding:24px;margin-bottom:20px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--mk-dark);}
+  .field .hint{font-size:12px;color:var(--mk-grey);margin-top:4px;}
+  .field input, .field textarea{
+    width:100%;padding:10px 12px;border:1px solid var(--mk-line);border-radius:8px;
+    font-family:inherit;font-size:14px;background:#fcfcfd;
+  }
+  .field input:focus, .field textarea:focus{outline:2px solid var(--mk-red);border-color:var(--mk-red);}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:600px){.grid2{grid-template-columns:1fr;}}
+
+  button.primary{
+    background:var(--mk-red);color:#fff;border:none;border-radius:9px;
+    padding:13px 22px;font-size:15px;font-weight:700;cursor:pointer;width:100%;
+    transition:opacity .15s;
+  }
+  button.primary:hover{opacity:.9;}
+  button.primary:disabled{opacity:.5;cursor:default;}
+  button.secondary{
+    background:#fff;color:var(--mk-dark);border:1px solid var(--mk-line);border-radius:9px;
+    padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;
+  }
+  button.secondary:hover{border-color:var(--mk-red);color:var(--mk-red);}
+  button.small{padding:6px 12px;font-size:12px;border-radius:7px;}
+  .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;}
+
+  .status{font-size:13px;color:var(--mk-grey);margin-top:12px;min-height:18px;}
+  .status.err{color:var(--mk-red);font-weight:600;}
+  .status.ok{color:#1f8b4c;font-weight:600;}
+  .spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--mk-line);border-top-color:var(--mk-red);border-radius:50%;animation:spin .8s linear infinite;margin-right:6px;vertical-align:-1px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .section-title{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--mk-red);margin:0 0 12px;}
+  .report{font-size:14.5px;line-height:1.65;}
+  .report h1,.report h2,.report h3{color:var(--mk-dark);margin:18px 0 8px;}
+  .report h2{font-size:16px;border-bottom:2px solid var(--mk-line);padding-bottom:6px;}
+  .report h3{font-size:14.5px;}
+  .report ul{margin:6px 0 12px;padding-left:20px;}
+  .report li{margin-bottom:4px;}
+  .report em{color:var(--mk-red);font-style:normal;}
+  .report p{margin:8px 0;}
+
+  .emailbox{white-space:pre-wrap;font-size:14px;line-height:1.6;background:#fcfcfd;border:1px solid var(--mk-line);border-radius:10px;padding:16px;}
+
+  .hidden{display:none;}
+  .top-toggle{display:flex;justify-content:flex-end;margin-bottom:12px;}
+  .top-toggle button{font-size:12px;}
+
+  .dbrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--mk-line);border-radius:9px;margin-bottom:10px;background:#fcfcfd;}
+  .dbrow .info{font-size:13px;}
+  .dbrow .info b{display:block;font-size:13.5px;margin-bottom:2px;}
+  .dbrow .info span{color:var(--mk-grey);font-size:12px;}
+  .uploadbox{display:block;border:1.5px dashed var(--mk-line);border-radius:10px;padding:14px;text-align:center;font-size:13px;color:var(--mk-grey);cursor:pointer;}
+  .uploadbox:hover{border-color:var(--mk-red);color:var(--mk-red);}
+  .uploadbox input{display:none;}
+
+  .matchlist{border:1px solid var(--mk-line);border-radius:10px;overflow:hidden;margin-bottom:14px;}
+  .matchitem{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--mk-line);cursor:pointer;font-size:13.5px;}
+  .matchitem:last-child{border-bottom:none;}
+  .matchitem:hover{background:#fff5f6;}
+  .matchitem .name{font-weight:700;flex:1;}
+  .matchitem .meta{color:var(--mk-grey);font-size:12px;}
+  .badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#fff0f2;color:var(--mk-red);margin-left:6px;}
+
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .chip{background:#f1f2f4;border-radius:20px;padding:4px 11px;font-size:12px;color:var(--mk-dark);}
+  .summary{background:#fcfcfd;border:1px solid var(--mk-line);border-radius:10px;padding:14px;margin-bottom:16px;}
+  .summary .row{display:flex;gap:8px;font-size:13px;margin-bottom:6px;}
+  .summary .row b{min-width:110px;color:var(--mk-grey);font-weight:600;}
+  .callout{font-size:12.5px;background:#fbf6e8;border:1px solid #f0e2b5;border-radius:9px;padding:10px 12px;margin-top:10px;color:#6b5b1e;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="brand"><span class="dot"></span><span>MotorK · SparK Outreach</span></div>
+  <h1>Analisi Web</h1>
+  <div class="sub">Analisi digitale del concessionario, che parte da quello che sai già di lui, per concentrarsi sui prodotti che non ha ancora.</div>
+
+  <div class="card" id="dbCard">
+    <div class="section-title">Portafoglio clienti</div>
+    <div id="accountSlot"></div>
+    <div id="personalSlot" style="margin-top:10px;"></div>
+    <div class="status" id="dbStatus"></div>
+  </div>
+
+  <div class="card" id="searchCard">
+    <div class="section-title">Cerca il cliente</div>
+    <div class="field">
+      <label>Nome del concessionario *</label>
+      <input id="nome" type="text" placeholder="es. Autoroma">
+    </div>
+    <div class="field">
+      <label>Indizio per trovarlo (città/zona) — opzionale, utile se il nome è comune</label>
+      <input id="indizio" type="text" placeholder="es. Giussano">
+    </div>
+    <button class="primary" onclick="searchClient()">Cerca nel portafoglio</button>
+    <div class="status" id="searchStatus"></div>
+    <div id="matchArea" style="margin-top:14px;"></div>
+  </div>
+
+  <div class="card hidden" id="formCard">
+    <div class="top-toggle"><button class="secondary small" onclick="backToSearch()">← Cambia cliente</button></div>
+    <div class="summary" id="clientSummary"></div>
+
+    <div class="grid2">
+      <div class="field">
+        <label>URL sito web</label>
+        <input id="sito" type="text" placeholder="https://...">
+      </div>
+      <div class="field">
+        <label>URL scheda Google (GMB)</label>
+        <input id="gmb" type="text" placeholder="https://www.google.com/search?q=...">
+      </div>
+      <div class="field">
+        <label>URL pagina AutoScout24</label>
+        <input id="autoscout" type="text" placeholder="https://www.autoscout24.it/concessionari/...">
+      </div>
+      <div class="field">
+        <label>URL pagina social</label>
+        <input id="social" type="text" placeholder="https://www.facebook.com/...">
+      </div>
+    </div>
+    <div class="field">
+      <label>Note aggiuntive (opzionale)</label>
+      <textarea id="note" rows="2" placeholder="es. concessionario ufficiale, multimarche, sedi..."></textarea>
+      <div class="hint">Se non conosci uno o più URL, lasciali vuoti: provo a trovarli online cercando il nome del concessionario.</div>
+    </div>
+    <button class="primary" id="runBtn" onclick="runAnalysis()">Avvia Analisi</button>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div id="resultCard" class="hidden">
+    <div class="card">
+      <div class="top-toggle"><button class="secondary" onclick="resetTool()">Nuova analisi</button></div>
+      <div class="section-title">Analisi digitale</div>
+      <div class="report" id="reportOut"></div>
+      <div class="btnrow">
+        <button class="secondary" onclick="downloadWord()">Scarica Word</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Mail per il cliente</div>
+      <div class="emailbox" id="emailOut"></div>
+      <div class="btnrow">
+        <button class="secondary" onclick="copyEmail()">Copia mail</button>
+        <button class="secondary" onclick="downloadEmail()">Scarica mail (.txt)</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const MOTORK_CONTEXT = `Prodotti MotorK SparK Platform utili per queste analisi (usane sempre uno specifico, mai generico, senza citare prezzi):
+- WebSparK: sito 100% automotive, leggero e veloce, aggiornamenti SaaS continui senza bisogno di programmatori, configuratore auto nuove con promo OEM automatiche, gestione nativa dell'usato sul sito proprio, cookie policy e accessibilità gestite nativamente.
+- SeoSparK: audit e ottimizzazione SEO tecnica e dei contenuti, per recuperare traffico organico.
+- StockSparK: gestionale stock con foto professionali, rimozione sfondo automatica, video AI, tour a 360°, multipubblicazione automatica su tutti i portali (AutoScout24 ecc.) e sul sito proprio.
+- LeadSparK: CRM/preventivatore che raccoglie lead da tutte le fonti (sito, portali, telefono, WhatsApp).
+- CallSparK: gestione AI delle chiamate e dei lead, aumenta la percentuale di appuntamenti fissati.
+- FidSparK: gestione della reputazione online, richieste di recensione post vendita, assistenza nella risposta alle recensioni.
+- AdSparK / Marketing Automation: pianificazione e gestione di campagne e contenuti social.
+- PredictSparK, AgentSparK, CDP: marketing predittivo con AI, agenti AI conversazionali H24, dati cliente unificati.`;
+
+let accountData = null;
+let personalData = null;
+let selectedAccount = null;
+let lastReportMd = '', lastEmail = '', lastName = '';
+
+function val(id){ return document.getElementById(id).value.trim(); }
+function norm(s){
+  if(!s) return '';
+  return s.toString().toUpperCase().replace(/&/g,'E').replace(/[^A-Z0-9]/g,'');
+}
+
+const ACCOUNT_FIELDS = ['Name','Customer_Type__c','Website','Region_Area__c','BillingState','BillingCity',
+  'Official_brand__c','Active_Products_List__c','Active_products__c','Success_Manager__r.Name','Committed_ARR__c'];
+
+function renderAccountSlot(){
+  const slot = document.getElementById('accountSlot');
+  if(accountData){
+    slot.innerHTML = '<div class="dbrow"><div class="info"><b>File Account (CRM)</b><span>' + accountData.length + ' account caricati</span></div><button class="secondary small" onclick="triggerUpload(\'accountInput\')">Sostituisci</button></div>' +
+      '<input type="file" id="accountInput" accept=".csv" style="display:none" onchange="handleAccountFile(event)">';
+  } else {
+    slot.innerHTML = '<label class="uploadbox" for="accountInput">📄 Carica il file Account (CRM) — .csv<input type="file" id="accountInput" accept=".csv" onchange="handleAccountFile(event)"></label>';
+  }
+}
+function renderPersonalSlot(){
+  const slot = document.getElementById('personalSlot');
+  if(personalData){
+    slot.innerHTML = '<div class="dbrow"><div class="info"><b>DB personale</b><span>' + personalData.length + ' clienti caricati</span></div><button class="secondary small" onclick="triggerUpload(\'personalInput\')">Sostituisci</button></div>' +
+      '<input type="file" id="personalInput" accept=".csv" style="display:none" onchange="handlePersonalFile(event)">';
+  } else {
+    slot.innerHTML = '<label class="uploadbox" for="personalInput">📄 Carica il tuo DB_CLIENTI personale — .csv<input type="file" id="personalInput" accept=".csv" onchange="handlePersonalFile(event)"></label>';
+  }
+}
+function triggerUpload(id){ document.getElementById(id).click(); }
+
+function handleAccountFile(ev){
+  const file = ev.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    Papa.parse(e.target.result, { header:true, skipEmptyLines:true, complete: async (res) => {
+      const slim = res.data.map(r => {
+        const o = {}; ACCOUNT_FIELDS.forEach(f => o[f] = r[f] || ''); return o;
+      });
+      accountData = slim;
+      try{ await window.storage.set('account_db', JSON.stringify(slim), false); }catch(err){}
+      renderAccountSlot();
+      document.getElementById('dbStatus').textContent = 'File Account caricato: ' + slim.length + ' righe.';
+    }});
+  };
+  reader.readAsText(file);
+}
+function handlePersonalFile(ev){
+  const file = ev.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    Papa.parse(e.target.result, { header:true, skipEmptyLines:true, complete: async (res) => {
+      const azRows = res.data.filter(r => (r['RUOLO']||'').toLowerCase() === 'azienda');
+      personalData = azRows;
+      try{ await window.storage.set('personal_db', JSON.stringify(azRows), false); }catch(err){}
+      renderPersonalSlot();
+      document.getElementById('dbStatus').textContent = 'DB personale caricato: ' + azRows.length + ' clienti.';
+    }});
+  };
+  reader.readAsText(file);
+}
+
+async function loadStoredDbs(){
+  try{
+    const r = await window.storage.get('account_db', false);
+    if(r && r.value) accountData = JSON.parse(r.value);
+  }catch(e){}
+  try{
+    const r = await window.storage.get('personal_db', false);
+    if(r && r.value) personalData = JSON.parse(r.value);
+  }catch(e){}
+  renderAccountSlot();
+  renderPersonalSlot();
+}
+loadStoredDbs();
+
+function searchClient(){
+  const nome = val('nome');
+  if(!nome){ document.getElementById('searchStatus').textContent = 'Inserisci il nome del concessionario.'; document.getElementById('searchStatus').className='status err'; return; }
+  const indizio = val('indizio');
+  document.getElementById('searchStatus').className = 'status';
+  document.getElementById('searchStatus').textContent = '';
+
+  const nNome = norm(nome);
+  const nIndizio = norm(indizio);
+
+  let matches = [];
+  if(accountData){
+    matches = accountData.filter(r => {
+      const nName = norm(r.Name);
+      return nName.includes(nNome) || nNome.includes(nName);
+    });
+    if(indizio && matches.length > 1){
+      const filtered = matches.filter(r => norm(r.BillingCity).includes(nIndizio) || norm(r.Region_Area__c).includes(nIndizio) || norm(r.BillingState).includes(nIndizio));
+      if(filtered.length) matches = filtered;
+    }
+  }
+
+  let personalMatches = [];
+  if(personalData){
+    personalMatches = personalData.filter(r => {
+      const nName = norm(r['RAGIONE SOCIALE']);
+      return nName.includes(nNome) || nNome.includes(nName);
+    });
+  }
+
+  renderMatches(matches, personalMatches, nome, indizio);
+}
+
+function renderMatches(matches, personalMatches, nome, indizio){
+  const area = document.getElementById('matchArea');
+  let html = '';
+
+  if(!accountData){
+    html += '<div class="callout">Non hai ancora caricato il file Account: la ricerca userà solo il nome inserito. Procederò come cliente non trovato (analisi completa).</div>';
+  }
+
+  if(matches.length === 0){
+    html += '<div class="callout">Nessuna corrispondenza nel file Account per "' + nome + '"' + (indizio ? ' (' + indizio + ')' : '') + '. Verrà trattato come cliente nuovo: analisi completa, senza filtri sui prodotti.</div>' +
+      '<button class="primary" onclick="confirmNoMatch()">Continua senza abbinamento</button>';
+  } else {
+    html += '<div class="matchlist">' + matches.map((r,i) =>
+      '<div class="matchitem" onclick="selectMatch(' + i + ')">' +
+        '<span class="name">' + r.Name + '</span>' +
+        '<span class="meta">' + (r.BillingCity || '') + (r.BillingState ? ' (' + r.BillingState + ')' : '') + ' · ' + (r.Region_Area__c || '') + '</span>' +
+        '<span class="badge">' + (r.Customer_Type__c || '—') + '</span>' +
+      '</div>').join('') + '</div>';
+  }
+
+  if(personalMatches.length){
+    html += '<div class="callout">Trovato anche nel tuo DB personale: <b>' + personalMatches.map(r=>r['RAGIONE SOCIALE']).join(', ') + '</b>. In attesa della legenda delle sigle prodotto, questo dato è solo informativo e non viene ancora usato nell\'analisi.</div>';
+  }
+
+  area.innerHTML = html;
+  window.__pendingMatches = matches;
+  window.__pendingNome = nome;
+  window.__pendingIndizio = indizio;
+}
+
+function selectMatch(i){
+  selectedAccount = window.__pendingMatches[i];
+  showFormCard(window.__pendingNome, window.__pendingIndizio);
+}
+function confirmNoMatch(){
+  selectedAccount = null;
+  showFormCard(window.__pendingNome, window.__pendingIndizio);
+}
+
+function showFormCard(nome, indizio){
+  lastName = selectedAccount ? selectedAccount.Name : nome;
+  document.getElementById('searchCard').classList.add('hidden');
+  document.getElementById('formCard').classList.remove('hidden');
+
+  const summary = document.getElementById('clientSummary');
+  const siteInput = document.getElementById('sito');
+  siteInput.value = '';
+
+  if(selectedAccount){
+    const products = (selectedAccount.Active_Products_List__c || '').split(';').map(s=>s.trim()).filter(Boolean);
+    const hasProducts = products.length > 0;
+    let website = selectedAccount.Website || '';
+    const invalid = !website || /no\s*sito/i.test(website);
+    if(!invalid) siteInput.value = website;
+
+    summary.innerHTML =
+      '<div class="row"><b>Cliente</b>' + selectedAccount.Name + '</div>' +
+      '<div class="row"><b>Segmento</b>' + (selectedAccount.Customer_Type__c || '—') + '</div>' +
+      '<div class="row"><b>Zona</b>' + (selectedAccount.BillingCity || '') + (selectedAccount.BillingState ? ' (' + selectedAccount.BillingState + ')' : '') + ' — ' + (selectedAccount.Region_Area__c || '') + '</div>' +
+      '<div class="row"><b>Sito (CRM)</b>' + (invalid ? 'non disponibile secondo CRM' : website) + '</div>' +
+      '<div class="row"><b>Prodotti attivi</b>' + (hasProducts ? '' : 'nessuno — analisi completa') + '</div>' +
+      (hasProducts ? '<div class="chips">' + products.map(p=>'<span class="chip">'+p+'</span>').join('') + '</div>' : '');
+  } else {
+    summary.innerHTML =
+      '<div class="row"><b>Cliente</b>' + nome + (indizio ? ' — ' + indizio : '') + '</div>' +
+      '<div class="row"><b>Segmento</b>non trovato nel portafoglio — trattato come nuovo</div>';
+  }
+}
+
+function backToSearch(){
+  document.getElementById('formCard').classList.add('hidden');
+  document.getElementById('searchCard').classList.remove('hidden');
+}
+
+async function callClaude(promptText, useSearch){
+  const body = {
+    model: "claude-sonnet-4-6",
+    max_tokens: 1000,
+    messages: [{ role: "user", content: promptText }]
+  };
+  if(useSearch){
+    body.tools = [{ type: "web_search_20250305", name: "web_search" }];
+  }
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if(!data.content) throw new Error("Risposta API non valida");
+  return data.content.filter(b => b.type === "text").map(b => b.text).join("\n").trim();
+}
+
+function mdToHtml(md){
+  const lines = md.split('\n');
+  let html = '';
+  let inList = false;
+  const inlineFmt = (t) => t
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[^*])\*(?!\*)([^*]+)\*(?!\*)/g, '$1<em>$2</em>');
+  for(let raw of lines){
+    const line = raw.trim();
+    if(line === ''){ if(inList){ html += '</ul>'; inList=false; } continue; }
+    let m;
+    if(m = line.match(/^###\s+(.*)/)){ if(inList){html+='</ul>';inList=false;} html += '<h3>' + inlineFmt(m[1]) + '</h3>'; }
+    else if(m = line.match(/^##\s+(.*)/)){ if(inList){html+='</ul>';inList=false;} html += '<h2>' + inlineFmt(m[1]) + '</h2>'; }
+    else if(m = line.match(/^#\s+(.*)/)){ if(inList){html+='</ul>';inList=false;} html += '<h1>' + inlineFmt(m[1]) + '</h1>'; }
+    else if(m = line.match(/^[-*]\s+(.*)/)){ if(!inList){html+='<ul>';inList=true;} html += '<li>' + inlineFmt(m[1]) + '</li>'; }
+    else { if(inList){html+='</ul>';inList=false;} html += '<p>' + inlineFmt(line) + '</p>'; }
+  }
+  if(inList) html += '</ul>';
+  return html;
+}
+
+function buildProductConstraint(){
+  if(!selectedAccount) return "Il concessionario non è nel portafoglio MotorK conosciuto: fai un'analisi completa, senza vincoli su prodotti già attivi.";
+  const products = (selectedAccount.Active_Products_List__c || '').split(';').map(s=>s.trim()).filter(Boolean);
+  if(products.length === 0){
+    return "Il concessionario è un cliente nuovo/prospect senza prodotti MotorK attivi: fai un'analisi completa, senza vincoli su prodotti già attivi.";
+  }
+  return 'Il concessionario ha GIÀ ATTIVI questi prodotti MotorK: ' + products.join(', ') + '. IMPORTANTE: nelle righe "Come MotorK può aiutare" NON proporre nessuno di questi prodotti già attivi — concentrati esclusivamente sui prodotti SparK che il dealer NON ha ancora, per risolvere le criticità individuate.';
+}
+
+async function runAnalysis(){
+  const nome = lastName;
+  const sito = val('sito'), gmb = val('gmb'), autoscout = val('autoscout'), social = val('social'), note = val('note');
+
+  document.getElementById('runBtn').disabled = true;
+  setStatus('<span class="spinner"></span>Ricerca e analisi in corso, può richiedere un minuto...');
+
+  const productConstraint = buildProductConstraint();
+
+  const prompt1 = 'Sei un analista digitale automotive che lavora per un Dealer Coach MotorK. Analizza in modo approfondito ma sintetico (massimo 550 parole, per punti/sezioni brevi, senza premesse tipo "ecco l\'analisi") la presenza digitale del concessionario "' + nome + '".' + (note ? ' Note: ' + note : '') + '\n\n' +
+productConstraint + '\n\n' +
+'Dati da analizzare (usa la ricerca web; se un URL non è indicato, cercalo online per "' + nome + '" e usa il risultato più plausibile, segnalando se un dato non è verificabile):\n' +
+'- Sito web: ' + (sito || 'da cercare online') + '\n' +
+'- Scheda Google (GMB): ' + (gmb || 'da cercare online') + '\n' +
+'- Pagina AutoScout24: ' + (autoscout || 'da cercare online') + '\n' +
+'- Pagina social (Facebook/Instagram): ' + (social || 'da cercare online') + '\n\n' +
+'Valuta questi punti, uno per sezione con titolo "## ":\n' +
+'1. Salute generale del sito: leggerezza del codice, SEO on-page, velocità di caricamento desktop/mobile (usa o stima i dati di PageSpeed Insights) confrontandola con questa demo MotorK come benchmark: https://demo-dealer-5.demo.web.motork.io/\n' +
+'2. Usato: quante auto, quante foto, presenza di video, oppure rimando a portali esterni tipo AutoScout24 (che regala lead ai competitor)\n' +
+'3. Solo se concessionario ufficiale: auto nuove con configuratore interno oppure rimando al sito della casa auto (che regala lead alla casa)\n' +
+'4. Cookie policy corretta (es. tipo Iubenda) o rischio sanzioni\n' +
+'5. Accessibility Act (accessibilità del sito per utenti con disabilità)\n' +
+'6. Recensioni Google: quante, voto medio (sotto 4,3 = criticità, sopra 4,3 = punto di forza), se il dealer risponde alle recensioni\n' +
+'7. AutoScout24: numero auto, numero foto, sfondo professionale o no, numero recensioni e voto medio\n' +
+'8. Social: data ultimo post e frequenza di pubblicazione\n\n' +
+'Per ogni criticità rilevante aggiungi una riga così: "*Come MotorK può aiutare: ...*" collegando UNO dei prodotti sotto (rispettando il vincolo sopra sui prodotti già attivi), in modo specifico e concreto, senza mai citare prezzi.\n\n' +
+MOTORK_CONTEXT + '\n\n' +
+'Scrivi in italiano, tono professionale, costruttivo, mai umiliante verso il dealer.';
+
+  try{
+    const reportMd = await callClaude(prompt1, true);
+    lastReportMd = reportMd;
+    document.getElementById('reportOut').innerHTML = mdToHtml(reportMd);
+
+    setStatus('<span class="spinner"></span>Preparo la mail per il cliente...');
+
+    const prompt2 = 'Sulla base di questa analisi digitale del concessionario "' + nome + '":\n"""\n' + reportMd + '\n"""\n' +
+'Scrivi in italiano una mail da parte di un Dealer Coach MotorK indirizzata al concessionario, tono professionale e amichevole, non tecnico, per punti sintetici, che:\n' +
+'- apre con un cenno positivo e rispettoso sul lavoro già fatto dal dealer\n' +
+'- riepiloga le 3-4 opportunità di miglioramento principali, senza tecnicismi\n' +
+'- collega ciascuna a una soluzione MotorK concreta, presentata come economica, fattibile anche con poco tempo o competenze interne\n' +
+'- chiude invitando a una breve call, senza citare prezzi\n' +
+'Massimo 250 parole. Non scrivere l\'oggetto, solo il corpo della mail. Non usare markdown, solo testo semplice con eventuali righe vuote tra i paragrafi.';
+
+    const emailTxt = await callClaude(prompt2, false);
+    lastEmail = emailTxt;
+    document.getElementById('emailOut').textContent = emailTxt;
+
+    setStatus('');
+    document.getElementById('resultCard').classList.remove('hidden');
+    document.getElementById('formCard').classList.add('hidden');
+  }catch(err){
+    setStatus('Errore durante l\'analisi: ' + err.message + '. Riprova.', true);
+  }finally{
+    document.getElementById('runBtn').disabled = false;
+  }
+}
+
+function setStatus(msg, isErr){
+  const s = document.getElementById('status');
+  s.innerHTML = msg;
+  s.className = 'status' + (isErr ? ' err' : '');
+}
+
+function resetTool(){
+  document.getElementById('resultCard').classList.add('hidden');
+  document.getElementById('searchCard').classList.remove('hidden');
+  document.getElementById('formCard').classList.add('hidden');
+  document.getElementById('nome').value = '';
+  document.getElementById('indizio').value = '';
+  document.getElementById('matchArea').innerHTML = '';
+  selectedAccount = null;
+}
+
+function downloadWord(){
+  const bodyHtml = mdToHtml(lastReportMd);
+  const today = new Date().toLocaleDateString('it-IT');
+  const doc = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
+'<head><meta charset="utf-8"><title>Analisi Web - ' + lastName + '</title>' +
+'<style>' +
+'  body{font-family:Calibri, Arial, sans-serif; color:#222; line-height:1.5; padding:20px 40px;}' +
+'  h1{color:#F90032; font-size:24px; margin-bottom:4px;}' +
+'  .tag{color:#777; font-size:12px; margin-bottom:24px;}' +
+'  h2{color:#F90032; font-size:16px; border-bottom:1px solid #eee; padding-bottom:4px; margin-top:26px;}' +
+'  h3{font-size:14px; margin-top:16px;}' +
+'  em{color:#F90032; font-style:normal;}' +
+'  ul{margin:6px 0 12px; padding-left:20px;}' +
+'  li{margin-bottom:4px;}' +
+'  p{margin:8px 0;}' +
+'  .footer{margin-top:40px; font-size:11px; color:#999; border-top:1px solid #eee; padding-top:10px;}' +
+'</style></head>' +
+'<body>' +
+'<h1>Analisi Web e Posizionamento Digitale</h1>' +
+'<div class="tag">' + lastName + ' &middot; ' + today + ' &middot; a cura di MotorK</div>' +
+bodyHtml +
+'<div class="footer">Documento preparato da MotorK - SparK Platform</div>' +
+'</body></html>';
+  const blob = new Blob(['\ufeff', doc], { type: 'application/msword' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'Analisi_Web_' + lastName.replace(/\s+/g,'_') + '.doc';
+  a.click();
+}
+
+function downloadEmail(){
+  const blob = new Blob([lastEmail], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'Mail_' + lastName.replace(/\s+/g,'_') + '.txt';
+  a.click();
+}
+
+function copyEmail(){
+  navigator.clipboard.writeText(lastEmail).then(()=>{
+    setStatus('Mail copiata negli appunti.');
+    setTimeout(()=>setStatus(''), 2000);
+  });
+}
+</script>
+</body>
+</html>
