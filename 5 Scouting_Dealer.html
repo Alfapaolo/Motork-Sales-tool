@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scouting Dealer — MotorK</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root{
+    --red:#F90032;
+    --red-dim: rgba(249,0,50,0.15);
+    --bg:#0B0B0D;
+    --panel:#141416;
+    --panel2:#1C1C1F;
+    --line:#2A2A2E;
+    --text:#F2F2F0;
+    --text-dim:#9A9A9E;
+    --green:#3DDC84;
+    --orange:#FFB020;
+    --blue:#4EA1FF;
+    font-family: 'Figtree', -apple-system, 'Segoe UI', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    display:flex; height:100vh; overflow:hidden;
+  }
+  /* ---- SIDEBAR ---- */
+  #sidebar{
+    width:340px; min-width:340px; background:var(--panel);
+    border-right:1px solid var(--line);
+    display:flex; flex-direction:column;
+    padding:22px 20px; overflow-y:auto;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; margin-bottom:22px;}
+  .brand .dot{ width:10px; height:10px; border-radius:2px; background:var(--red);}
+  .brand h1{ font-size:15px; margin:0; letter-spacing:0.02em; font-weight:700;}
+  .brand span{ font-size:11px; color:var(--text-dim); display:block; margin-top:2px;}
+
+  label{ font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-dim); display:block; margin:18px 0 6px;}
+  input[type=text], input[type=password], textarea{
+    width:100%; background:var(--panel2); border:1px solid var(--line); color:var(--text);
+    border-radius:6px; padding:9px 10px; font-size:13px; font-family:inherit; resize:vertical;
+  }
+  textarea{ min-height:90px; line-height:1.5;}
+  input:focus, textarea:focus{ outline:none; border-color:var(--red);}
+  .hint{ font-size:11px; color:var(--text-dim); margin-top:5px; line-height:1.4;}
+  .hint a{ color:var(--blue);}
+
+  .file-btn{
+    display:block; width:100%; text-align:center; padding:9px; border-radius:6px;
+    background:var(--panel2); border:1px dashed var(--line); color:var(--text-dim);
+    font-size:12px; cursor:pointer; margin-top:4px;
+  }
+  .file-btn.ok{ border-style:solid; border-color:var(--green); color:var(--green);}
+  input[type=file]{ display:none; }
+
+  .toggle-row{ display:flex; align-items:center; justify-content:space-between; margin-top:14px;}
+  .toggle-row span{ font-size:12px; color:var(--text-dim);}
+  .switch{ position:relative; width:34px; height:19px; background:var(--panel2); border:1px solid var(--line); border-radius:20px; cursor:pointer;}
+  .switch.on{ background:var(--red-dim); border-color:var(--red);}
+  .switch::after{ content:''; position:absolute; top:2px; left:2px; width:13px; height:13px; border-radius:50%; background:var(--text-dim); transition:.15s;}
+  .switch.on::after{ left:17px; background:var(--red);}
+
+  #runBtn{
+    margin-top:22px; background:var(--red); color:#fff; border:none; border-radius:8px;
+    padding:12px; font-size:13px; font-weight:700; letter-spacing:0.02em; cursor:pointer;
+  }
+  #runBtn:disabled{ background:#4a2530; color:#9a7480; cursor:not-allowed;}
+  #runBtn:hover:not(:disabled){ background:#e0002d; }
+
+  #status{ font-size:11.5px; color:var(--text-dim); margin-top:12px; line-height:1.5; min-height:18px;}
+  #status .err{ color:var(--red);}
+  #status .ok{ color:var(--green);}
+
+  #costEstimate{ margin-top:auto; padding-top:16px; border-top:1px solid var(--line); font-size:11px; color:var(--text-dim); line-height:1.6;}
+  #costEstimate b{ color:var(--text);}
+  #budgetBar{ height:6px; background:var(--panel2); border-radius:4px; overflow:hidden; margin:8px 0;}
+  #budgetFill{ height:100%; background:var(--green); transition:.3s; }
+  #budgetFill.warn{ background:var(--orange); }
+  #budgetFill.over{ background:var(--red); }
+  #budgetTxt{ font-size:11px; }
+  #budgetTxt b{ color:var(--text); }
+
+  /* ---- MAIN ---- */
+  #main{ flex:1; display:flex; flex-direction:column; min-width:0;}
+  #topbar{
+    padding:14px 24px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:18px;
+    background:var(--panel);
+  }
+  #topbar h2{ font-size:14px; margin:0; font-weight:600;}
+  .stat{ font-size:11px; color:var(--text-dim);}
+  .stat b{ color:var(--text); font-size:14px; display:block;}
+  .stat.new b{ color:var(--blue);}
+  .stat.exist b{ color:var(--green);}
+  .stat.ex b{ color:var(--orange);}
+  #exportBtn{
+    margin-left:auto; background:var(--panel2); border:1px solid var(--line); color:var(--text);
+    padding:8px 14px; border-radius:6px; font-size:12px; cursor:pointer;
+  }
+  #exportBtn:hover{ border-color:var(--red); }
+
+  #content{ flex:1; display:flex; min-height:0; }
+  #mapWrap{ width:38%; min-width:280px; border-right:1px solid var(--line); position:relative;}
+  #map{ width:100%; height:100%; background:#111; }
+  #tableWrap{ flex:1; overflow:auto; padding:0; }
+
+  table{ width:100%; border-collapse:collapse; font-size:12.5px;}
+  thead th{
+    position:sticky; top:0; background:var(--panel); text-align:left; padding:10px 12px;
+    font-size:10.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-dim);
+    border-bottom:1px solid var(--line); cursor:pointer; white-space:nowrap;
+  }
+  thead th:hover{ color:var(--text); }
+  tbody td{ padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
+  tbody tr:hover{ background:var(--panel2); }
+  .badge{ display:inline-block; padding:2px 8px; border-radius:20px; font-size:10.5px; font-weight:600;}
+  .badge.new{ background:rgba(78,161,255,0.15); color:var(--blue);}
+  .badge.exist{ background:rgba(61,220,132,0.15); color:var(--green);}
+  .badge.ex{ background:rgba(255,176,32,0.15); color:var(--orange);}
+  .score{ display:inline-flex; gap:2px;}
+  .score i{ width:6px; height:6px; border-radius:50%; background:var(--line); display:inline-block;}
+  .score i.on{ background:var(--red); }
+  .namecell{ font-weight:600; }
+  .sub{ color:var(--text-dim); font-size:11px; }
+  a.link{ color:var(--blue); text-decoration:none; }
+  a.link:hover{ text-decoration:underline; }
+
+  #empty{ display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-dim); font-size:13px; text-align:center; padding:40px; flex-direction:column; gap:10px;}
+  #empty b{ color:var(--text); font-size:15px; }
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div class="brand">
+    <div class="dot"></div>
+    <div>
+      <h1>Scouting Dealer</h1>
+      <span>Google Maps → confronto Account</span>
+    </div>
+  </div>
+
+  <label>Apify API Token</label>
+  <input type="password" id="apifyToken" placeholder="apify_api_...">
+  <div class="hint">Da <a href="https://console.apify.com/settings/integrations" target="_blank">console.apify.com → Integrations</a>. Resta solo su questo dispositivo.</div>
+
+  <label>File Account (CSV export Salesforce)</label>
+  <button class="file-btn" id="accountBtn" onclick="document.getElementById('accountFile').click()">Carica Account-*.csv</button>
+  <input type="file" id="accountFile" accept=".csv">
+
+  <label>Zone da scansionare</label>
+  <textarea id="areas" placeholder="Una zona per riga, es:&#10;Bergamo&#10;Brescia&#10;Torino&#10;Genova">Bergamo
+Brescia</textarea>
+  <div class="hint">Per città/provincia. Più righe = più chiamate = più costo (vedi stima sotto).</div>
+
+  <div class="toggle-row">
+    <span>Includi "usato/rivenditori"</span>
+    <div class="switch on" id="toggleUsed" onclick="this.classList.toggle('on')"></div>
+  </div>
+
+  <button id="runBtn" onclick="runScan()">Avvia scansione</button>
+  <div id="status"></div>
+
+  <div id="costEstimate">
+    Stima questo scan: <b id="estQueries">2</b> query · <b id="estCost">~$0.42</b>
+    <div class="hint" style="margin-top:2px;">Actor Google Maps Scraper: $4 ogni 1.000 risultati.</div>
+    <div id="budgetTxt">Budget mensile Apify: <b id="budgetSpent">$0.00</b> / $5.00</div>
+    <div id="budgetBar"><div id="budgetFill" style="width:0%"></div></div>
+    <div class="hint" id="budgetHint">Si azzera automaticamente ogni mese.</div>
+  </div>
+</div>
+
+<div id="main">
+  <div id="topbar">
+    <h2>Risultati</h2>
+    <div class="stat new"><b id="cNew">0</b>Nuovi</div>
+    <div class="stat exist"><b id="cExist">0</b>Esistenti</div>
+    <div class="stat ex"><b id="cEx">0</b>Ex Customer</div>
+    <button id="exportBtn" onclick="exportCSV()">↓ Esporta CSV</button>
+  </div>
+  <div id="content">
+    <div id="mapWrap"><div id="map"></div></div>
+    <div id="tableWrap">
+      <div id="empty"><b>Nessun dato ancora</b>Carica il file Account, inserisci le zone e avvia la scansione.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+let accountRows = [];
+let results = [];
+let map, markersLayer;
+let sortState = {col:'score', dir:-1};
+
+// ---------- budget tracking (persistente, personale) ----------
+const COST_PER_1000 = 4.0; // compass/crawler-google-places: $4 / 1000 risultati
+const MONTHLY_FREE = 5.0;
+let budgetState = { month:'', spent:0 };
+
+function currentMonthKey(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+async function loadBudget(){
+  try{
+    const raw = localStorage.getItem('apify_budget_tracker');
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(parsed.month === currentMonthKey()){
+        budgetState = parsed;
+      } else {
+        budgetState = { month: currentMonthKey(), spent: 0 };
+        saveBudget();
+      }
+    } else {
+      budgetState = { month: currentMonthKey(), spent: 0 };
+      saveBudget();
+    }
+  }catch(e){
+    budgetState = { month: currentMonthKey(), spent: 0 };
+  }
+  renderBudget();
+}
+
+function saveBudget(){
+  try{
+    localStorage.setItem('apify_budget_tracker', JSON.stringify(budgetState));
+  }catch(e){ console.error('budget save failed', e); }
+}
+
+function addSpend(amount){
+  budgetState.spent += amount;
+  saveBudget();
+  renderBudget();
+}
+
+function renderBudget(){
+  document.getElementById('budgetSpent').textContent = `$${budgetState.spent.toFixed(2)}`;
+  const pct = Math.min(100, (budgetState.spent / MONTHLY_FREE) * 100);
+  const fill = document.getElementById('budgetFill');
+  fill.style.width = pct + '%';
+  fill.className = pct >= 100 ? 'over' : (pct >= 75 ? 'warn' : '');
+  const remaining = Math.max(0, MONTHLY_FREE - budgetState.spent);
+  document.getElementById('budgetHint').textContent =
+    budgetState.spent >= MONTHLY_FREE
+      ? 'Credito gratuito esaurito per questo mese: gli scan da qui in poi verranno addebitati.'
+      : `Rimangono ~$${remaining.toFixed(2)} gratis questo mese (~${Math.floor(remaining/COST_PER_1000*1000)} risultati).`;
+}
+
+// ---------- utils ----------
+function normName(s){
+  if(!s) return '';
+  return s.toUpperCase()
+    .replace(/[À-Ü]/g, c => c) // keep accents as-is for now, normalize below
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/\b(SRL|S\.R\.L|SPA|S\.P\.A|SNC|S\.N\.C|SAS|S\.A\.S|SOCIETA|A RESPONSABILITA|LIMITATA|SEMPLIFICATA|DI|E C|& C|GROUP|AUTO|AUTOMOBILI|CONCESSIONARIA)\b/g,'')
+    .replace(/[^A-Z0-9]/g,'')
+    .trim();
+}
+function similarity(a,b){
+  // simple containment-based score, good enough for dealer names
+  if(!a || !b) return 0;
+  if(a===b) return 1;
+  if(a.includes(b) || b.includes(a)) return 0.85;
+  // token overlap
+  let la=a.length, lb=b.length;
+  let short = la<lb?a:b, long = la<lb?b:a;
+  let matches=0;
+  for(let i=0;i<short.length-2;i++){
+    if(long.includes(short.substr(i,3))) matches++;
+  }
+  return matches / Math.max(short.length-2,1);
+}
+
+// ---------- account file ----------
+document.getElementById('accountFile').addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  Papa.parse(file, {
+    header:true, skipEmptyLines:true,
+    complete: function(res){
+      accountRows = res.data.map(r => ({
+        name: r['Name'] || '',
+        normName: normName(r['Name']||''),
+        vat: (r['VAT__c']||'').replace(/[^A-Z0-9]/gi,'').toUpperCase(),
+        customerType: r['Customer_Type__c'] || '',
+        rating: r['Rating'] || '',
+        companyType: r['Company_type__c'] || '',
+        brand: r['Official_brand__c'] || '',
+        website: r['Website'] || '',
+        city: (r['BillingCity']||'').toUpperCase(),
+        province: (r['BillingState']||'').toUpperCase(),
+        activeProducts: r['Active_Products_List__c'] || '',
+        arr: r['Committed_ARR__c'] || ''
+      }));
+      const btn = document.getElementById('accountBtn');
+      btn.textContent = `✓ ${accountRows.length} account caricati`;
+      btn.classList.add('ok');
+    }
+  });
+});
+
+// ---------- cost estimate live ----------
+document.getElementById('areas').addEventListener('input', updateEstimate);
+document.getElementById('toggleUsed').addEventListener('click', updateEstimate);
+function updateEstimate(){
+  const areas = document.getElementById('areas').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  const usedToo = document.getElementById('toggleUsed').classList.contains('on');
+  const queriesPerArea = usedToo ? 2 : 1;
+  const totalQueries = areas.length * queriesPerArea;
+  document.getElementById('estQueries').textContent = totalQueries;
+  // rough: ~80 results per query avg, $4/1000
+  const estCost = (totalQueries * 80 / 1000 * COST_PER_1000).toFixed(2);
+  document.getElementById('estCost').textContent = `~$${estCost}`;
+  return parseFloat(estCost);
+}
+updateEstimate();
+
+// ---------- matching ----------
+function matchAccount(placeName, city){
+  const n = normName(placeName);
+  const cityU = (city||'').toUpperCase();
+  let best=null, bestScore=0;
+  for(const acc of accountRows){
+    let s = similarity(n, acc.normName);
+    if(acc.city && cityU && acc.city===cityU) s += 0.1;
+    if(s > bestScore){ bestScore = s; best = acc; }
+  }
+  if(best && bestScore >= 0.55) return best;
+  return null;
+}
+
+// ---------- Apify call ----------
+async function callGoogleMaps(searchStrings, token){
+  const url = `https://api.apify.com/v2/acts/compass~crawler-google-places/run-sync-get-dataset-items?token=${encodeURIComponent(token)}`;
+  const body = {
+    searchStringsArray: searchStrings,
+    maxCrawledPlacesPerSearch: 120,
+    language: "it",
+    countryCode: "it"
+  };
+  const resp = await fetch(url, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  if(!resp.ok){
+    const txt = await resp.text();
+    throw new Error(`Apify ${resp.status}: ${txt.substring(0,200)}`);
+  }
+  return await resp.json();
+}
+
+function setStatus(msg, cls){
+  const el = document.getElementById('status');
+  el.innerHTML = cls ? `<span class="${cls}">${msg}</span>` : msg;
+}
+
+// ---------- main run ----------
+async function runScan(){
+  const token = document.getElementById('apifyToken').value.trim();
+  if(!token){ setStatus('Inserisci il token Apify.', 'err'); return; }
+  if(accountRows.length===0){ setStatus('Carica prima il file Account.', 'err'); return; }
+  const areas = document.getElementById('areas').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  if(areas.length===0){ setStatus('Inserisci almeno una zona.', 'err'); return; }
+  const usedToo = document.getElementById('toggleUsed').classList.contains('on');
+
+  const estCost = updateEstimate();
+  const remaining = MONTHLY_FREE - budgetState.spent;
+  if(estCost > remaining && remaining > 0){
+    const proceed = confirm(`Questo scan (~$${estCost.toFixed(2)}) supera il credito gratuito rimasto (~$${remaining.toFixed(2)}). Il resto verrà addebitato sul tuo account Apify. Continuare?`);
+    if(!proceed) return;
+  } else if(remaining <= 0){
+    const proceed = confirm(`Hai già esaurito i $5 gratuiti di questo mese. Questo scan verrà addebitato interamente (~$${estCost.toFixed(2)}). Continuare?`);
+    if(!proceed) return;
+  }
+
+  const runBtn = document.getElementById('runBtn');
+  runBtn.disabled = true;
+  results = [];
+  const rawByPlaceId = {};
+  let totalItemsFetched = 0;
+
+  try{
+    for(let i=0;i<areas.length;i++){
+      const area = areas[i];
+      setStatus(`Scansione ${i+1}/${areas.length}: ${area}...`);
+      const queries = [`concessionari auto ${area}`];
+      if(usedToo) queries.push(`rivenditori auto usate ${area}`);
+      const items = await callGoogleMaps(queries, token);
+      totalItemsFetched += items.length;
+      for(const it of items){
+        const pid = it.placeId || it.cid || (it.title+it.address);
+        if(!rawByPlaceId[pid]){
+          rawByPlaceId[pid] = it;
+        }
+      }
+    }
+
+    // group by normalized name to count "sedi"
+    const nameGroups = {};
+    const rawList = Object.values(rawByPlaceId);
+    for(const it of rawList){
+      const nn = normName(it.title);
+      if(!nameGroups[nn]) nameGroups[nn] = [];
+      nameGroups[nn].push(it);
+    }
+
+    for(const it of rawList){
+      const nn = normName(it.title);
+      const sedi = nameGroups[nn].length;
+      const acc = matchAccount(it.title, it.city);
+      const reviews = it.reviewsCount || 0;
+      const rating = it.totalScore || 0;
+      // composite score 1-5
+      let raw = Math.log10(reviews+1)*1.3 + rating*0.6 + Math.min(sedi,5)*0.4;
+      let score = Math.max(1, Math.min(5, Math.round(raw)));
+
+      let stato = 'new';
+      if(acc){
+        stato = acc.customerType.toLowerCase().includes('ex') ? 'ex' : 'exist';
+      }
+
+      results.push({
+        name: it.title,
+        address: it.address,
+        city: it.city,
+        province: it.state || '',
+        phone: it.phone || it.phoneUnformatted || '',
+        website: it.website || '',
+        category: it.categoryName || '',
+        rating, reviews, sedi, score,
+        lat: it.location ? it.location.lat : null,
+        lng: it.location ? it.location.lng : null,
+        mapsUrl: it.url || '',
+        stato,
+        acc
+      });
+    }
+
+    renderAll();
+    const realCost = (totalItemsFetched / 1000) * COST_PER_1000;
+    await addSpend(realCost);
+    setStatus(`Fatto: ${results.length} punti vendita trovati (${totalItemsFetched} risultati grezzi, ~$${realCost.toFixed(2)} di credito usato).`, 'ok');
+  }catch(err){
+    setStatus('Errore: '+err.message, 'err');
+    console.error(err);
+  }finally{
+    runBtn.disabled = false;
+  }
+}
+
+// ---------- render ----------
+function renderAll(){
+  document.getElementById('cNew').textContent = results.filter(r=>r.stato==='new').length;
+  document.getElementById('cExist').textContent = results.filter(r=>r.stato==='exist').length;
+  document.getElementById('cEx').textContent = results.filter(r=>r.stato==='ex').length;
+  renderTable();
+  renderMap();
+}
+
+function sortResults(col){
+  if(sortState.col===col) sortState.dir *= -1;
+  else { sortState.col=col; sortState.dir=-1; }
+  renderTable();
+}
+
+function renderTable(){
+  const wrap = document.getElementById('tableWrap');
+  if(results.length===0){
+    wrap.innerHTML = `<div id="empty"><b>Nessun dato ancora</b>Carica il file Account, inserisci le zone e avvia la scansione.</div>`;
+    return;
+  }
+  const col = sortState.col, dir = sortState.dir;
+  const sorted = [...results].sort((a,b)=>{
+    let va=a[col], vb=b[col];
+    if(typeof va==='string'){ va=va.toLowerCase(); vb=(vb||'').toLowerCase(); }
+    if(va<vb) return -1*dir; if(va>vb) return 1*dir; return 0;
+  });
+
+  let html = `<table><thead><tr>
+    <th onclick="sortResults('name')">Nome</th>
+    <th onclick="sortResults('city')">Città</th>
+    <th onclick="sortResults('rating')">★ Google</th>
+    <th onclick="sortResults('sedi')">Sedi</th>
+    <th onclick="sortResults('score')">Score</th>
+    <th onclick="sortResults('stato')">Stato</th>
+    <th>Dati Salesforce</th>
+    <th>Sito</th>
+  </tr></thead><tbody>`;
+
+  for(const r of sorted){
+    const badgeCls = r.stato==='new'?'new':(r.stato==='ex'?'ex':'exist');
+    const badgeTxt = r.stato==='new'?'Nuovo':(r.stato==='ex'?'Ex Customer':'Esistente');
+    let sfCell = '<span class="sub">—</span>';
+    if(r.acc){
+      sfCell = `<div>${r.acc.customerType}<div class="sub">Rating SF: ${r.acc.rating||'—'} · ${r.acc.companyType||''}</div>${r.acc.activeProducts?`<div class="sub">${r.acc.activeProducts.substring(0,60)}${r.acc.activeProducts.length>60?'…':''}</div>`:''}</div>`;
+    }
+    let dots='';
+    for(let i=1;i<=5;i++) dots += `<i class="${i<=r.score?'on':''}"></i>`;
+
+    html += `<tr>
+      <td><div class="namecell">${r.name}</div><div class="sub">${r.category||''}</div></td>
+      <td>${r.city||''}<div class="sub">${r.address||''}</div></td>
+      <td>${r.rating?r.rating.toFixed(1):'—'}<div class="sub">${r.reviews} recensioni</div></td>
+      <td>${r.sedi}</td>
+      <td><span class="score">${dots}</span></td>
+      <td><span class="badge ${badgeCls}">${badgeTxt}</span></td>
+      <td>${sfCell}</td>
+      <td>${r.website?`<a class="link" href="${r.website}" target="_blank">sito ↗</a>`:'<span class="sub">—</span>'}${r.mapsUrl?`<br><a class="link" href="${r.mapsUrl}" target="_blank">maps ↗</a>`:''}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+function renderMap(){
+  if(!map){
+    map = L.map('map', {zoomControl:true}).setView([45.4, 9.6], 8);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+      attribution:'&copy; OpenStreetMap &copy; CARTO', maxZoom:19
+    }).addTo(map);
+    markersLayer = L.layerGroup().addTo(map);
+  }
+  markersLayer.clearLayers();
+  const colors = {new:'#4EA1FF', exist:'#3DDC84', ex:'#FFB020'};
+  const bounds = [];
+  for(const r of results){
+    if(r.lat==null) continue;
+    bounds.push([r.lat, r.lng]);
+    const marker = L.circleMarker([r.lat, r.lng], {
+      radius: 5 + r.score, color: colors[r.stato], fillColor: colors[r.stato], fillOpacity:0.7, weight:1
+    }).bindPopup(`<b>${r.name}</b><br>${r.address||''}<br>★ ${r.rating||'—'} (${r.reviews})`);
+    markersLayer.addLayer(marker);
+  }
+  if(bounds.length) map.fitBounds(bounds, {padding:[30,30]});
+}
+
+// ---------- export ----------
+function exportCSV(){
+  if(results.length===0) return;
+  const headers = ['Nome','Indirizzo','Città','Provincia','Telefono','Sito','Categoria','Rating Google','Recensioni','N. Sedi','Score','Stato','Customer Type SF','Rating SF','Prodotti Attivi SF','ARR SF'];
+  const rows = results.map(r => [
+    r.name, r.address, r.city, r.province, r.phone, r.website, r.category,
+    r.rating, r.reviews, r.sedi, r.score,
+    r.stato==='new'?'Nuovo':(r.stato==='ex'?'Ex Customer':'Esistente'),
+    r.acc?r.acc.customerType:'', r.acc?r.acc.rating:'', r.acc?r.acc.activeProducts:'', r.acc?r.acc.arr:''
+  ]);
+  let csv = headers.join(',') + '\n' + rows.map(r => r.map(v => `"${(v+'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `scouting_dealer_${new Date().toISOString().slice(0,10)}.csv`;
+  link.click();
+}
+
+// init empty map
+window.addEventListener('load', () => { renderMap(); loadBudget(); });
+</script>
+</body>
+</html>
