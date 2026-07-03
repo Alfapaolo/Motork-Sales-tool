@@ -10,16 +10,16 @@
 <style>
   :root{
     --red:#F90032;
-    --red-dim: rgba(249,0,50,0.15);
-    --bg:#0B0B0D;
-    --panel:#141416;
-    --panel2:#1C1C1F;
-    --line:#2A2A2E;
-    --text:#F2F2F0;
-    --text-dim:#9A9A9E;
-    --green:#3DDC84;
-    --orange:#FFB020;
-    --blue:#4EA1FF;
+    --red-dim: rgba(249,0,50,0.08);
+    --bg:#FFFFFF;
+    --panel:#FAFAFA;
+    --panel2:#F1F1F2;
+    --line:#E2E2E4;
+    --text:#1A1A1C;
+    --text-dim:#6B6B70;
+    --green:#1A9E5C;
+    --orange:#B8720A;
+    --blue:#1D6FD6;
     font-family: 'Figtree', -apple-system, 'Segoe UI', sans-serif;
   }
   *{box-sizing:border-box;}
@@ -31,6 +31,7 @@
   #sidebar{
     width:340px; min-width:340px; background:var(--panel);
     border-right:1px solid var(--line);
+    box-shadow: 2px 0 8px rgba(0,0,0,0.03);
     display:flex; flex-direction:column;
     padding:22px 20px; overflow-y:auto;
   }
@@ -68,7 +69,7 @@
     margin-top:22px; background:var(--red); color:#fff; border:none; border-radius:8px;
     padding:12px; font-size:13px; font-weight:700; letter-spacing:0.02em; cursor:pointer;
   }
-  #runBtn:disabled{ background:#4a2530; color:#9a7480; cursor:not-allowed;}
+  #runBtn:disabled{ background:#F7C9D2; color:#B3495D; cursor:not-allowed;}
   #runBtn:hover:not(:disabled){ background:#e0002d; }
 
   #status{ font-size:11.5px; color:var(--text-dim); margin-top:12px; line-height:1.5; min-height:18px;}
@@ -104,7 +105,7 @@
 
   #content{ flex:1; display:flex; min-height:0; }
   #mapWrap{ width:38%; min-width:280px; border-right:1px solid var(--line); position:relative;}
-  #map{ width:100%; height:100%; background:#111; }
+  #map{ width:100%; height:100%; background:#EAEAEC; }
   #tableWrap{ flex:1; overflow:auto; padding:0; }
 
   table{ width:100%; border-collapse:collapse; font-size:12.5px;}
@@ -116,10 +117,10 @@
   thead th:hover{ color:var(--text); }
   tbody td{ padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
   tbody tr:hover{ background:var(--panel2); }
-  .badge{ display:inline-block; padding:2px 8px; border-radius:20px; font-size:10.5px; font-weight:600;}
-  .badge.new{ background:rgba(78,161,255,0.15); color:var(--blue);}
-  .badge.exist{ background:rgba(61,220,132,0.15); color:var(--green);}
-  .badge.ex{ background:rgba(255,176,32,0.15); color:var(--orange);}
+  .badge{ display:inline-block; padding:2px 8px; border-radius:20px; font-size:10.5px; font-weight:700; border:1px solid transparent;}
+  .badge.new{ background:rgba(29,111,214,0.10); color:var(--blue); border-color:rgba(29,111,214,0.25);}
+  .badge.exist{ background:rgba(26,158,92,0.10); color:var(--green); border-color:rgba(26,158,92,0.25);}
+  .badge.ex{ background:rgba(217,138,14,0.10); color:var(--orange); border-color:rgba(217,138,14,0.25);}
   .score{ display:inline-flex; gap:2px;}
   .score i{ width:6px; height:6px; border-radius:50%; background:var(--line); display:inline-block;}
   .score i.on{ background:var(--red); }
@@ -521,13 +522,13 @@ function renderTable(){
 function renderMap(){
   if(!map){
     map = L.map('map', {zoomControl:true}).setView([45.4, 9.6], 8);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
       attribution:'&copy; OpenStreetMap &copy; CARTO', maxZoom:19
     }).addTo(map);
     markersLayer = L.layerGroup().addTo(map);
   }
   markersLayer.clearLayers();
-  const colors = {new:'#4EA1FF', exist:'#3DDC84', ex:'#FFB020'};
+  const colors = {new:'#1D6FD6', exist:'#1A9E5C', ex:'#D98A0E'};
   const bounds = [];
   for(const r of results){
     if(r.lat==null) continue;
