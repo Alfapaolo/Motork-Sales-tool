@@ -152,10 +152,21 @@
   <button class="file-btn" id="accountBtn" onclick="document.getElementById('accountFile').click()">Carica Account-*.csv</button>
   <input type="file" id="accountFile" accept=".csv">
 
+  <label>Livello zona</label>
+  <select id="zoneLevel" style="width:100%; background:var(--panel2); border:1px solid var(--line); color:var(--text); border-radius:6px; padding:9px 10px; font-size:13px;">
+    <option value="comune">Comune / città</option>
+    <option value="provincia">Provincia</option>
+    <option value="regione">Regione</option>
+  </select>
+
   <label>Zone da scansionare</label>
-  <textarea id="areas" placeholder="Una zona per riga, es:&#10;Bergamo&#10;Brescia&#10;Torino&#10;Genova">Bergamo
+  <textarea id="areas" placeholder="Una per riga">Bergamo
 Brescia</textarea>
-  <div class="hint">Per città/provincia. Più righe = più chiamate = più costo (vedi stima sotto).</div>
+  <div class="hint" id="areasHint">Per città. Più righe = più chiamate = più costo (vedi stima sotto).</div>
+
+  <label>Raggio massimo dal centro zona (km)</label>
+  <input type="text" id="radiusKm" value="15">
+  <div class="hint" id="radiusHint">Usato solo per Comune. Per Provincia/Regione uso i confini amministrativi reali (OpenStreetMap) invece del raggio.</div>
 
   <div class="toggle-row">
     <span>Includi "usato/rivenditori"</span>
@@ -252,6 +263,69 @@ function renderBudget(){
       : `Rimangono ~$${remaining.toFixed(2)} gratis questo mese (~${Math.floor(remaining/COST_PER_1000*1000)} risultati).`;
 }
 
+// ---------- espansione zone per livello ----------
+const REGION_PROVINCES = {
+  'LOMBARDIA': ['Bergamo','Brescia','Como','Cremona','Lecco','Lodi','Mantova','Milano','Monza e della Brianza','Pavia','Sondrio','Varese'],
+  'PIEMONTE': ['Alessandria','Asti','Biella','Cuneo','Novara','Torino','Verbano-Cusio-Ossola','Vercelli'],
+  'LIGURIA': ['Genova','Imperia','La Spezia','Savona'],
+  "VALLE D'AOSTA": ["Valle d'Aosta"],
+  "VALLE D AOSTA": ["Valle d'Aosta"]
+};
+
+// Espande le zone inserite in una lista di {label, geoQuery, level} da scansionare davvero
+function expandZones(rawAreas, level){
+  const out = [];
+  for(const area of rawAreas){
+    if(level === 'regione'){
+      const key = area.toUpperCase().trim();
+      const provinces = REGION_PROVINCES[key];
+      if(provinces){
+        for(const p of provinces){
+          out.push({ label: `${p} (${area})`, geoQuery: `provincia di ${p}, Italia`, searchTerm: `provincia di ${p}`, level:'provincia' });
+        }
+      } else {
+        out.push({ label: area, geoQuery: `${area}, Italia`, searchTerm: area, level:'regione' });
+      }
+    } else if(level === 'provincia'){
+      out.push({ label: area, geoQuery: `provincia di ${area}, Italia`, searchTerm: `provincia di ${area}`, level:'provincia' });
+    } else {
+      out.push({ label: area, geoQuery: `${area}, Italia`, searchTerm: area, level:'comune' });
+    }
+  }
+  return out;
+}
+
+// ---------- geocoding & distance (per filtro raggio/confini) ----------
+const geocodeCache = {};
+async function geocodeArea(geoQuery){
+  if(geocodeCache[geoQuery]) return geocodeCache[geoQuery];
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=it&q=${encodeURIComponent(geoQuery)}`;
+  try{
+    const resp = await fetch(url, {headers:{'Accept-Language':'it'}});
+    const data = await resp.json();
+    if(data && data[0]){
+      const bb = data[0].boundingbox; // [south, north, west, east] come stringhe
+      const point = {
+        lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon),
+        bbox: bb ? { south:parseFloat(bb[0]), north:parseFloat(bb[1]), west:parseFloat(bb[2]), east:parseFloat(bb[3]) } : null
+      };
+      geocodeCache[geoQuery] = point;
+      return point;
+    }
+  }catch(e){ console.error('geocode failed for', geoQuery, e); }
+  return null;
+}
+function insideBbox(lat, lng, bbox){
+  return lat >= bbox.south && lat <= bbox.north && lng >= bbox.west && lng <= bbox.east;
+}
+function haversineKm(lat1, lon1, lat2, lon2){
+  const R = 6371;
+  const dLat = (lat2-lat1) * Math.PI/180;
+  const dLon = (lon2-lon1) * Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
 // ---------- utils ----------
 function normName(s){
   if(!s) return '';
@@ -266,18 +340,37 @@ function similarity(a,b){
   // simple containment-based score, good enough for dealer names
   if(!a || !b) return 0;
   if(a===b) return 1;
-  if(a.includes(b) || b.includes(a)) return 0.85;
-  // token overlap
-  let la=a.length, lb=b.length;
-  let short = la<lb?a:b, long = la<lb?b:a;
-  let matches=0;
-  for(let i=0;i<short.length-2;i++){
+  // containment is only meaningful for names long enough to be specific
+  const minLen = Math.min(a.length, b.length);
+  if(minLen >= 5 && (a.includes(b) || b.includes(a))) return 0.85;
+  // token overlap via trigrams
+  let short = a.length<b.length?a:b, long = a.length<b.length?b:a;
+  if(short.length < 3) return 0; // too generic to trust
+  let matches=0, total=0;
+  for(let i=0;i<=short.length-3;i++){
+    total++;
     if(long.includes(short.substr(i,3))) matches++;
   }
-  return matches / Math.max(short.length-2,1);
+  return total>0 ? matches/total : 0;
 }
 
-// ---------- account file ----------
+// ---------- matching ----------
+function matchAccount(placeName, city, province){
+  const n = normName(placeName);
+  if(n.length < 3) return null; // nome troppo generico dopo normalizzazione, non matchare
+  const cityU = (city||'').toUpperCase().trim();
+  let best=null, bestScore=0;
+  for(const acc of accountRows){
+    if(acc.normName.length < 3) continue;
+    const s = similarity(n, acc.normName);
+    if(s > bestScore){ bestScore = s; best = acc; }
+  }
+  if(!best) return null;
+  const sameCity = best.city && cityU && best.city === cityU;
+  // Città diversa: servono nomi quasi identici. Stessa città o città mancante: soglia media.
+  const threshold = sameCity ? 0.62 : 0.88;
+  return bestScore >= threshold ? best : null;
+}
 document.getElementById('accountFile').addEventListener('change', function(e){
   const file = e.target.files[0];
   if(!file) return;
@@ -311,36 +404,30 @@ document.getElementById('toggleUsed').addEventListener('click', updateEstimate);
 function updateEstimate(){
   const areas = document.getElementById('areas').value.split('\n').map(s=>s.trim()).filter(Boolean);
   const usedToo = document.getElementById('toggleUsed').classList.contains('on');
-  const queriesPerArea = usedToo ? 2 : 1;
-  const totalQueries = areas.length * queriesPerArea;
+  const level = document.getElementById('zoneLevel').value;
+  const zones = expandZones(areas, level);
+  const queriesPerZone = usedToo ? 2 : 1;
+  const totalQueries = zones.length * queriesPerZone;
   document.getElementById('estQueries').textContent = totalQueries;
-  // rough: ~80 results per query avg, $4/1000
-  const estCost = (totalQueries * 80 / 1000 * COST_PER_1000).toFixed(2);
+  // media risultati per query stimata diversa per comune vs provincia
+  const avgPerQuery = level==='comune' ? 60 : 200;
+  const estCost = (totalQueries * avgPerQuery / 1000 * COST_PER_1000).toFixed(2);
   document.getElementById('estCost').textContent = `~$${estCost}`;
+  document.getElementById('areasHint').textContent =
+    level==='regione' ? `Ogni regione mappata viene espansa nelle sue province (es. Lombardia → 12 query). ${zones.length} query totali risultanti.`
+    : level==='provincia' ? `Una query per provincia inserita. Più righe = più costo.`
+    : `Per città. Più righe = più chiamate = più costo.`;
   return parseFloat(estCost);
 }
+document.getElementById('zoneLevel').addEventListener('change', updateEstimate);
 updateEstimate();
 
-// ---------- matching ----------
-function matchAccount(placeName, city){
-  const n = normName(placeName);
-  const cityU = (city||'').toUpperCase();
-  let best=null, bestScore=0;
-  for(const acc of accountRows){
-    let s = similarity(n, acc.normName);
-    if(acc.city && cityU && acc.city===cityU) s += 0.1;
-    if(s > bestScore){ bestScore = s; best = acc; }
-  }
-  if(best && bestScore >= 0.55) return best;
-  return null;
-}
-
 // ---------- Apify call ----------
-async function callGoogleMaps(searchStrings, token){
+async function callGoogleMaps(searchStrings, token, maxPerSearch){
   const url = `https://api.apify.com/v2/acts/compass~crawler-google-places/run-sync-get-dataset-items?token=${encodeURIComponent(token)}`;
   const body = {
     searchStringsArray: searchStrings,
-    maxCrawledPlacesPerSearch: 120,
+    maxCrawledPlacesPerSearch: maxPerSearch || 120,
     language: "it",
     countryCode: "it"
   };
@@ -385,20 +472,36 @@ async function runScan(){
   results = [];
   const rawByPlaceId = {};
   let totalItemsFetched = 0;
+  let discardedFar = 0;
+  const radiusKm = parseFloat(document.getElementById('radiusKm').value) || 15;
+  const level = document.getElementById('zoneLevel').value;
+  const zones = expandZones(areas, level);
 
   try{
-    for(let i=0;i<areas.length;i++){
-      const area = areas[i];
-      setStatus(`Scansione ${i+1}/${areas.length}: ${area}...`);
-      const queries = [`concessionari auto ${area}`];
-      if(usedToo) queries.push(`rivenditori auto usate ${area}`);
-      const items = await callGoogleMaps(queries, token);
+    for(let i=0;i<zones.length;i++){
+      const zone = zones[i];
+      setStatus(`Geocodifica ${zone.label}...`);
+      const center = await geocodeArea(zone.geoQuery);
+      setStatus(`Scansione ${i+1}/${zones.length}: ${zone.label}...`);
+      const queries = [`concessionari auto ${zone.searchTerm}`];
+      if(usedToo) queries.push(`rivenditori auto usate ${zone.searchTerm}`);
+      const maxPerSearch = zone.level === 'comune' ? 120 : 300;
+      const items = await callGoogleMaps(queries, token, maxPerSearch);
       totalItemsFetched += items.length;
       for(const it of items){
         const pid = it.placeId || it.cid || (it.title+it.address);
-        if(!rawByPlaceId[pid]){
-          rawByPlaceId[pid] = it;
+        if(rawByPlaceId[pid]) continue;
+        if(center && it.location && it.location.lat!=null){
+          let outOfZone = false;
+          if(zone.level !== 'comune' && center.bbox){
+            outOfZone = !insideBbox(it.location.lat, it.location.lng, center.bbox);
+          } else {
+            const d = haversineKm(center.lat, center.lng, it.location.lat, it.location.lng);
+            outOfZone = d > radiusKm;
+          }
+          if(outOfZone){ discardedFar++; continue; }
         }
+        rawByPlaceId[pid] = it;
       }
     }
 
@@ -446,7 +549,7 @@ async function runScan(){
     renderAll();
     const realCost = (totalItemsFetched / 1000) * COST_PER_1000;
     await addSpend(realCost);
-    setStatus(`Fatto: ${results.length} punti vendita trovati (${totalItemsFetched} risultati grezzi, ~$${realCost.toFixed(2)} di credito usato).`, 'ok');
+    setStatus(`Fatto: ${results.length} punti vendita trovati su ${zones.length} zone scansionate (${discardedFar} scartati fuori confine, ${totalItemsFetched} risultati grezzi, ~$${realCost.toFixed(2)} di credito usato).`, 'ok');
   }catch(err){
     setStatus('Errore: '+err.message, 'err');
     console.error(err);
