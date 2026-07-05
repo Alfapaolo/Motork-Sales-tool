@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preventivo SparK Platform - MotorK Italia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Figtree',Arial,sans-serif;background:#f0f0f0;padding:16px;font-size:13px}
+.container{max-width:1300px;margin:0 auto;background:#fff;border-radius:8px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.12)}
+
+/* Header */
+.header{display:flex;align-items:center;gap:16px;padding-bottom:16px;border-bottom:2px solid #E9E9E9;margin-bottom:16px}
+.mk-logo{width:64px;height:64px;background:#F90032;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;flex-shrink:0}
+.header-logos{display:flex;align-items:center;gap:0;flex-shrink:0}
+.header-logo-sep{width:1px;height:36px;background:#C2C1C1;margin:0 16px;display:none}
+#motork-logo{height:34px;max-height:34px;object-fit:contain;display:block}
+#dealer-logo-img{height:34px;max-height:34px;max-width:140px;object-fit:contain;display:none;filter:none}
+.header h1{font-size:20px;color:#4D4D4D;font-weight:700}
+.header p{color:#C2C1C1;font-size:11px;margin-top:2px}
+
+/* Dealer Grid */
+.dealer-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.form-group label{display:block;font-size:11px;font-weight:600;color:#4D4D4D;margin-bottom:4px}
+.form-group input{width:100%;padding:7px 9px;border:1px solid #C2C1C1;border-radius:4px;font-size:12px;font-family:inherit}
+.form-group input:focus{outline:none;border-color:#F90032}
+
+/* Buttons */
+.btn-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+button{padding:8px 14px;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;transition:background .15s}
+.btn-red{background:#F90032;color:#fff}.btn-red:hover{background:#c8001f}
+.btn-gray{background:#E9E9E9;color:#4D4D4D}.btn-gray:hover{background:#d5d5d5}
+
+/* Tabs */
+.tab-nav{display:flex;gap:0;border-bottom:2px solid #E9E9E9;margin-bottom:14px}
+.tab-btn{padding:10px 16px;background:none;border:none;font-size:12px;font-weight:600;color:#C2C1C1;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px}
+.tab-btn.active{color:#F90032;border-bottom-color:#F90032}
+.tab-content{display:none}.tab-content.active{display:block}
+
+/* Section */
+.section{border:1px solid #E9E9E9;border-radius:6px;margin-bottom:10px;overflow:hidden}
+.section-hdr{background:#F8F8F8;padding:10px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-weight:600;color:#4D4D4D;user-select:none}
+.section-hdr:hover{background:#f0f0f0}
+.section-body{display:none}
+.section-body.open{display:block}
+
+/* Table */
+.container{overflow-x:auto}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+thead{background:#4D4D4D;color:#fff}
+th{padding:8px 7px;text-align:right;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;border-right:1px solid #5a5a5a}
+th:last-child{border-right:none}
+/* Larghezze colonne: 46+46+110+72+70+72+76+80+78 = 650 → nome prende il resto */
+th:nth-child(1){width:46px;text-align:center}   /* ☐☐ checkbox */
+th:nth-child(2){text-align:left}                 /* Nome prodotto - auto */
+th:nth-child(3){width:150px;text-align:center}   /* Variabili */
+th:nth-child(4){width:80px}                      /* Canone base */
+th:nth-child(5){width:80px}                      /* UT calc */
+th:nth-child(6){width:82px}                      /* UT libero */
+th:nth-child(7){width:82px}                      /* Canone calc */
+th:nth-child(8){width:82px}                      /* Canone libero */
+td{padding:7px 7px;border-bottom:1px solid #f0f0f0;font-size:13px;vertical-align:middle;text-align:right;overflow:hidden;white-space:nowrap;border-right:1px solid #f0f0f0}
+td:last-child{border-right:none}
+td:nth-child(1){text-align:center}
+td:nth-child(2){text-align:left;white-space:normal;font-weight:500;color:#333;line-height:1.3}
+td:nth-child(3){text-align:center}
+td:nth-child(4){text-align:right}
+td:nth-child(5){text-align:right}
+td:nth-child(6){text-align:right}
+td:nth-child(7){text-align:right}
+td:nth-child(8){text-align:right}
+tr:hover td{background:#fafafa}
+input[type=number]{width:68px;padding:4px 5px;border:1px solid #C2C1C1;border-radius:3px;font-size:12px;text-align:right;font-family:inherit}
+input[type=number].inp-var{width:40px}
+input[type=number].inp-ut-ov{width:72px;color:#c00020;border-color:#c00020;background:#fff8f9}
+input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;background:#f5f8ff}
+.cb-cost{accent-color:#F90032}
+.cb-suggest{accent-color:#2B7FF5}
+.cb-pair{display:flex;gap:6px;justify-content:center;align-items:center}
+
+/* Search */
+.search-row{padding:8px 10px;border-bottom:1px solid #E9E9E9}
+.search-row input{width:100%;padding:6px 9px;border:1px solid #C2C1C1;border-radius:4px;font-size:11px}
+
+/* Totals */
+.totals-box{background:#F8F8F8;padding:14px;border-radius:6px;margin-top:14px}
+.tot-row{display:flex;justify-content:space-between;padding:5px 0;color:#4D4D4D;font-weight:600;font-size:13px}
+.tot-row.grand{color:#F90032;font-size:15px;border-top:2px solid #E9E9E9;padding-top:10px;margin-top:10px}
+
+/* Discounts */
+.disc-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.disc-box{background:#fff;border:1px solid #E9E9E9;border-radius:4px;padding:10px}
+.disc-box label{font-size:10px;font-weight:600;color:#4D4D4D;display:block;margin-bottom:4px}
+.disc-box input[type=date]{width:100%;padding:5px;border:1px solid #C2C1C1;border-radius:3px;font-size:11px;margin-bottom:6px}
+.disc-inline{display:flex;gap:8px;align-items:center;margin-top:4px}
+.disc-inline label{margin:0;flex-shrink:0}
+.disc-savings{font-size:12px;color:#F90032;font-weight:600;margin-top:6px}
+
+/* Bozza Preventivo */
+.bozza-toolbar{display:flex;align-items:center;gap:16px;margin-bottom:16px}
+.bozza-hint{font-size:12px;color:#C2C1C1;font-style:italic}
+.bozza-page{background:#fff;border:1px solid #E9E9E9;border-radius:6px;padding:32px 40px;max-width:900px;margin:0 auto;box-shadow:0 2px 12px rgba(0,0,0,.08);font-family:'Figtree',Arial,sans-serif}
+.bozza-empty{color:#C2C1C1;font-style:italic;text-align:center;padding:40px 0}
+
+/* Header bozza */
+.bozza-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;border-bottom:3px solid #F90032;margin-bottom:24px}
+.bozza-header-left img{height:40px;object-fit:contain}
+.bozza-header-right{text-align:right}
+.bozza-header-right .bozza-title{font-size:18px;font-weight:700;color:#4D4D4D;letter-spacing:.5px}
+.bozza-header-right .bozza-date{font-size:11px;color:#C2C1C1;margin-top:4px}
+
+/* Dati cliente */
+.bozza-cliente{margin-bottom:22px}
+.bozza-section-label{font-size:10px;font-weight:700;color:#F90032;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px}
+.bozza-cliente-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.bozza-cliente-item label{display:block;font-size:10px;color:#C2C1C1;font-weight:600;margin-bottom:2px}
+.bozza-cliente-item span{font-size:13px;font-weight:600;color:#4D4D4D}
+
+/* Tabella prodotti */
+.bozza-prodotti{margin-bottom:20px;page-break-inside:auto}
+.bozza-section-hdr{background:#F8F8F8;border-left:3px solid #F90032;padding:7px 12px;font-size:12px;font-weight:700;color:#4D4D4D;margin-top:16px;margin-bottom:6px;border-radius:0 4px 4px 0}
+.bozza-table{width:100%;border-collapse:collapse;margin-bottom:4px}
+.bozza-table th{font-size:10px;font-weight:700;color:#fff;background:#4D4D4D;padding:6px 10px;text-align:right}
+.bozza-table th:first-child{text-align:left}
+.bozza-table td{font-size:12px;padding:7px 10px;border-bottom:1px solid #f0f0f0;color:#4D4D4D;text-align:right}
+.bozza-table td:first-child{text-align:left;font-weight:500}
+.bozza-table tr:last-child td{border-bottom:none}
+.bozza-table tr:hover td{background:#fafafa}
+/* Link presentazione */
+.pres-link{display:inline-block;margin-left:7px;font-size:10px;color:#C2C1C1;text-decoration:none;font-weight:400;vertical-align:middle;opacity:.8}
+.pres-link:hover{color:#F90032;opacity:1}
+.bozza-pres-link{display:block;font-size:10px;color:#C2C1C1;text-decoration:none;margin-top:3px;font-weight:400}
+.bozza-pres-link:hover{color:#F90032}
+
+/* Totali */
+.bozza-totali{background:#F8F8F8;border-radius:6px;padding:16px 20px;margin-top:20px}
+.bozza-tot-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;font-weight:600;color:#4D4D4D;border-bottom:1px solid #E9E9E9}
+.bozza-tot-row:last-child{border-bottom:none}
+.bozza-tot-row.grand{font-size:15px;color:#F90032;padding-top:12px;margin-top:6px;border-top:2px solid #E9E9E9;border-bottom:none}
+.bozza-sconti{background:#fff;border:1px solid #E9E9E9;border-radius:4px;padding:12px 16px;margin-top:10px}
+.bozza-sconto-row{display:flex;justify-content:space-between;font-size:11px;color:#666;padding:3px 0}
+.bozza-sconto-row span:last-child{font-weight:600;color:#F90032}
+/* Box scenari scontati */
+.bozza-scenari{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.bozza-scenari.single{grid-template-columns:1fr}
+.bozza-scenario-box{border-radius:6px;padding:14px 16px;border:1.5px solid #F90032}
+.bozza-scenario-box.annuale{border-color:#2B7FF5}
+.bozza-scenario-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;color:#F90032}
+.bozza-scenario-box.annuale .bozza-scenario-label{color:#2B7FF5}
+.bozza-scenario-desc{font-size:11px;color:#888;margin-bottom:10px;line-height:1.5}
+.bozza-scenario-row{display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;border-bottom:1px solid #f5f5f5}
+.bozza-scenario-row:last-child{border-bottom:none}
+.bozza-scenario-row span:first-child{font-size:11px;color:#666}
+.bozza-scenario-row span:last-child{font-size:14px;font-weight:700;color:#333}
+.bozza-scenario-saving{margin-top:8px;font-size:11px;font-weight:600;color:#F90032}
+.bozza-scenario-box.annuale .bozza-scenario-saving{color:#2B7FF5}
+
+/* Suggeriti */
+.bozza-suggest-box{border:1.5px dashed #2B7FF5;border-radius:6px;padding:14px 20px;margin-top:18px}
+.bozza-suggest-title{font-size:11px;font-weight:700;color:#2B7FF5;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.bozza-suggest-item{font-size:12px;color:#4D4D4D;padding:4px 0;border-bottom:1px solid #e8f0fe}
+.bozza-suggest-item:last-child{border-bottom:none}
+
+/* Footer */
+.bozza-footer{margin-top:28px;padding-top:12px;border-top:1px solid #E9E9E9;text-align:center;font-size:10px;color:#C2C1C1}
+
+/* Copertina - stile MotorK light */
+.bozza-cover{background:#fff;min-height:242mm;padding:44px 48px 32px;display:flex;flex-direction:column;page-break-after:always;break-after:page;margin:0 0 32px 0;position:relative;overflow:hidden}
+/* Onda decorativa destra */
+.bozza-cover-wave{position:absolute;top:0;right:0;width:46%;height:100%;pointer-events:none}
+/* Logos top */
+.bozza-cover-logos{display:flex;align-items:center;gap:18px;z-index:1;position:relative;margin-bottom:auto}
+.bozza-cover-logos img.mk-logo-cover{height:30px;object-fit:contain}
+.bozza-cover-logos img.dealer-logo-cover{height:28px;max-width:110px;object-fit:contain}
+.bozza-cover-logo-sep{width:1px;height:32px;background:#C2C1C1}
+/* Main content - bottom-left */
+.bozza-cover-main{z-index:1;position:relative;margin-top:auto;padding-top:40px;max-width:55%}
+.bozza-cover-pretitle{font-size:13px;font-weight:600;color:#4D4D4D;letter-spacing:.3px;margin-bottom:10px}
+.bozza-cover-h1{font-size:38px;font-weight:700;color:#1a1a1a;line-height:1.1;margin-bottom:6px}
+.bozza-cover-h1 span{color:#F90032}
+.bozza-cover-dealer-name{font-size:18px;font-weight:600;color:#4D4D4D;margin-top:14px;margin-bottom:28px}
+.bozza-cover-sep{width:48px;height:2px;background:#E9E9E9;margin-bottom:22px}
+.bozza-cover-referenti{font-size:12px;color:#666;line-height:1.9}
+.bozza-cover-referenti b{color:#333;font-weight:600}
+/* Bottom bar */
+.bozza-cover-bottom{border-top:1px solid #E9E9E9;padding-top:14px;margin-top:32px;display:flex;justify-content:space-between;align-items:center;z-index:1;position:relative}
+.bozza-cover-bottom-date{color:#F90032;font-size:11px;font-weight:600}
+.bozza-cover-bottom-name{font-size:11px;color:#4D4D4D;text-align:right}
+
+/* Fix nomi prodotti troncati */
+.bozza-table{width:100%;border-collapse:collapse;table-layout:auto;page-break-inside:auto}
+.bozza-table th{font-size:11px;font-weight:700;color:#fff;background:#4D4D4D;padding:7px 12px;text-align:right;white-space:nowrap}
+.bozza-table th:first-child{text-align:left;width:60%}
+.bozza-table td{font-size:12px;padding:8px 12px;border-bottom:1px solid #f0f0f0;color:#4D4D4D;text-align:right;white-space:nowrap}
+.bozza-table td:first-child{text-align:left;font-weight:500;white-space:normal;word-break:break-word;width:60%}
+.bozza-table tr:last-child td{border-bottom:none}
+.bozza-table tr:hover td{background:#fafafa}
+/* Link presentazione */
+.pres-link{display:inline-block;margin-left:7px;font-size:10px;color:#C2C1C1;text-decoration:none;font-weight:400;vertical-align:middle;opacity:.8}
+.pres-link:hover{color:#F90032;opacity:1}
+.bozza-pres-link{display:block;font-size:10px;color:#C2C1C1;text-decoration:none;margin-top:3px;font-weight:400}
+.bozza-pres-link:hover{color:#F90032}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-logos" id="logo-wrap">
+      <img id="motork-logo" src="data:image/png;base64,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" alt="MotorK">
+      <div class="header-logo-sep" id="logo-sep"></div>
+      <img id="dealer-logo-img" src="" alt="Logo dealer">
+    </div>
+    <div>
+      <h1>Preventivo SparK Platform</h1>
+      <p>MotorK Italia — Paolo Pesenti, Senior Dealer Coach</p>
+    </div>
+  </div>
+
+  <!-- Dealer Info -->
+  <div class="dealer-grid">
+    <div class="form-group"><label>Concessionario</label><input id="dealer-name" placeholder="Nome dealer"></div>
+    <div class="form-group">
+      <label style="display:flex;align-items:center;gap:5px;cursor:pointer">
+        <input type="checkbox" id="show-dealer-logo" checked
+          style="accent-color:#F90032;width:14px;height:14px;flex-shrink:0;cursor:pointer"
+          onchange="toggleDealerLogo(this.checked)">
+        URL Sito (per logo)
+      </label>
+      <input id="dealer-url" placeholder="https://www.concessionario.it" oninput="updateDealerLogo(this.value)" type="url">
+    </div>
+    <div class="form-group"><label>Titolare</label><input id="contact-name" placeholder="Nome Titolare"></div>
+    <div class="form-group"><label>Digital Manager</label><input id="dm-name" placeholder="Nome Digital Manager"></div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="btn-bar">
+    <button class="btn-red" onclick="generatePDF()">📄 Genera PDF</button>
+    <button class="btn-gray" onclick="toggleAllSections()">⊕⊖ Apri/Chiudi Tutto</button>
+    <button class="btn-gray" onclick="populateRandom()">🎲 Test Random</button>
+    <button class="btn-gray" onclick="resetForm()">🔄 Azzera</button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('spark',this)">🎯 SparK Platform</button>
+    <button class="tab-btn" onclick="switchTab('marketing',this)">📊 Marketing</button>
+    <button class="tab-btn" onclick="switchTab('bozza',this); renderBozza()">📄 Bozza Preventivo</button>
+  </div>
+
+  <!-- TAB SPARK -->
+  <div id="spark" class="tab-content active">
+
+    <!-- STOCK -->
+    <div class="section">
+      <div class="section-hdr" onclick="toggleSection('s-stock')">
+        <span>📦 Stock &amp; Multimedia</span><span>▼</span>
+      </div>
+      <div id="s-stock" class="section-body open">
+        <table>
+          <thead><tr>
+            <th title="🔴 In offerta / 🔵 Suggerito">☐☐</th>
+            <th style="text-align:left">Prodotto</th>
+            <th>Variabili</th>
+            <th>Canone<br>base</th>
+            <th>UT<br>calc.</th>
+            <th>UT<br>libero</th>
+            <th>Canone<br>calc.</th>
+            <th>Canone<br>libero</th>
+          </tr></thead>
+          <tbody id="tbody-stock"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- WEB -->
+    <div class="section">
+      <div class="section-hdr" onclick="toggleSection('s-web')">
+        <span>🌐 WebSparK</span><span>▼</span>
+      </div>
+      <div id="s-web" class="section-body open">
+        <table>
+          <thead><tr>
+            <th title="🔴 In offerta / 🔵 Suggerito">☐☐</th>
+            <th style="text-align:left">Prodotto</th>
+            <th>Variabili</th>
+            <th>Canone<br>base</th>
+            <th>UT<br>calc.</th>
+            <th>UT<br>libero</th>
+            <th>Canone<br>calc.</th>
+            <th>Canone<br>libero</th>
+          </tr></thead>
+          <tbody id="tbody-web"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CRM -->
+    <div class="section">
+      <div class="section-hdr" onclick="toggleSection('s-crm')">
+        <span>🎯 CRM &amp; Comunicazione</span><span>▼</span>
+      </div>
+      <div id="s-crm" class="section-body open">
+        <table>
+          <thead><tr>
+            <th title="🔴 In offerta / 🔵 Suggerito">☐☐</th>
+            <th style="text-align:left">Prodotto</th>
+            <th>Variabili</th>
+            <th>Canone<br>base</th>
+            <th>UT<br>calc.</th>
+            <th>UT<br>libero</th>
+            <th>Canone<br>calc.</th>
+            <th>Canone<br>libero</th>
+          </tr></thead>
+          <tbody id="tbody-crm"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- AFTERSALES -->
+    <div class="section">
+      <div class="section-hdr" onclick="toggleSection('s-aftersales')">
+        <span>⭐ After-Sales</span><span>▼</span>
+      </div>
+      <div id="s-aftersales" class="section-body open">
+        <table>
+          <thead><tr>
+            <th title="🔴 In offerta / 🔵 Suggerito">☐☐</th>
+            <th style="text-align:left">Prodotto</th>
+            <th>Variabili</th>
+            <th>Canone<br>base</th>
+            <th>UT<br>calc.</th>
+            <th>UT<br>libero</th>
+            <th>Canone<br>calc.</th>
+            <th>Canone<br>libero</th>
+          </tr></thead>
+          <tbody id="tbody-aftersales"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- INTEGRAZIONI -->
+    <div class="section">
+      <div class="section-hdr" onclick="toggleSection('s-integrazioni')">
+        <span>🔗 Integrazioni</span><span>▶</span>
+      </div>
+      <div id="s-integrazioni" class="section-body">
+        <div class="search-row">
+          <input type="text" id="search-integrazioni" placeholder="🔍 Cerca integrazione..." oninput="filterIntegrazioni(this.value)">
+        </div>
+        <table>
+          <thead><tr>
+            <th title="🔴 In offerta / 🔵 Suggerito">☐☐</th>
+            <th style="text-align:left">Prodotto</th>
+            <th>Variabili</th>
+            <th>Canone<br>base</th>
+            <th>UT<br>calc.</th>
+            <th>UT<br>libero</th>
+            <th>Canone<br>calc.</th>
+            <th>Canone<br>libero</th>
+          </tr></thead>
+          <tbody id="tbody-integrazioni-spark"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TOTALS -->
+    <div class="totals-box">
+      <div class="tot-row"><span>TOTALE UNA TANTUM</span><span id="total-ut">€ 0</span></div>
+      <div class="tot-row"><span>TOTALE CANONI MENSILI</span><span id="total-canone">€ 0/mese</span></div>
+      <div class="disc-grid">
+        <div class="disc-box">
+          <label>Sconto firma entro</label>
+          <input type="date" id="sconto-data" onchange="calculateAll()">
+          <div class="disc-inline"><label>% UT</label><input type="number" id="sconto-ut-pct" class="var-input" min="0" max="100" step="0.5" oninput="calculateAll()"></div>
+          <div class="disc-inline"><label>% Can.</label><input type="number" id="sconto-canone-firma-pct" class="var-input" min="0" max="100" step="0.5" oninput="calculateAll()"></div>
+          <div class="disc-savings" id="firma-savings"></div>
+        </div>
+        <div class="disc-box">
+          <label>Sconto pagamento annuale anticipato</label>
+          <div class="disc-inline"><label>% UT</label><input type="number" id="sconto-annuale-ut-pct" class="var-input" min="0" max="100" step="0.5" oninput="calculateAll()"></div>
+          <div class="disc-inline"><label>% Can.</label><input type="number" id="sconto-annuale-canone-pct" class="var-input" min="0" max="100" step="0.5" oninput="calculateAll()"></div>
+          <div class="disc-savings" id="annuale-savings"></div>
+        </div>
+      </div>
+      <div class="tot-row grand"><span>TOTALE SCONTATO</span><span id="total-scontato">€ 0</span></div>
+    </div>
+  </div>
+
+  <!-- TAB MARKETING -->
+  <div id="marketing" class="tab-content">
+    <div class="section">
+      <div class="section-hdr" onclick="toggleSection('s-marketing')">
+        <span>📊 Attività Marketing</span><span>▼</span>
+      </div>
+      <div id="s-marketing" class="section-body open">
+        <table>
+          <thead><tr>
+            <th title="🔴 In offerta / 🔵 Suggerito">☐☐</th>
+            <th style="text-align:left">Prodotto</th>
+            <th>Variabili</th>
+            <th>Canone<br>base</th>
+            <th>UT<br>calc.</th>
+            <th>UT<br>libero</th>
+            <th>Canone<br>calc.</th>
+            <th>Canone<br>libero</th>
+          </tr></thead>
+          <tbody id="tbody-marketing"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB BOZZA -->
+  <div id="bozza" class="tab-content">
+    <div class="bozza-toolbar">
+      <button class="btn-red" onclick="generatePDF()">📄 Genera PDF</button>
+      <span class="bozza-hint">Il PDF sarà identico a questa anteprima</span>
+    </div>
+    <div id="bozza-content" class="bozza-page">
+      <p class="bozza-empty">Seleziona dei prodotti nelle tab SparK Platform o Marketing per vedere l'anteprima.</p>
+    </div>
+  </div>
+
+</div>
+<script>
+// ============================================================
+// PRODOTTI
+// ============================================================
+var MK_LOGO_DARK = "data:image/png;base64,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";
+var MK_LOGO_LIGHT = "data:image/png;base64,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";
+const products = {
+  stock: [
+    { id:'ssk_multi',   name:'StockSparK - Multipubblicazione da targa / telaio', ut:0, canone:80, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing' },
+    { id:'ssk_app',     name:'StockSparK APP - 360° interno/esterno',              ut:0, canone:90, locations:1, locationPrice:30, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing' },
+    { id:'bgrem_100',   name:'Rimozione sfondo - 100 immagini/mese',               ut:0, canone:70, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing' },
+    { id:'bgrem_250',   name:'Rimozione sfondo - 250 immagini/mese',               ut:0, canone:160, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing' },
+    { id:'bgrem_500',   name:'Rimozione sfondo - 500 immagini/mese',               ut:0, canone:280, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing' },
+    { id:'bgrem_1000',  name:'Rimozione sfondo - 1000 immagini/mese',              ut:0, canone:1000, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing' },
+    { id:'bgrem_custom',name:'Rimozione sfondo - Custom (input immagini/mese)',    ut:0, canone:0, isCustom:true, customLabel:'img' },
+    { id:'bgrem_sfondo',name:'Rimozione sfondo - Sfondo personalizzato',           ut:0, canone:20 },
+    { id:'aiv_20',      name:'AI Video - 20 video simultanei',                     ut:0, canone:100, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing' },
+    { id:'aiv_50',      name:'AI Video - 50 video simultanei',                     ut:0, canone:140, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing' },
+    { id:'aiv_100',     name:'AI Video - 100 video simultanei',                    ut:0, canone:221, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing' },
+    { id:'aiv_200',     name:'AI Video - 200 video simultanei',                    ut:0, canone:371, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing' },
+    { id:'aiv_500',     name:'AI Video - 500 video simultanei',                    ut:0, canone:875, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing' },
+    { id:'aiv_custom',  name:'AI Video - Custom (input video)',                    ut:0, canone:0, isCustom:true, customLabel:'video' }
+  ],
+  web: [
+    { id:'wsk_core', name:'WebSparK Revolution - Core',     ut:1000, canone:300, variables:1, variablePrice:48, presentUrl:'https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present' },
+    { id:'wsk_adv',  name:'WebSparK Revolution - Advanced', ut:1500, canone:570, variables:1, variablePrice:48, presentUrl:'https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present' },
+    { id:'wsk_prem', name:'WebSparK Revolution - Premium',  ut:2000, canone:870, variables:1, variablePrice:48, presentUrl:'https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present' },
+    { id:'wsk_mob',  name:'WebSparK Revolution - Mobility', ut:1200, canone:500, variables:1, variablePrice:48, presentUrl:'https://docs.google.com/presentation/d/1yrbghZDpe7prWrcvEmYbK0uKunI3qKf271J0oecz8WE/present' },
+    { id:'wsk_srv',  name:'WebSparK Revolution - Service',  ut:1000, canone:300, variables:1, variablePrice:48, presentUrl:'https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present' },
+    { id:'wsk_trk',  name:'WebSparK Revolution - Truck',    ut:1200, canone:500, variables:1, variablePrice:25, presentUrl:'https://docs.google.com/presentation/d/196mZFXnlcAtrIFjWzBShXlJ8y08pZDMG5WUFR25tMAk/present' },
+    { id:'wsk_b2b',  name:'WebSparK B2B',                   ut:1500, canone:500, presentUrl:'https://drive.google.com/file/d/1JqFCLERcvEAzaHxJukixjY2-EeL4j3m6/view?usp=sharing' },
+    { id:'wsk_aste', name:'WebSparK Aste',                  ut:2000, canone:1000, presentUrl:'https://drive.google.com/file/d/1JqFCLERcvEAzaHxJukixjY2-EeL4j3m6/view?usp=sharing' },
+    { id:'wsk_ecom', name:'WebSparK - ecommerce',           ut:1500, canone:315, presentUrl:'https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present' },
+    { id:'wsk_conf', name:'WebSparK - Car Configurator',    ut:800,  canone:100, variables:1, variablePrice:100, presentUrl:'https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present' }
+  ],
+  crm: [
+    { id:'lsk_ess',  name:'LeadSparK Essential',                         ut:1000, canone:75,   licenses:1, licensesPrice:75, presentUrl:'https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present' },
+    { id:'lsk_rev',  name:'LeadSparK Revolution',                        ut:1500, canone:100,  licenses:1, licensesPrice:100, presentUrl:'https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present' },
+    { id:'lsk_wa',   name:'LeadSparK WhatsApp Business',                 ut:500,  canone:39,   licenses:1, licensesPrice:39, presentUrl:'https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present' },
+    { id:'lsk_conf', name:'LeadSparK Car Configurator',                  ut:800,  canone:100,  brands:1, brandsPrice:100, presentUrl:'https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present' },
+    { id:'lsk_mkt',  name:'LeadSparK Marketing/Process/AI Automation',   ut:3000, canone:1000, presentUrl:'https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present' },
+    { id:'csk_100',  name:'CallSparK - Gestione AI 100 lead/mese',       ut:1500, canone:350,  locations:1, locationPrice:100, presentUrl:'https://docs.google.com/presentation/d/185utUR8TkIl8lUsW3DkpNNW8RDtiVBHUIB_ghK8A2hk/present' },
+    { id:'csk_200',  name:'CallSparK - Gestione AI 200 lead/mese',       ut:2000, canone:580,  locations:1, locationPrice:100, presentUrl:'https://docs.google.com/presentation/d/185utUR8TkIl8lUsW3DkpNNW8RDtiVBHUIB_ghK8A2hk/present' },
+    { id:'csk_300',  name:'CallSparK - Gestione AI 300 lead/mese',       ut:2500, canone:790,  locations:1, locationPrice:100, presentUrl:'https://docs.google.com/presentation/d/185utUR8TkIl8lUsW3DkpNNW8RDtiVBHUIB_ghK8A2hk/present' },
+    { id:'csk_500',  name:'CallSparK - Gestione AI 500 lead/mese',       ut:3000, canone:1200, locations:1, locationPrice:100, presentUrl:'https://docs.google.com/presentation/d/185utUR8TkIl8lUsW3DkpNNW8RDtiVBHUIB_ghK8A2hk/present' },
+    { id:'csk_cust', name:'CallSparK - Custom (input lead/mese)',         ut:2000, canone:0,   isCustom:true, customLabel:'lead' },
+    { id:'cdp',      name:'Customer Data Platform - CDP AI',              ut:1200, canone:100, presentUrl:'https://docs.google.com/presentation/d/15DxZnZXd-AmXoCEoW38UfM-Vzy7moBLVhvx8gkTfzDc/present' }
+  ],
+  aftersales: [
+    { id:'fsk', name:'FidSparK',    ut:1000, canone:100, locations:1, locationPrice:50, presentUrl:'https://docs.google.com/presentation/d/1tKwQ8I8RfuCLswVCublwRyTGEnwUCwqAmaMzWxID7Is/present' },
+    { id:'psk', name:'PredictSparK',ut:2000, canone:500, locations:1, locationPrice:100, presentUrl:'https://docs.google.com/presentation/d/1LqHmmVMst3zOtl-KggSmUg0NWGezzIBG9qtFQ78RfqY/present' }
+  ],
+  marketing: [
+    { id:'mkt_budget',   name:'Budget Campagna (input €)',               ut:0, canone:0, isCustom:true, customLabel:'€' },
+    { id:'gads_large',   name:'Google Feed Vehicle Ads - Large',         ut:0, canone:225, feeds:1, feedsPrice:50 },
+    { id:'gads_small',   name:'Google Feed Vehicle Ads - Small',         ut:0, canone:175, feeds:1, feedsPrice:50 },
+    { id:'fb_auto_large',name:'Facebook Automotive Feed - Large',        ut:0, canone:225, feeds:1, feedsPrice:50 },
+    { id:'fb_auto_small',name:'Facebook Automotive Feed - Small',        ut:0, canone:175, feeds:1, feedsPrice:50 },
+    { id:'fb_ecom',      name:'Facebook Ecommerce Feed',                 ut:0, canone:100 }
+  ],
+  integrazioni: [
+    { id:'incadea',        name:'Incadea - Customers & Privacy',                ut:0,   canone:130 },
+    { id:'kl_cust',        name:'Keyloop Windrakar - Customer',                 ut:0,   canone:50, locations:1, locationPrice:50 },
+    { id:'kl_maint',       name:'Keyloop Windrakar - Maintenance',              ut:0,   canone:90 },
+    { id:'kl_offers',      name:'Keyloop Windrakar - Offers & Contracts',       ut:0,   canone:50, locations:1, locationPrice:50 },
+    { id:'kl_stock',       name:'Keyloop Windrakar - Vehicle Stock',            ut:0,   canone:50, locations:1, locationPrice:50 },
+    { id:'kl_booking',     name:'Keyloop Windrakar - Workshop Booking',         ut:0,   canone:50, locations:1, locationPrice:50 },
+    { id:'kl_orders',      name:'Keyloop Windrakar - Workshop Orders',          ut:0,   canone:50, locations:1, locationPrice:50 },
+    { id:'rsp_bmw',        name:'RSP BMW - Lead Connector',                     ut:83,  canone:83 },
+    { id:'swp2',           name:'SWP2 - Lead Management',                       ut:0,   canone:130 },
+    { id:'sipad_maint',    name:'Sipadpower - Maintenance',                     ut:0,   canone:90 },
+    { id:'sipad_offers',   name:'Sipadpower - Offers & Contracts',              ut:500, canone:30, locations:1, locationPrice:30 },
+    { id:'sipad_stock',    name:'Sipadpower - Vehicle Stock',                   ut:0,   canone:50, locations:1, locationPrice:50 },
+    { id:'sipad_cust',     name:'Sipadpower - Customers & Privacy',             ut:0,   canone:130 },
+    { id:'stellantis',     name:'Stellantis - Lead Connector',                  ut:0,   canone:130 },
+    { id:'toshiko',        name:'Toshiko - Lead Management',                    ut:0,   canone:130 },
+    { id:'ford',           name:'Ford - Lead Connector',                        ut:0,   canone:83 },
+    { id:'mazda',          name:'Mazda/Ecar - Lead Connector',                  ut:0,   canone:83 },
+    { id:'visual_soft',    name:'Visual Software - Lead Connector',             ut:0,   canone:130 },
+    { id:'ssk_leadmgr',   name:'StockSparK Lead Manager API',                  ut:200, canone:150 },
+    { id:'datacar',        name:'Datacar - Lead Connector',                     ut:0,   canone:130 },
+    { id:'kia',            name:'KIA - Lead Connector',                         ut:0,   canone:83 },
+    { id:'tcar',           name:'TCAR - Lead Connector',                        ut:0,   canone:83 },
+    { id:'honda',          name:'Honda - Lead Connector',                       ut:0,   canone:83 },
+    { id:'hyundai_leads',  name:'Hyundai - Lead Connector',                     ut:0,   canone:83 },
+    { id:'hyundai_stock',  name:'Hyundai - Vehicle Stock',                      ut:0,   canone:50, locations:1, locationPrice:50 },
+    { id:'cf_leads',       name:'Customer First - Lead Connector',              ut:0,   canone:83 },
+    { id:'cf_stock',       name:'Customer First - Vehicle Stock',               ut:0,   canone:50, locations:1, locationPrice:50 },
+    { id:'kgm',            name:'KGM - Lead Connector',                         ut:0,   canone:83 },
+    { id:'api_stock',      name:'API Stock (Custom)',                            ut:0,   canone:200 },
+    { id:'api_lead',       name:'API Lead (Custom)',                             ut:0,   canone:200 },
+    { id:'mg_leads',       name:'MG - Lead Connector',                          ut:0,   canone:83 },
+    { id:'mg_stock',       name:'MG - Vehicle Stock',                           ut:0,   canone:50, locations:1, locationPrice:50 },
+    { id:'mercedes',       name:'Mercedes - Lead Connector',                    ut:0,   canone:130 },
+    { id:'nextlane_cust',  name:'Nextlane - Customer',                          ut:0,   canone:50, locations:1, locationPrice:50 },
+    { id:'nextlane_offers',name:'Nextlane - Offers & Contracts',                ut:0,   canone:50, locations:1, locationPrice:50 },
+    { id:'nextlane_stock', name:'Nextlane - Vehicle Stock',                     ut:0,   canone:50, locations:1, locationPrice:50 }
+  ]
+};
+
+// ============================================================
+// RENDER TABLES
+// ============================================================
+function renderTable(section, tbodyId) {
+  var tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  products[section].forEach(function(p) {
+    var tr = document.createElement('tr');
+    tr.dataset.pid = p.id;
+    tr.dataset.section = section;
+
+    // --- Cella variabili (colonna 3) ---
+    var varHtml = '';
+    if (p.isCustom) {
+      varHtml = (p.customLabel || '') + ' <input type="number" class="inp-var" min="0" step="1" oninput="calculateAll()" placeholder="0">';
+    } else if (p.variables) {
+      varHtml = '<input type="number" class="inp-var" min="1" value="' + p.variables + '" step="1" oninput="calculateAll()"> &times;&nbsp;€' + p.variablePrice;
+    } else if (p.locations) {
+      varHtml = 'Sedi&nbsp;<input type="number" class="inp-var" min="1" value="' + p.locations + '" step="1" oninput="calculateAll()"> &times;&nbsp;€' + p.locationPrice;
+    } else if (p.licenses) {
+      varHtml = 'Lic&nbsp;<input type="number" class="inp-var" min="1" value="' + p.licenses + '" step="1" oninput="calculateAll()"> &times;&nbsp;€' + p.licensesPrice;
+    } else if (p.brands) {
+      varHtml = 'Brand&nbsp;<input type="number" class="inp-var" min="1" value="' + p.brands + '" step="1" oninput="calculateAll()"> &times;&nbsp;€' + p.brandsPrice;
+    } else if (p.feeds) {
+      varHtml = 'Feed&nbsp;<input type="number" class="inp-var" min="1" value="' + p.feeds + '" step="1" oninput="calculateAll()"> &times;&nbsp;€' + p.feedsPrice;
+    } else {
+      varHtml = '—';
+    }
+
+    // --- Canone base (colonna 4) ---
+    var canoneBaseHtml = p.isCustom
+      ? '<input type="number" class="inp-var" placeholder="€/m" oninput="calculateAll()" style="width:56px">'
+      : (p.canone > 0 ? '€&nbsp;' + p.canone.toLocaleString('it-IT') : '—');
+
+    // --- UT calcolata (colonna 5) ---
+    var utCalcHtml = p.ut > 0 ? '€&nbsp;' + p.ut.toLocaleString('it-IT') : '—';
+
+    // --- UT libero override (colonna 7) ---
+    var utOvHtml = p.ut > 0
+      ? '<input type="number" class="inp-ut-ov" placeholder="override" oninput="calculateAll()" title="Sostituisce UT calcolata">'
+      : '<input type="number" class="inp-ut-ov" placeholder="inserisci" oninput="calculateAll()" title="UT manuale">';
+
+    // --- Canone calcolato (colonna 8) ---
+    var canCalcHtml = '<span class="can-calc" id="can-' + p.id + '">—</span>';
+
+    // --- Canone libero override (colonna 9) ---
+    var canOvHtml = '<input type="number" class="inp-can-ov" placeholder="override" oninput="calculateAll()" title="Sostituisce canone calcolato">';
+
+    tr.innerHTML =
+      '<td>' +
+        '<div class="cb-pair">' +
+          '<input type="checkbox" class="cb-cost" title="In offerta (rosso)" onchange="handleCbToggle(this)">' +
+          '<input type="checkbox" class="cb-suggest" title="Suggerisci (blu)" onchange="handleCbToggle(this)">' +
+        '</div>' +
+      '</td>' +
+      '<td>' + p.name + (p.presentUrl ? '<a class="pres-link" href="' + p.presentUrl + '" target="_blank" title="Vedi presentazione">↗ presentazione</a>' : '') + '</td>' +
+      '<td style="text-align:center">' + varHtml + '</td>' +
+      '<td>' + canoneBaseHtml + '</td>' +
+      '<td id="ut-' + p.id + '">' + utCalcHtml + '</td>' +
+      '<td>' + utOvHtml + '</td>' +
+      '<td>' + canCalcHtml + '</td>' +
+      '<td>' + canOvHtml + '</td>';
+
+    tbody.appendChild(tr);
+  });
+}
+
+// ============================================================
+// LOGIC
+// ============================================================
+function handleCbToggle(cb) {
+  const row = cb.closest('tr');
+  const cost = row.querySelector('.cb-cost');
+  const suggest = row.querySelector('.cb-suggest');
+  if (cb.classList.contains('cb-cost') && cb.checked) suggest.checked = false;
+  if (cb.classList.contains('cb-suggest') && cb.checked) cost.checked = false;
+  calculateAll();
+}
+
+function getRowCanone(row) {
+  var pid = row.dataset.pid;
+  var section = row.dataset.section;
+  var p = products[section].find(function(x) { return x.id === pid; });
+  if (!p) return 0;
+
+  // Override manuale canone (colonna 9)
+  var canOv = row.querySelector('.inp-can-ov');
+  if (canOv && canOv.value !== '') return parseFloat(canOv.value) || 0;
+
+  // Canone base
+  var base = p.canone;
+  var varInp = row.querySelector('.inp-var');
+
+  if (p.isCustom) {
+    base = varInp ? (parseFloat(varInp.value) || 0) : 0;
+  } else if (p.variables) {
+    var n = varInp ? (parseInt(varInp.value) || p.variables) : p.variables;
+    base = p.canone + Math.max(0, n - 1) * p.variablePrice;
+  } else if (p.locations) {
+    var n = varInp ? (parseInt(varInp.value) || p.locations) : p.locations;
+    base = p.canone + Math.max(0, n - p.locations) * p.locationPrice;
+  } else if (p.licenses) {
+    var n = varInp ? (parseInt(varInp.value) || p.licenses) : p.licenses;
+    base = p.canone + Math.max(0, n - p.licenses) * p.licensesPrice;
+  } else if (p.brands) {
+    var n = varInp ? (parseInt(varInp.value) || p.brands) : p.brands;
+    base = p.canone + Math.max(0, n - p.brands) * p.brandsPrice;
+  } else if (p.feeds) {
+    var n = varInp ? (parseInt(varInp.value) || p.feeds) : p.feeds;
+    base = p.canone + Math.max(0, n - p.feeds) * p.feedsPrice;
+  }
+  return base;
+}
+
+function getRowUT(row) {
+  var pid = row.dataset.pid;
+  var section = row.dataset.section;
+  var p = products[section].find(function(x) { return x.id === pid; });
+  if (!p) return 0;
+  // Override manuale UT (colonna 7)
+  var utOv = row.querySelector('.inp-ut-ov');
+  if (utOv && utOv.value !== '') return parseFloat(utOv.value) || 0;
+  return p.ut;
+}
+
+function calculateAll() {
+  var totalUT = 0, totalCanone = 0;
+  document.querySelectorAll('tr[data-pid]').forEach(function(row) {
+    var pid = row.dataset.pid;
+    var cost = row.querySelector('.cb-cost');
+    var canCalcSpan = document.getElementById('can-' + pid);
+    // Aggiorna sempre il canone calcolato visibile
+    var c = getRowCanone(row);
+    if (canCalcSpan) canCalcSpan.textContent = c > 0 ? '€ ' + c.toFixed(2).replace('.',',') : '—';
+    if (cost && cost.checked) {
+      var u = getRowUT(row);
+      totalUT += u;
+      totalCanone += c;
+    }
+  });
+
+  document.getElementById('total-ut').textContent = '€ ' + totalUT.toLocaleString('it-IT', {minimumFractionDigits:2});
+  document.getElementById('total-canone').textContent = '€ ' + totalCanone.toLocaleString('it-IT', {minimumFractionDigits:2}) + '/mese';
+
+  // Sconti firma
+  const scontoData = document.getElementById('sconto-data').value;
+  const sUTPct = parseFloat(document.getElementById('sconto-ut-pct').value) || 0;
+  const sCanPct = parseFloat(document.getElementById('sconto-canone-firma-pct').value) || 0;
+  const sAnnUTPct = parseFloat(document.getElementById('sconto-annuale-ut-pct').value) || 0;
+  const sAnnCanPct = parseFloat(document.getElementById('sconto-annuale-canone-pct').value) || 0;
+
+  let scUTFirma = 0, scCanFirma = 0;
+  if (scontoData && (sUTPct > 0 || sCanPct > 0)) {
+    scUTFirma = totalUT * sUTPct / 100;
+    scCanFirma = totalCanone * sCanPct / 100;
+    document.getElementById('firma-savings').textContent = 'Risparmio: € ' + (scUTFirma + scCanFirma).toFixed(2).replace('.',',');
+  } else {
+    document.getElementById('firma-savings').textContent = '';
+  }
+
+  const scUTAnn = totalUT * sAnnUTPct / 100;
+  const scCanAnn = totalCanone * sAnnCanPct / 100;
+  if (sAnnUTPct > 0 || sAnnCanPct > 0) {
+    document.getElementById('annuale-savings').textContent = 'Risparmio: € ' + (scUTAnn + scCanAnn).toFixed(2).replace('.',',');
+  } else {
+    document.getElementById('annuale-savings').textContent = '';
+  }
+
+  const totScUt = totalUT - scUTFirma - scUTAnn;
+  const totScCan = totalCanone - scCanFirma - scCanAnn;
+  document.getElementById('total-scontato').textContent = '€ ' + totScUt.toFixed(2).replace('.',',') + ' UT + € ' + totScCan.toFixed(2).replace('.',',') + '/m';
+}
+
+// ============================================================
+// UI HELPERS
+// ============================================================
+function toggleDealerLogo(checked) {
+  var img = document.getElementById('dealer-logo-img');
+  var sep = document.getElementById('logo-sep');
+  if (!checked) {
+    img.style.display = 'none';
+    img.src = '';
+    sep.style.display = 'none';
+  } else {
+    var urlVal = document.getElementById('dealer-url').value;
+    if (urlVal && urlVal.trim()) updateDealerLogo(urlVal);
+  }
+}
+
+function updateDealerLogo(urlInput) {
+  var img = document.getElementById('dealer-logo-img');
+  var sep = document.getElementById('logo-sep');
+  var flag = document.getElementById('show-dealer-logo');
+
+  function showLogo(src) {
+    img.src = src;
+    img.style.display = 'block';
+    sep.style.display = 'block';
+  }
+  function hideLogo() {
+    img.style.display = 'none';
+    img.src = '';
+    sep.style.display = 'none';
+  }
+
+  // Se il flag è deselezionato non mostrare nulla
+  if (flag && !flag.checked) { hideLogo(); return; }
+
+  if (!urlInput || urlInput.trim() === '') { hideLogo(); return; }
+
+  var domain = urlInput.trim()
+    .replace(/^https?:\/\//i, '')
+    .replace(/^www\./i, '')
+    .split('/')[0];
+  if (!domain) { hideLogo(); return; }
+
+  // Testa se un URL immagine carica con successo
+  function tryImage(src) {
+    return new Promise(function(resolve) {
+      var t = new Image();
+      var timer = setTimeout(function() { t.src = ''; resolve(null); }, 5000);
+      t.onload  = function() { clearTimeout(timer); resolve(src); };
+      t.onerror = function() { clearTimeout(timer); resolve(null); };
+      t.src = src;
+    });
+  }
+
+  // Estrae URL logo dall'HTML della pagina
+  function extractLogoFromHtml(html, base) {
+    // 1. og:image (spesso è il logo o immagine principale)
+    var ogPatterns = [
+      /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']{10,})["']/i,
+      /<meta[^>]+content=["']([^"']{10,})["'][^>]+property=["']og:image["']/i
+    ];
+    for (var i = 0; i < ogPatterns.length; i++) {
+      var m = html.match(ogPatterns[i]);
+      if (m && m[1]) {
+        var u = m[1];
+        if (!u.match(/^https?:\/\//i)) u = 'https://' + base + (u[0] === '/' ? '' : '/') + u;
+        return u;
+      }
+    }
+    // 2. <img> con "logo" nel src, class o id
+    var allImgs = html.match(/<img\s[^>]{0,500}>/gi) || [];
+    for (var j = 0; j < allImgs.length; j++) {
+      var tag = allImgs[j];
+      if (/logo/i.test(tag) && !/nologo|logoutBtn/i.test(tag)) {
+        var sm = tag.match(/\ssrc=["']([^"']{5,})["']/i);
+        if (sm && !sm[1].startsWith('data:') && !sm[1].includes('pixel')) {
+          var u = sm[1];
+          if (!u.match(/^https?:\/\//i)) u = 'https://' + base + (u[0] === '/' ? '' : '/') + u;
+          return u;
+        }
+      }
+    }
+    return null;
+  }
+
+  async function fetchLogo() {
+    // 1. Clearbit (ottimo per brand noti)
+    var r = await tryImage('https://logo.clearbit.com/' + domain);
+    if (r) { showLogo(r); return; }
+
+    // 2. Brandfetch CDN (ottimo per aziende europee, incluse PMI)
+    r = await tryImage('https://cdn.brandfetch.io/' + domain + '/logo');
+    if (r) { showLogo(r); return; }
+
+    // 3. Scraping OG image / logo dalla homepage tramite proxy CORS
+    try {
+      var controller = new AbortController();
+      var timeout = setTimeout(function() { controller.abort(); }, 6000);
+      var resp = await fetch(
+        'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://' + domain),
+        { signal: controller.signal }
+      );
+      clearTimeout(timeout);
+      var html = await resp.text();
+      var logoSrc = extractLogoFromHtml(html, domain);
+      if (logoSrc) {
+        r = await tryImage(logoSrc);
+        if (r) { showLogo(r); return; }
+      }
+    } catch(e) {}
+
+    // Nessun logo trovato
+    hideLogo();
+  }
+
+  fetchLogo();
+}
+
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-content').forEach(function(el) { el.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(el) { el.classList.remove('active'); });
+  document.getElementById(tabId).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+const sectionOpen = { 's-stock':true,'s-web':true,'s-crm':true,'s-aftersales':true,'s-integrazioni':false,'s-marketing':true };
+
+function toggleSection(id) {
+  const body = document.getElementById(id);
+  const hdr = body.previousElementSibling;
+  const arrow = hdr ? hdr.querySelector('span:last-child') : null;
+  sectionOpen[id] = !sectionOpen[id];
+  body.classList.toggle('open', sectionOpen[id]);
+  if (arrow) arrow.textContent = sectionOpen[id] ? '▼' : '▶';
+}
+
+function toggleAllSections() {
+  const anyOpen = Object.values(sectionOpen).some(function(v) { return v; });
+  Object.keys(sectionOpen).forEach(function(id) {
+    sectionOpen[id] = !anyOpen;
+    const body = document.getElementById(id);
+    const hdr = body ? body.previousElementSibling : null;
+    const arrow = hdr ? hdr.querySelector('span:last-child') : null;
+    if (body) body.classList.toggle('open', !anyOpen);
+    if (arrow) arrow.textContent = !anyOpen ? '▼' : '▶';
+  });
+}
+
+function filterIntegrazioni(q) {
+  document.querySelectorAll('#tbody-integrazioni-spark tr').forEach(function(row) {
+    row.style.display = row.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
+  });
+}
+
+function resetForm() {
+  document.querySelectorAll('input').forEach(function(el) {
+    if (el.type === 'checkbox') el.checked = false;
+    else if (el.type !== 'date') el.value = '';
+  });
+  document.getElementById('sconto-data').value = '';
+  // Ripristina defaults variabili
+  document.querySelectorAll('tr[data-pid]').forEach(function(row) {
+    var pid = row.dataset.pid;
+    var section = row.dataset.section;
+    var p = products[section] ? products[section].find(function(x) { return x.id === pid; }) : null;
+    if (!p) return;
+    var varInp = row.querySelector('.inp-var');
+    if (!varInp) return;
+    if (p.variables) varInp.value = p.variables;
+    else if (p.locations) varInp.value = p.locations;
+    else if (p.licenses) varInp.value = p.licenses;
+    else if (p.brands) varInp.value = p.brands;
+    else if (p.feeds) varInp.value = p.feeds;
+  });
+  calculateAll();
+}
+
+function renderBozza() {
+  var el = document.getElementById('bozza-content');
+  if (!el) return;
+
+  var sectionDefs = [
+    { key:'stock',        label:'📦 Stock &amp; Multimedia' },
+    { key:'web',          label:'🌐 WebSparK' },
+    { key:'crm',          label:'🎯 CRM &amp; Comunicazione' },
+    { key:'aftersales',   label:'⭐ After-Sales' },
+    { key:'integrazioni', label:'🔗 Integrazioni' },
+    { key:'marketing',    label:'📊 Marketing' }
+  ];
+
+  var costItems = [], suggestItems = [];
+
+  sectionDefs.forEach(function(s) {
+    var rows = Array.from(document.querySelectorAll('tr[data-section="' + s.key + '"]'));
+    var sectionCost = [];
+    rows.forEach(function(row) {
+      var cbCost    = row.querySelector('.cb-cost');
+      var cbSuggest = row.querySelector('.cb-suggest');
+      var pid = row.dataset.pid;
+      var p   = products[s.key] ? products[s.key].find(function(x){ return x.id === pid; }) : null;
+      if (!p) return;
+      if (cbCost && cbCost.checked) {
+        sectionCost.push({ name: p.name, ut: getRowUT(row), canone: getRowCanone(row), presentUrl: p.presentUrl || '' });
+      }
+      if (cbSuggest && cbSuggest.checked) {
+        suggestItems.push(p.name);
+      }
+    });
+    if (sectionCost.length > 0) costItems.push({ label: s.label, rows: sectionCost });
+  });
+
+  if (costItems.length === 0 && suggestItems.length === 0) {
+    el.innerHTML = '<p class="bozza-empty">Seleziona dei prodotti nelle tab SparK Platform o Marketing per vedere l\'anteprima.</p>';
+    return;
+  }
+
+  var dealerName  = document.getElementById('dealer-name').value  || '—';
+  var contactName = document.getElementById('contact-name').value || '—';
+  var dmName      = document.getElementById('dm-name').value      || '—';
+  var today       = new Date().toLocaleDateString('it-IT', {day:'2-digit', month:'long', year:'numeric'});
+
+  // Logo dealer
+  var dealerLogoImg = document.getElementById('dealer-logo-img');
+  var hasDealerLogo = dealerLogoImg && dealerLogoImg.style.display !== 'none' && dealerLogoImg.src && dealerLogoImg.src !== window.location.href;
+  var dealerLogoSrc = hasDealerLogo ? dealerLogoImg.src : '';
+
+  var html = '';
+
+  // ══════════════════════════════════════════
+  // COPERTINA (pagina 1) - stile MotorK light
+  // ══════════════════════════════════════════
+  html += '<div class="bozza-cover">';
+
+  // Onda decorativa destra (SVG inline)
+  html += '<div class="bozza-cover-wave"><svg viewBox=\"0 0 420 740\" xmlns=\"http://www.w3.org/2000/svg\" preserveAspectRatio=\"xMaxYMid slice\" style=\"width:100%;height:100%\">  <defs>    <clipPath id=\"wclip\">      <path d=\"M0 0 L420 0 L420 740 L0 740 Z\"/>    </clipPath>  </defs>  <g clip-path=\"url(#wclip)\" fill=\"none\" stroke=\"#D8D8D8\" stroke-width=\"1.1\">    <path d=\"M420,0 C350,80 280,100 240,200 C200,300 260,380 220,460 C180,540 100,560 60,640 C20,720 0,740 0,740\"/>    <path d=\"M420,0 C370,70 310,90 270,190 C230,290 290,370 250,450 C210,530 130,550 90,630 C50,710 20,730 0,740\"/>    <path d=\"M420,20 C390,80 340,80 300,180 C260,280 320,360 280,440 C240,520 160,540 120,620 C80,700 40,720 0,740\"/>    <path d=\"M420,50 C400,90 360,80 330,170 C300,270 350,350 310,430 C270,510 190,530 150,610 C110,690 60,710 0,740\"/>    <path d=\"M420,90 C410,110 380,90 360,160 C340,260 380,340 340,420 C300,500 220,520 180,600 C140,680 80,700 0,740\"/>    <path d=\"M420,130 C420,140 400,100 390,150 C370,250 410,330 370,410 C330,490 250,510 210,590 C170,670 100,690 20,730\"/>    <path d=\"M420,180 C420,175 415,120 415,160 C405,250 430,320 400,400 C370,480 290,500 250,580 C210,660 130,680 50,720\"/>    <path d=\"M420,230 C420,210 420,145 420,175 C420,270 440,310 420,390 C400,470 330,490 300,560 C270,640 180,660 80,710\"/>    <path d=\"M420,290 C420,250 420,180 420,200 C420,300 440,300 430,370 C420,460 370,480 350,545 C320,615 230,640 110,700\"/>    <path d=\"M420,360 C420,290 420,220 420,235 C420,330 440,295 438,350 C434,440 410,465 400,530 C375,600 290,625 140,690\"/>  </g>  <!-- Sfondo grigio chiarissimo sul blocco onda -->  <path d=\"M420,0 C350,80 270,110 230,210 C190,310 250,390 210,470 C170,550 90,570 50,650 C10,730 0,740 0,740 L420,740 Z\" fill=\"#F2F2F2\" opacity=\"0.55\"/></svg></div>';
+
+  // Logos top: MotorK | Cliente (se disponibile)
+  html += '<div class="bozza-cover-logos">';
+  html += '  <img class="mk-logo-cover" src="' + MK_LOGO_DARK + '" alt="MotorK">';
+  if (hasDealerLogo) {
+    html += '  <div class="bozza-cover-logo-sep"></div>';
+    html += '  <img class="dealer-logo-cover" src="' + dealerLogoSrc + '" alt="' + dealerName + '">';
+  }
+  html += '</div>';
+
+  // Main content (basso-sinistra)
+  html += '<div class="bozza-cover-main">';
+  html += '  <div class="bozza-cover-pretitle">Proposta commerciale</div>';
+  html += '  <div class="bozza-cover-h1">SparK<br><span>Platform</span></div>';
+  if (dealerName !== '—') {
+    html += '  <div class="bozza-cover-dealer-name">' + dealerName + '</div>';
+  }
+  html += '  <div class="bozza-cover-sep"></div>';
+
+  // Referenti: solo quelli compilati
+  var hasRefs = (contactName !== '—') || (dmName !== '—');
+  if (hasRefs) {
+    html += '<div class="bozza-cover-referenti">';
+    if (contactName !== '—') html += '<div><b>Titolare</b> &nbsp; ' + contactName + '</div>';
+    if (dmName !== '—')      html += '<div><b>Digital Manager</b> &nbsp; ' + dmName + '</div>';
+    html += '</div>';
+  }
+  html += '</div>'; // fine .bozza-cover-main
+
+  // Bottom: data sinistra, Paolo destra
+  html += '<div class="bozza-cover-bottom">';
+  html += '  <div class="bozza-cover-bottom-date">' + today + '</div>';
+  html += '  <div class="bozza-cover-bottom-name"><b>Paolo Pesenti</b><br>Senior Dealer Coach — MotorK Italia</div>';
+  html += '</div>';
+  html += '</div>'; // fine .bozza-cover
+
+  // ══════════════════════════════════════════
+  // PAGINA 2+: contenuto economico
+  // ══════════════════════════════════════════
+
+  // Header pagina contenuto (logo dark su bianco)
+  html += '<div class="bozza-header">';
+  html += '  <div class="bozza-header-left"><img src="' + MK_LOGO_DARK + '" alt="MotorK"></div>';
+  html += '  <div class="bozza-header-right">';
+  html += '    <div class="bozza-title">PREVENTIVO SPARK PLATFORM</div>';
+  html += '    <div class="bozza-date">' + dealerName + ' — ' + today + '</div>';
+  html += '  </div>';
+  html += '</div>';
+
+  // Prodotti
+  html += '<div class="bozza-prodotti">';
+  html += '<div class="bozza-section-label">Prodotti in offerta</div>';
+
+  var totalUT = 0, totalCan = 0;
+
+  costItems.forEach(function(section) {
+    html += '<div class="bozza-section-hdr">' + section.label + '</div>';
+    html += '<table class="bozza-table"><thead><tr>';
+    html += '<th>Prodotto</th><th>Una Tantum</th><th>Canone / mese</th>';
+    html += '</tr></thead><tbody>';
+    section.rows.forEach(function(item) {
+      totalUT  += item.ut;
+      totalCan += item.canone;
+      html += '<tr><td>' + item.name + (item.presentUrl ? '<a class="bozza-pres-link" href="' + item.presentUrl + '" target="_blank">↗ Vedi presentazione</a>' : '') + '</td>';
+      html += '<td>' + (item.ut > 0 ? '€ ' + item.ut.toLocaleString('it-IT',{minimumFractionDigits:2}) : '—') + '</td>';
+      html += '<td>€ ' + item.canone.toLocaleString('it-IT',{minimumFractionDigits:2}) + '</td></tr>';
+    });
+    html += '</tbody></table>';
+  });
+  html += '</div>';
+
+  // Totali
+  html += '<div class="bozza-totali">';
+  html += '<div class="bozza-tot-row"><span>Totale Una Tantum</span><span>€ ' + totalUT.toLocaleString('it-IT',{minimumFractionDigits:2}) + '</span></div>';
+  html += '<div class="bozza-tot-row"><span>Totale Canone Mensile</span><span>€ ' + totalCan.toLocaleString('it-IT',{minimumFractionDigits:2}) + ' / mese</span></div>';
+
+  // Sconti — calcola scenari
+  var scontoData = document.getElementById('sconto-data').value;
+  var sUTPct     = parseFloat(document.getElementById('sconto-ut-pct').value) || 0;
+  var sCanPct    = parseFloat(document.getElementById('sconto-canone-firma-pct').value) || 0;
+  var sAnnUTPct  = parseFloat(document.getElementById('sconto-annuale-ut-pct').value) || 0;
+  var sAnnCanPct = parseFloat(document.getElementById('sconto-annuale-canone-pct').value) || 0;
+
+  var hasFirma   = scontoData && (sUTPct > 0 || sCanPct > 0);
+  var hasAnnuale = sAnnUTPct > 0 || sAnnCanPct > 0;
+
+  var scUTFirma = hasFirma   ? totalUT  * sUTPct    / 100 : 0;
+  var scCanFirma= hasFirma   ? totalCan * sCanPct   / 100 : 0;
+  var scUTAnn   = hasAnnuale ? totalUT  * sAnnUTPct / 100 : 0;
+  var scCanAnn  = hasAnnuale ? totalCan * sAnnCanPct/ 100 : 0;
+
+  html += '</div>'; // fine bozza-totali base
+
+  // Box scenari — mostrati solo se c'è almeno uno sconto
+  if (hasFirma || hasAnnuale) {
+    var gridClass = (hasFirma && hasAnnuale) ? 'bozza-scenari' : 'bozza-scenari single';
+    html += '<div class="' + gridClass + '">';
+
+    // Scenario 1: sconto firma
+    if (hasFirma) {
+      var dataFmt = new Date(scontoData).toLocaleDateString('it-IT');
+      var firmaUT  = totalUT  - scUTFirma;
+      var firmaCan = totalCan - scCanFirma;
+      var rispFirma = scUTFirma + scCanFirma;
+      html += '<div class="bozza-scenario-box">';
+      html += '  <div class="bozza-scenario-label">✍️ Se firmi entro il ' + dataFmt + '</div>';
+      html += '  <div class="bozza-scenario-desc">Sconto ' + sUTPct + '% sull\'una tantum e ' + sCanPct + '% sul canone mensile</div>';
+      html += '  <div class="bozza-scenario-row"><span>Una Tantum</span><span>€ ' + firmaUT.toLocaleString('it-IT',{minimumFractionDigits:2}) + '</span></div>';
+      html += '  <div class="bozza-scenario-row"><span>Canone mensile</span><span>€ ' + firmaCan.toLocaleString('it-IT',{minimumFractionDigits:2}) + ' / mese</span></div>';
+      html += '  <div class="bozza-scenario-saving">Risparmi € ' + rispFirma.toLocaleString('it-IT',{minimumFractionDigits:2}) + '</div>';
+      html += '</div>';
+    }
+
+    // Scenario 2: pagamento annuale anticipato
+    if (hasAnnuale) {
+      var annUT  = totalUT  - scUTAnn;
+      var annCan = totalCan - scCanAnn;
+      var rispAnn = scUTAnn + scCanAnn;
+      html += '<div class="bozza-scenario-box annuale">';
+      html += '  <div class="bozza-scenario-label">📅 Se paghi in anticipo (annuale)</div>';
+      html += '  <div class="bozza-scenario-desc">Sconto ' + sAnnUTPct + '% sull\'una tantum e ' + sAnnCanPct + '% sul canone mensile</div>';
+      html += '  <div class="bozza-scenario-row"><span>Una Tantum</span><span>€ ' + annUT.toLocaleString('it-IT',{minimumFractionDigits:2}) + '</span></div>';
+      html += '  <div class="bozza-scenario-row"><span>Canone mensile</span><span>€ ' + annCan.toLocaleString('it-IT',{minimumFractionDigits:2}) + ' / mese</span></div>';
+      html += '  <div class="bozza-scenario-saving">Risparmi € ' + rispAnn.toLocaleString('it-IT',{minimumFractionDigits:2}) + '</div>';
+      html += '</div>';
+    }
+
+    html += '</div>'; // fine .bozza-scenari
+
+    // Se entrambi: mostra anche combinato
+    if (hasFirma && hasAnnuale) {
+      var combUT  = totalUT  - scUTFirma  - scUTAnn;
+      var combCan = totalCan - scCanFirma - scCanAnn;
+      html += '<div class="bozza-tot-row grand" style="margin-top:14px">';
+      html += '  <span>Se firmi entro ' + new Date(scontoData).toLocaleDateString('it-IT') + ' e paghi in anticipo</span>';
+      html += '  <span>€ ' + combUT.toLocaleString('it-IT',{minimumFractionDigits:2}) + ' UT + € ' + combCan.toLocaleString('it-IT',{minimumFractionDigits:2}) + ' / mese</span>';
+      html += '</div>';
+    }
+  } else {
+    // nessuno sconto, non chiudiamo di nuovo (già chiuso)
+  }
+
+  // Suggeriti
+  if (suggestItems.length > 0) {
+    html += '<div class="bozza-suggest-box">';
+    html += '<div class="bozza-suggest-title">💡 Soluzioni consigliate</div>';
+    suggestItems.forEach(function(name) {
+      html += '<div class="bozza-suggest-item">→ ' + name + '</div>';
+    });
+    html += '</div>';
+  }
+
+  // Footer
+  html += '<div class="bozza-footer">Paolo Pesenti &nbsp;|&nbsp; Senior Dealer Coach &nbsp;|&nbsp; MotorK Italia &nbsp;|&nbsp; paolo.pesenti@motork.io</div>';
+
+  el.innerHTML = html;
+}
+
+
+function populateRandom() {
+  resetForm();
+
+  // Dealer random
+  var dealers = ['Autosalone Bianchi','Concessionaria Rossi','Gruppo Ferrari','AutoPrime','MotorCity','Mondial Auto','Autoshow Torino','Delta Motors'];
+  var names = ['Marco Bianchi','Laura Rossi','Giuseppe Ferrari','Anna Mancini','Roberto Sala','Francesca Galli'];
+  document.getElementById('dealer-name').value = dealers[Math.floor(Math.random()*dealers.length)];
+  document.getElementById('contact-name').value = names[Math.floor(Math.random()*names.length)];
+
+  // Funzione helper: seleziona N prodotti casuali da una sezione e li attiva
+  function pickFromSection(section, n, asCost) {
+    var rows = Array.from(document.querySelectorAll('tr[data-section="' + section + '"]'));
+    // Escludi i prodotti "custom" dall'estrazione automatica (troppo complessi senza dati)
+    var eligible = rows.filter(function(r) {
+      var pid = r.dataset.pid;
+      var p = products[section].find(function(x) { return x.id === pid; });
+      return p && !p.isCustom;
+    });
+    // Mescola e prendi N
+    eligible.sort(function() { return Math.random() - 0.5; });
+    eligible.slice(0, n).forEach(function(row) {
+      var pid = row.dataset.pid;
+      var p = products[section].find(function(x) { return x.id === pid; });
+      // Attiva checkbox
+      var cb = row.querySelector(asCost ? '.cb-cost' : '.cb-suggest');
+      if (cb) cb.checked = true;
+      // Imposta variabili random se il prodotto le ha
+      var varInp = row.querySelector('.inp-var');
+      if (varInp && p) {
+        if (p.variables)  varInp.value = 1 + Math.floor(Math.random() * 4);        // 1-4 sedi/varianti
+        else if (p.locations) varInp.value = 1 + Math.floor(Math.random() * 3);    // 1-3 sedi
+        else if (p.licenses)  varInp.value = 1 + Math.floor(Math.random() * 5);    // 1-5 licenze
+        else if (p.brands)    varInp.value = 1 + Math.floor(Math.random() * 3);    // 1-3 brand
+        else if (p.feeds)     varInp.value = 1 + Math.floor(Math.random() * 3);    // 1-3 feed
+      }
+    });
+  }
+
+  // 2-3 prodotti per ogni sezione come "in offerta"
+  pickFromSection('stock',       2 + Math.floor(Math.random()*2), true);
+  pickFromSection('web',         2 + Math.floor(Math.random()*2), true);
+  pickFromSection('crm',         2 + Math.floor(Math.random()*2), true);
+  pickFromSection('aftersales',  1 + Math.floor(Math.random()*2), true);  // max 2 prodotti totali
+  pickFromSection('integrazioni',2 + Math.floor(Math.random()*2), true);
+
+  // 1-2 prodotti da sezioni random come "suggeriti"
+  var suggestSections = ['stock','web','crm'];
+  suggestSections.sort(function() { return Math.random()-0.5; }).slice(0,2).forEach(function(s) {
+    // Prendi 1 prodotto non già selezionato
+    var rows = Array.from(document.querySelectorAll('tr[data-section="' + s + '"]'));
+    var free = rows.filter(function(r) {
+      return !r.querySelector('.cb-cost').checked && !r.querySelector('.cb-suggest').checked;
+    });
+    if (free.length > 0) {
+      var pick = free[Math.floor(Math.random()*free.length)];
+      var cb = pick.querySelector('.cb-suggest');
+      if (cb) cb.checked = true;
+    }
+  });
+
+  // Sconto firma random (50% probabilità)
+  if (Math.random() > 0.5) {
+    var d = new Date(); d.setDate(d.getDate() + 7 + Math.floor(Math.random()*21));
+    document.getElementById('sconto-data').value = d.toISOString().split('T')[0];
+    document.getElementById('sconto-ut-pct').value = 5 + Math.floor(Math.random()*11);
+    document.getElementById('sconto-canone-firma-pct').value = 3 + Math.floor(Math.random()*8);
+  }
+
+  // Sconto annuale random (30% probabilità)
+  if (Math.random() > 0.7) {
+    document.getElementById('sconto-annuale-ut-pct').value = 3 + Math.floor(Math.random()*8);
+    document.getElementById('sconto-annuale-canone-pct').value = 3 + Math.floor(Math.random()*8);
+  }
+
+  calculateAll();
+}
+
+function generatePDF() {
+  // Prima aggiorna la bozza, poi stampa
+  renderBozza();
+  var el = document.getElementById('bozza-content');
+  var dealerName = document.getElementById('dealer-name').value || 'Preventivo';
+  var filename = 'Preventivo_SparK_' + dealerName.replace(/[^a-zA-Z0-9]/g,'_') + '.pdf';
+  var opt = {
+    margin:       [10, 10, 12, 10],
+    filename:     filename,
+    image:        { type:'jpeg', quality:0.97 },
+    html2canvas:  { scale:2, useCORS:true, logging:false },
+    jsPDF:        { unit:'mm', format:'a4', orientation:'portrait' },
+    pagebreak:    { mode:['css','legacy'] }
+  };
+  html2pdf().set(opt).from(el).save();
+}
+
+
+
+// Init
+document.addEventListener('DOMContentLoaded', function() {
+  renderTable('stock', 'tbody-stock');
+  renderTable('web', 'tbody-web');
+  renderTable('crm', 'tbody-crm');
+  renderTable('aftersales', 'tbody-aftersales');
+  renderTable('marketing', 'tbody-marketing');
+  renderTable('integrazioni', 'tbody-integrazioni-spark');
+  calculateAll();
+});
+</script>
+</body>
+</html>
