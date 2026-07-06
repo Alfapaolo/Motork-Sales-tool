@@ -268,10 +268,12 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
 .log-card{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid #E9E9E9;border-radius:6px;margin-bottom:8px;transition:border-color .15s,background .15s;cursor:pointer}
 .log-card:hover{border-color:#F90032;background:#FFF9F9}
 .log-card input[type=checkbox]{accent-color:#F90032;width:15px;height:15px;flex-shrink:0;cursor:pointer}
-.log-card-main{flex:1;min-width:0;display:grid;grid-template-columns:1.1fr .8fr .7fr .9fr 1.3fr;gap:14px;align-items:center}
+.log-card-main{flex:1;min-width:0;display:grid;grid-template-columns:1.1fr .65fr .7fr .9fr 1.3fr;gap:14px;align-items:center}
 .log-card-dealer{font-size:13px;font-weight:700;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .log-card-sub{font-size:10px;color:#999;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.log-card-date{font-size:11px;color:#666;white-space:nowrap}
+.log-card-date{font-size:11px;color:#666;white-space:nowrap;text-align:left}
+.log-card-arr{font-size:10px;color:#999;white-space:nowrap;margin-top:2px}
+.log-card-arr b{color:#4D4D4D;font-weight:700}
 .log-card-tot{font-size:11px;color:#4D4D4D;white-space:nowrap}
 .log-card-tot b{color:#333}
 .log-card-load{font-size:10px;font-weight:700;color:#F90032;letter-spacing:.5px;text-transform:uppercase;flex-shrink:0}
@@ -1032,6 +1034,34 @@ function escLog(s) {
   });
 }
 
+function formatK(value) {
+  var v = (value || 0) / 1000;
+  var rounded = Math.round(v * 10) / 10;
+  var str = (rounded % 1 === 0) ? String(Math.round(rounded)) : rounded.toFixed(1).replace('.', ',');
+  return str + 'K';
+}
+
+function computeOfferARR(entry) {
+  var utListino  = entry.totalUT  || 0;
+  var canListino = entry.totalCan || 0; // mensile
+  var sUTPct     = parseFloat(entry.scontoUtPct)        || 0;
+  var sCanPct    = parseFloat(entry.scontoCanFirmaPct)  || 0;
+  var sAnnUTPct  = parseFloat(entry.scontoAnnUtPct)     || 0;
+  var sAnnCanPct = parseFloat(entry.scontoAnnCanPct)    || 0;
+  var hasFirma   = entry.scontoData && (sUTPct > 0 || sCanPct > 0);
+
+  var scUTFirma  = hasFirma ? utListino  * sUTPct     / 100 : 0;
+  var scCanFirma = hasFirma ? canListino * sCanPct    / 100 : 0;
+  var scUTAnn    = utListino  * sAnnUTPct  / 100;
+  var scCanAnn   = canListino * sAnnCanPct / 100;
+
+  var utScontata       = utListino  - scUTFirma  - scUTAnn;
+  var canAnnuoListino   = canListino * 12;
+  var canAnnuoScontato  = (canListino - scCanFirma - scCanAnn) * 12;
+
+  return 'ARR: ' + formatK(utListino) + '/' + formatK(canAnnuoListino) + ' - ' + formatK(utScontata) + '/' + formatK(canAnnuoScontato);
+}
+
 function getOfferProductCodes(entry) {
   var codes = [];
   (entry.rows || []).forEach(function(r) {
@@ -1071,7 +1101,7 @@ function renderLog() {
     html += '  <input type="checkbox" class="log-cb" data-id="' + e.id + '" onclick="event.stopPropagation()">';
     html += '  <div class="log-card-main">';
     html += '    <div><div class="log-card-dealer">' + escLog(e.dealerName || '(senza nome)') + '</div><div class="log-card-sub">' + escLog(e.contactName || '') + (e.dmName ? ' · ' + escLog(e.dmName) : '') + '</div></div>';
-    html += '    <div class="log-card-date">📅 ' + formatLogDate(e.savedAt) + '</div>';
+    html += '    <div><div class="log-card-date">📅 ' + formatLogDate(e.savedAt) + '</div><div class="log-card-arr">' + computeOfferARR(e) + '</div></div>';
     html += '    <div class="log-card-tot">UT <b>€ ' + (e.totalUT||0).toLocaleString('it-IT',{minimumFractionDigits:2}) + '</b></div>';
     html += '    <div class="log-card-tot">Canone <b>€ ' + (e.totalCan||0).toLocaleString('it-IT',{minimumFractionDigits:2}) + '</b>/mese</div>';
     html += '    <div class="log-card-note" title="' + escLog(codesStr) + '"><b>Prodotti: ' + nProdotti + '</b>' + (codesStr ? '  <span>' + escLog(codesStr) + '</span>' : '') + '</div>';
