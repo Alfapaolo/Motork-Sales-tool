@@ -1228,11 +1228,11 @@ function renderBozza() {
     html += '<table style="width:100%;border-collapse:collapse"><tr>';
     // Colonna sinistra: validità + firma
     html += '<td style="vertical-align:bottom;width:50%;text-align:left">';
-    html += '<div style="display:inline-block;background:#F9F9F9;border-left:3px solid #F90032;border-radius:0 5px 5px 0;padding:10px 16px;margin-bottom:18px">';
-    html += '<div style="font-size:9px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Validità dell’offerta</div>';
-    html += '<div style="font-size:15px;font-weight:700;color:#1A1A1A">'+vStr+'</div>';
+    html += '<div style="display:block;background:#F9F9F9;border-left:3px solid #F90032;border-radius:0 5px 5px 0;padding:12px 18px;margin-bottom:28px;width:240px">';
+    html += '<div style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Validità dell’offerta</div>';
+    html += '<div style="font-size:15px;font-weight:700;color:#000000;line-height:1.3">'+vStr+'</div>';
     html += '</div><br>';
-    html += '<div style="border-bottom:1.5px solid #B0B0B0;width:220px;margin-top:8px"></div>';
+    html += '<div style="border-bottom:1.5px solid #B0B0B0;width:220px;margin-top:32px"></div>';
     html += '<div style="font-size:9px;color:#AAA;margin-top:5px;letter-spacing:.5px;text-transform:uppercase">Firma per accettazione</div>';
     html += '</td>';
     // Colonna destra: contatto
@@ -1348,7 +1348,11 @@ function generatePDF() {
   renderBozza();
   var el = document.getElementById('bozza-content');
   var dealerName = document.getElementById('dealer-name').value || 'Preventivo';
-  var filename = 'Preventivo_SparK_' + dealerName.replace(/[^a-zA-Z0-9]/g,'_') + '.pdf';
+  var _d = new Date();
+  var _dd = String(_d.getDate()).padStart(2,'0');
+  var _mm = String(_d.getMonth()+1).padStart(2,'0');
+  var _yy = String(_d.getFullYear()).slice(-2);
+  var filename = dealerName.replace(/[^a-zA-Z0-9 ]/g,'').trim().toUpperCase().replace(/ +/g,'_') + '_offerta_' + _dd + '-' + _mm + '-' + _yy + '.pdf';
   var opt = {
     margin:       [10, 10, 12, 10],
     filename:     filename,
