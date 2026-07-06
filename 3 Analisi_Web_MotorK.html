@@ -166,18 +166,20 @@
       <div class="top-toggle"><button class="secondary" onclick="resetTool()">Nuova analisi</button></div>
       <div class="section-title">Analisi digitale</div>
       <div class="report" id="reportOut"></div>
-      <div class="btnrow">
-        <button class="secondary" onclick="downloadWord()">Scarica Word</button>
-      </div>
     </div>
 
     <div class="card">
       <div class="section-title">Mail per il cliente</div>
       <div class="emailbox" id="emailOut"></div>
+    </div>
+
+    <div class="card">
       <div class="btnrow">
-        <button class="secondary" onclick="copyEmail()">Copia mail</button>
-        <button class="secondary" onclick="downloadEmail()">Scarica mail (.txt)</button>
+        <button class="secondary" onclick="downloadWord()">Scarica analisi</button>
+        <button class="secondary" onclick="downloadEmail()">Scarica mail</button>
+        <button class="primary" style="width:auto;" onclick="downloadBoth()">Scarica entrambe</button>
       </div>
+      <div class="status" id="downloadStatus"></div>
     </div>
   </div>
 
@@ -380,7 +382,7 @@ function backToSearch(){
   document.getElementById('searchCard').classList.remove('hidden');
 }
 
-async function callClaude(promptText, useSearch){
+async function callClaudeOnce(promptText, useSearch){
   const body = {
     model: "claude-sonnet-4-6",
     max_tokens: 1000,
@@ -394,9 +396,30 @@ async function callClaude(promptText, useSearch){
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body)
   });
+  if(!res.ok){
+    let detail = '';
+    try{ const j = await res.json(); detail = (j.error && j.error.message) || ''; }catch(e){}
+    throw new Error('HTTP ' + res.status + (detail ? ' — ' + detail : ''));
+  }
   const data = await res.json();
   if(!data.content) throw new Error("Risposta API non valida");
   return data.content.filter(b => b.type === "text").map(b => b.text).join("\n").trim();
+}
+
+async function callClaude(promptText, useSearch){
+  try{
+    return await callClaudeOnce(promptText, useSearch);
+  }catch(err){
+    if(err.message === 'Failed to fetch'){
+      await new Promise(r => setTimeout(r, 2000));
+      try{
+        return await callClaudeOnce(promptText, useSearch);
+      }catch(err2){
+        throw new Error("connessione al servizio non riuscita dopo un ritentativo. Può dipendere da una rete aziendale/VPN che blocca le chiamate a api.anthropic.com, o da un timeout. Riprova tra poco o da un'altra rete.");
+      }
+    }
+    throw err;
+  }
 }
 
 function mdToHtml(md){
@@ -503,7 +526,18 @@ function resetTool(){
   selectedAccount = null;
 }
 
-function downloadWord(){
+function triggerDownload(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
+}
+
+function buildWordBlob(){
   const bodyHtml = mdToHtml(lastReportMd);
   const today = new Date().toLocaleDateString('it-IT');
   const doc = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
@@ -526,25 +560,32 @@ function downloadWord(){
 bodyHtml +
 '<div class="footer">Documento preparato da MotorK - SparK Platform</div>' +
 '</body></html>';
-  const blob = new Blob(['\ufeff', doc], { type: 'application/msword' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'Analisi_Web_' + lastName.replace(/\s+/g,'_') + '.doc';
-  a.click();
+  return new Blob(['\ufeff', doc], { type: 'application/msword' });
+}
+
+function downloadWord(){
+  triggerDownload(buildWordBlob(), 'Analisi_Web_' + lastName.replace(/\s+/g,'_') + '.doc');
 }
 
 function downloadEmail(){
-  const blob = new Blob([lastEmail], { type: 'text/plain' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'Mail_' + lastName.replace(/\s+/g,'_') + '.txt';
-  a.click();
+  triggerDownload(new Blob([lastEmail], { type: 'text/plain' }), 'Mail_' + lastName.replace(/\s+/g,'_') + '.txt');
+}
+
+function downloadBoth(){
+  downloadWord();
+  setTimeout(() => downloadEmail(), 400);
+  const s = document.getElementById('downloadStatus');
+  s.textContent = 'Scaricati entrambi i file.';
+  s.className = 'status ok';
+  setTimeout(() => { s.textContent=''; s.className='status'; }, 2500);
 }
 
 function copyEmail(){
   navigator.clipboard.writeText(lastEmail).then(()=>{
-    setStatus('Mail copiata negli appunti.');
-    setTimeout(()=>setStatus(''), 2000);
+    const s = document.getElementById('downloadStatus');
+    s.textContent = 'Mail copiata negli appunti.';
+    s.className = 'status ok';
+    setTimeout(() => { s.textContent=''; s.className='status'; }, 2000);
   });
 }
 </script>
