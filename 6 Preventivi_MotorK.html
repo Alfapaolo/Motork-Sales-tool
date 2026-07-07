@@ -8,6 +8,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  if (window['pdfjsLib']) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Figtree',Arial,sans-serif;background:#f0f0f0;padding:16px;font-size:13px}
@@ -31,7 +37,7 @@ body{font-family:'Figtree',Arial,sans-serif;background:#f0f0f0;padding:16px;font
 .form-group-c input:focus{outline:none;border-color:#F90032}
 .action-btns{display:flex;gap:5px;flex-shrink:0;align-items:flex-end}
 .action-btns button{width:34px;height:34px;border:1px solid #D0D0D0;background:#FAFAFA;border-radius:5px;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .15s,background .15s;padding:0}
-.action-btns button:hover{border-color:#F90032;background:#FFF5F5}
+.action-btns button:hover,.action-btns label:hover{border-color:#F90032;background:#FFF5F5}
 
 /* Buttons */
 /* btn-bar rimosso */
@@ -316,6 +322,8 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
     <div class="action-btns">
       <button onclick="toggleAllSections()" title="Apri / Chiudi tutto">⊕⊖</button>
       <button onclick="populateRandom()" title="Test random">🎲</button>
+      <label for="pdf-upload-input" title="Ricarica da un PDF già generato" style="width:34px;height:34px;border:1px solid #D0D0D0;background:#FAFAFA;border-radius:5px;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .15s,background .15s">⬆️</label>
+      <input type="file" id="pdf-upload-input" accept="application/pdf" style="display:none" onchange="handlePdfUpload(this)">
       <button onclick="resetForm()" title="Azzera tutto">🔄</button>
     </div>
   </div>
@@ -513,8 +521,12 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
         <button class="btn-gray" onclick="toggleAllLogCheckboxes()" title="Seleziona / deseleziona tutte" style="width:auto;padding:8px 12px">☑︎ Tutte</button>
         <button class="btn-gray" onclick="deleteSelectedOffers()" title="Cancella le offerte selezionate" style="width:auto;padding:8px 12px">🗑️ Cancella selezionate</button>
         <button class="btn-red" onclick="deleteAllOffers()" title="Cancella tutte le offerte" style="width:auto;padding:8px 12px">🗑️ Cancella tutte</button>
+        <button class="btn-gray" onclick="exportLogOfferte()" title="Scarica un file di backup con tutte le offerte" style="width:auto;padding:8px 12px">⬇️ Esporta log</button>
+        <label class="btn-gray" for="log-import-file" title="Carica un file di backup esportato in precedenza" style="width:auto;padding:8px 12px;cursor:pointer;display:inline-flex;align-items:center">⬆️ Importa log</label>
+        <input type="file" id="log-import-file" accept="application/json" style="display:none" onchange="importLogOfferte(this)">
       </div>
     </div>
+    <div id="log-count" style="font-size:11px;color:#999;margin-bottom:10px"></div>
     <div id="log-list"></div>
   </div>
 
@@ -1076,6 +1088,12 @@ function renderLog() {
   if (!container) return;
   var log = getLogOfferte();
 
+  var countEl = document.getElementById('log-count');
+  if (countEl) {
+    countEl.textContent = 'Totale offerte salvate su questo browser/file: ' + log.length +
+      (log.length ? ' (dal ' + formatLogDate(log[log.length-1].savedAt) + ' al ' + formatLogDate(log[0].savedAt) + ')' : '');
+  }
+
   var qDealer = (document.getElementById('log-search-dealer').value || '').trim().toLowerCase();
   var qFrom   = document.getElementById('log-search-from').value;
   var qTo     = document.getElementById('log-search-to').value;
@@ -1133,6 +1151,234 @@ function deleteAllOffers() {
   if (!confirm('Cancellare TUTTE le ' + log.length + ' offerte salvate nel log? L\'operazione non è reversibile.')) return;
   setLogOfferte([]);
   renderLog();
+}
+
+function exportLogOfferte() {
+  var log = getLogOfferte();
+  if (log.length === 0) { alert('Non c\'è nessuna offerta salvata da esportare.'); return; }
+  var blob = new Blob([JSON.stringify(log, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  var _d = new Date();
+  var stamp = String(_d.getDate()).padStart(2,'0') + '-' + String(_d.getMonth()+1).padStart(2,'0') + '-' + String(_d.getFullYear()).slice(-2);
+  a.href = url;
+  a.download = 'log_offerte_backup_' + stamp + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importLogOfferte(inputEl) {
+  var file = inputEl.files && inputEl.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var imported;
+    try { imported = JSON.parse(e.target.result); }
+    catch (err) { alert('File non valido: non è un backup del Log Offerte.'); inputEl.value = ''; return; }
+    if (!Array.isArray(imported)) { alert('File non valido: non è un backup del Log Offerte.'); inputEl.value = ''; return; }
+
+    var current = getLogOfferte();
+    var existingIds = {};
+    current.forEach(function(e2) { existingIds[e2.id] = true; });
+
+    var added = 0;
+    imported.forEach(function(entry) {
+      if (entry && entry.id && !existingIds[entry.id]) {
+        current.push(entry);
+        existingIds[entry.id] = true;
+        added++;
+      }
+    });
+    // Ordina per data salvataggio, più recenti prima
+    current.sort(function(a, b) { return (b.savedAt || '').localeCompare(a.savedAt || ''); });
+
+    setLogOfferte(current);
+    renderLog();
+    inputEl.value = '';
+    alert('Importate ' + added + ' nuove offerte (' + (imported.length - added) + ' già presenti, ignorate).');
+  };
+  reader.readAsText(file);
+}
+
+// ============================================================
+// RICARICA DA PDF — legge un PDF già generato dal tool e ricompila il preventivatore
+// ============================================================
+
+function escapeRegex(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function getFlatProductCatalog() {
+  var flat = [];
+  Object.keys(products).forEach(function(section) {
+    products[section].forEach(function(p) {
+      flat.push({ id: p.id, section: section, name: p.name });
+    });
+  });
+  // Nomi più lunghi/specifici prima, per evitare match parziali errati
+  flat.sort(function(a, b) { return b.name.length - a.name.length; });
+  return flat;
+}
+
+async function extractPdfText(file) {
+  if (!window.pdfjsLib) throw new Error('Libreria di lettura PDF non disponibile (serve una connessione internet).');
+  var buf = await file.arrayBuffer();
+  var pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  var fullText = '';
+  for (var i = 1; i <= pdf.numPages; i++) {
+    var page = await pdf.getPage(i);
+    var content = await page.getTextContent();
+    fullText += content.items.map(function(it) { return it.str; }).join(' ') + ' ';
+  }
+  return fullText;
+}
+
+function parseOfferFromPdfText(rawText) {
+  var norm = rawText.replace(/\s+/g, ' ').trim();
+
+  var result = {
+    dealerName: '', scontoData: '',
+    scontoUtPct: '', scontoCanFirmaPct: '',
+    scontoAnnUtPct: '', scontoAnnCanPct: '',
+    rows: []
+  };
+
+  // Nome dealer: "PREVENTIVO SPARK PLATFORM ... NOME — dd-mm-aa"
+  var mDealer = norm.match(/PREVENTIVO SPARK PLATFORM\s*(.+?)\s*[—-]\s*\d{2}-\d{2}-\d{2}/);
+  if (mDealer && mDealer[1].trim() && mDealer[1].trim() !== '—') {
+    result.dealerName = mDealer[1].trim();
+  }
+
+  // Sconto firma: dal box "Se firmi entro il dd/mm/aaaa ... Sconto X% sull'una tantum e Y% sul canone mensile"
+  var mFirma = norm.match(/Se firmi entro il (\d{2})\/(\d{2})\/(\d{4})(.*?)(?=Se paghi in anticipo|SOLUZIONI UTILI|Approfondisci|$)/);
+  if (mFirma) {
+    result.scontoData = mFirma[3] + '-' + mFirma[2] + '-' + mFirma[1];
+    var mPctF = mFirma[4].match(/Sconto\s+([\d.,]+)%\s+sull'una tantum e\s+([\d.,]+)%\s+sul canone mensile/);
+    if (mPctF) {
+      result.scontoUtPct       = mPctF[1].replace(',', '.');
+      result.scontoCanFirmaPct = mPctF[2].replace(',', '.');
+    }
+  }
+
+  // Sconto annuale anticipato
+  var mAnn = norm.match(/Se paghi in anticipo \(annuale anticipato\)(.*?)(?=SOLUZIONI UTILI|Approfondisci|$)/);
+  if (mAnn) {
+    var mPctA = mAnn[1].match(/Sconto\s+([\d.,]+)%\s+sull'una tantum e\s+([\d.,]+)%\s+sul canone mensile/);
+    if (mPctA) {
+      result.scontoAnnUtPct  = mPctA[1].replace(',', '.');
+      result.scontoAnnCanPct = mPctA[2].replace(',', '.');
+    }
+  }
+
+  // Isola il blocco dei prodotti "in offerta" e quello dei prodotti "suggeriti"
+  var mCost = norm.match(/oggetto dell'offerta(.*?)Totale Una Tantum/);
+  var costText = mCost ? mCost[1] : '';
+  var mSugg = norm.match(/CHE SI INTEGRANO CON QUANTO IN OFFERTA(.*?)(?=Approfondisci|$)/);
+  var suggText = mSugg ? mSugg[1] : '';
+
+  var catalog = getFlatProductCatalog();
+  catalog.forEach(function(p) {
+    var idxCost = costText.indexOf(p.name);
+    var idxSugg = suggText.indexOf(p.name);
+    if (idxCost === -1 && idxSugg === -1) return;
+    var isCost = idxCost !== -1;
+
+    var afterText = isCost
+      ? costText.substr(idxCost + p.name.length, 40)
+      : suggText.substr(idxSugg + p.name.length, 40);
+
+    var varVal = '';
+    var cfg = VAR_DISPLAY_MAP[p.id];
+    if (cfg) {
+      var re1 = new RegExp('\\(\\s*(?:' + escapeRegex(cfg.label) + '|' + escapeRegex(cfg.singular) + ')\\s+(\\d+)\\s*\\)', 'i');
+      var re2 = new RegExp('\\(\\s*(\\d+)\\s+(?:' + escapeRegex(cfg.label) + '|' + escapeRegex(cfg.singular) + ')\\s*\\)', 'i');
+      var m1 = afterText.match(re1);
+      var m2 = afterText.match(re2);
+      if (m1) varVal = m1[1]; else if (m2) varVal = m2[1];
+    }
+
+    // Rimuovo il testo trovato per evitare che un nome molto simile venga ri-matchato
+    if (isCost) costText = costText.slice(0, idxCost) + costText.slice(idxCost + p.name.length);
+    else suggText = suggText.slice(0, idxSugg) + suggText.slice(idxSugg + p.name.length);
+
+    result.rows.push({ pid: p.id, section: p.section, cost: isCost, suggest: !isCost, varVal: varVal });
+  });
+
+  return result;
+}
+
+function applyParsedOfferToForm(parsed) {
+  // Reset di base: spegne tutte le checkbox e ripristina i valori di default delle variabili
+  document.querySelectorAll('tr[data-pid]').forEach(function(row) {
+    var cbCost    = row.querySelector('.cb-cost');
+    var cbSuggest = row.querySelector('.cb-suggest');
+    if (cbCost)    cbCost.checked = false;
+    if (cbSuggest) cbSuggest.checked = false;
+    var pid = row.dataset.pid, section = row.dataset.section;
+    var p = products[section] ? products[section].find(function(x) { return x.id === pid; }) : null;
+    var varInp = row.querySelector('.inp-var');
+    if (p && varInp) {
+      if (p.variables)      varInp.value = p.variables;
+      else if (p.locations) varInp.value = p.locations;
+      else if (p.licenses)  varInp.value = p.licenses;
+      else if (p.brands)    varInp.value = p.brands;
+      else if (p.feeds)     varInp.value = p.feeds;
+      else                  varInp.value = '';
+    }
+    var utOv  = row.querySelector('.inp-ut-ov');  if (utOv)  utOv.value  = '';
+    var canOv = row.querySelector('.inp-can-ov'); if (canOv) canOv.value = '';
+  });
+
+  if (parsed.dealerName) document.getElementById('dealer-name').value = parsed.dealerName;
+  document.getElementById('sconto-data').value              = parsed.scontoData        || '';
+  document.getElementById('sconto-ut-pct').value             = parsed.scontoUtPct       || '';
+  document.getElementById('sconto-canone-firma-pct').value   = parsed.scontoCanFirmaPct || '';
+  document.getElementById('sconto-annuale-ut-pct').value     = parsed.scontoAnnUtPct    || '';
+  document.getElementById('sconto-annuale-canone-pct').value = parsed.scontoAnnCanPct   || '';
+
+  var matched = 0;
+  parsed.rows.forEach(function(r) {
+    var row = document.querySelector('tr[data-pid="' + r.pid + '"][data-section="' + r.section + '"]');
+    if (!row) return;
+    var cbCost    = row.querySelector('.cb-cost');
+    var cbSuggest = row.querySelector('.cb-suggest');
+    if (cbCost)    cbCost.checked    = !!r.cost;
+    if (cbSuggest) cbSuggest.checked = !!r.suggest;
+    var varInp = row.querySelector('.inp-var');
+    if (varInp && r.varVal !== '') varInp.value = r.varVal;
+    matched++;
+  });
+
+  calculateAll();
+  var bozzaBtn = Array.from(document.querySelectorAll('.tab-btn')).find(function(b){ return b.textContent.indexOf('Bozza') !== -1; });
+  switchTab('bozza', bozzaBtn);
+  renderBozza();
+
+  return matched;
+}
+
+async function handlePdfUpload(inputEl) {
+  var file = inputEl.files && inputEl.files[0];
+  if (!file) return;
+  try {
+    var text = await extractPdfText(file);
+    var parsed = parseOfferFromPdfText(text);
+    if (parsed.rows.length === 0) {
+      alert('Non ho trovato nessun prodotto riconoscibile in questo PDF. Assicurati che sia un PDF generato da questo tool.');
+      inputEl.value = '';
+      return;
+    }
+    var matched = applyParsedOfferToForm(parsed);
+    var msg = 'Ricompilato dal PDF: ' + (parsed.dealerName || '(nome dealer non trovato)') + '\n' +
+      matched + ' prodotti riconosciuti e selezionati.\n\n' +
+      'Controlla il risultato (in particolare eventuali quantità/variabili e sconti) prima di inviare l\'offerta: il riconoscimento è automatico e potrebbe non essere perfetto al 100%.';
+    alert(msg);
+  } catch (err) {
+    alert('Errore nella lettura del PDF: ' + err.message);
+  }
+  inputEl.value = '';
 }
 
 // Prodotti per cui la variabile va mostrata al cliente nel preventivo/PDF,
