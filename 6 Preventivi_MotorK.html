@@ -333,7 +333,7 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
     <button class="tab-btn active" onclick="switchTab('spark',this)">🎯 SparK Platform</button>
     <button class="tab-btn" onclick="switchTab('marketing',this)">📊 Marketing</button>
     <button class="tab-btn" onclick="switchTab('bozza',this); renderBozza()">📄 Bozza Preventivo</button>
-    <button class="tab-btn" onclick="switchTab('log',this); renderLog()">🗂️ Log Offerte</button>
+    <button class="tab-btn" onclick="switchTab('log',this); renderLog(); updateLogFolderStatus()">🗂️ Log Offerte</button>
   </div>
 
   <!-- TAB SPARK -->
@@ -526,6 +526,7 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
         <input type="file" id="log-import-file" accept="application/json" style="display:none" onchange="importLogOfferte(this)">
       </div>
     </div>
+    <div id="log-folder-status" style="margin-bottom:8px"></div>
     <div id="log-count" style="font-size:11px;color:#999;margin-bottom:10px"></div>
     <div id="log-list"></div>
   </div>
@@ -968,6 +969,7 @@ function saveOfferToLog(interactive) {
   }, state);
   log.unshift(entry);
   setLogOfferte(log);
+  writeLogFileToDisk(); // best-effort, silenzioso: aggiorna il file su disco se la cartella è collegata
   if (interactive) {
     renderLog();
     alert('Offerta salvata nel Log (' + (entry.dealerName || 'senza nome') + ').');
@@ -1142,6 +1144,7 @@ function deleteSelectedOffers() {
   if (!confirm('Cancellare ' + ids.length + ' offerta/e selezionate dal log? L\'operazione non è reversibile.')) return;
   var log = getLogOfferte().filter(function(e) { return ids.indexOf(e.id) === -1; });
   setLogOfferte(log);
+  writeLogFileToDisk();
   renderLog();
 }
 
@@ -1150,6 +1153,7 @@ function deleteAllOffers() {
   if (log.length === 0) return;
   if (!confirm('Cancellare TUTTE le ' + log.length + ' offerte salvate nel log? L\'operazione non è reversibile.')) return;
   setLogOfferte([]);
+  writeLogFileToDisk();
   renderLog();
 }
 
@@ -1203,6 +1207,111 @@ function importLogOfferte(inputEl) {
 }
 
 // ============================================================
+// CARTELLA DI LOG SU DISCO — salvataggio automatico ad ogni offerta
+// (solo Chrome/Edge/Opera: File System Access API)
+// ============================================================
+var LOG_FILE_NAME = '6 Preventivi_MotorK - LOG.json';
+var _logDirHandle = null;
+
+function fsAccessSupported() {
+  return 'showDirectoryPicker' in window;
+}
+
+function openHandleDB() {
+  return new Promise(function(resolve, reject) {
+    var req = indexedDB.open('mk_preventivi_fs', 1);
+    req.onupgradeneeded = function() { req.result.createObjectStore('handles'); };
+    req.onsuccess = function() { resolve(req.result); };
+    req.onerror   = function() { reject(req.error); };
+  });
+}
+
+async function saveDirHandleToDB(handle) {
+  var db = await openHandleDB();
+  return new Promise(function(resolve, reject) {
+    var tx = db.transaction('handles', 'readwrite');
+    tx.objectStore('handles').put(handle, 'logDir');
+    tx.oncomplete = function() { resolve(); };
+    tx.onerror    = function() { reject(tx.error); };
+  });
+}
+
+async function loadDirHandleFromDB() {
+  var db = await openHandleDB();
+  return new Promise(function(resolve, reject) {
+    var tx  = db.transaction('handles', 'readonly');
+    var req = tx.objectStore('handles').get('logDir');
+    req.onsuccess = function() { resolve(req.result || null); };
+    req.onerror   = function() { reject(req.error); };
+  });
+}
+
+async function linkLogFolder() {
+  if (!fsAccessSupported()) {
+    alert('Il tuo browser non supporta il collegamento diretto a una cartella (funziona solo su Chrome, Edge o Opera). Continua a usare "⬇️ Esporta log" per il backup manuale.');
+    return;
+  }
+  try {
+    var handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    _logDirHandle = handle;
+    await saveDirHandleToDB(handle);
+    await writeLogFileToDisk();
+    updateLogFolderStatus();
+    alert('Cartella collegata. Da ora ogni offerta salvata viene scritta automaticamente nel file "' + LOG_FILE_NAME + '" dentro quella cartella.');
+  } catch (err) {
+    if (err.name !== 'AbortError') alert('Errore nel collegare la cartella: ' + err.message);
+  }
+}
+
+async function tryRestoreLogFolder() {
+  if (!fsAccessSupported()) { updateLogFolderStatus(); return; }
+  try {
+    var handle = await loadDirHandleFromDB();
+    if (!handle) { updateLogFolderStatus(); return; }
+    _logDirHandle = handle;
+    var perm = await handle.queryPermission({ mode: 'readwrite' });
+    updateLogFolderStatus(perm !== 'granted');
+  } catch (err) { updateLogFolderStatus(); }
+}
+
+async function confirmLogFolderAccess() {
+  if (!_logDirHandle) return;
+  try {
+    var perm = await _logDirHandle.requestPermission({ mode: 'readwrite' });
+    if (perm === 'granted') { await writeLogFileToDisk(); updateLogFolderStatus(); }
+    else { updateLogFolderStatus(true); }
+  } catch (err) { alert('Accesso alla cartella non confermato: ' + err.message); }
+}
+
+async function writeLogFileToDisk() {
+  if (!_logDirHandle) return;
+  try {
+    var perm = await _logDirHandle.queryPermission({ mode: 'readwrite' });
+    if (perm !== 'granted') return; // serve un click di riconferma, non blocchiamo il salvataggio normale
+    var fileHandle = await _logDirHandle.getFileHandle(LOG_FILE_NAME, { create: true });
+    var writable = await fileHandle.createWritable();
+    await writable.write(JSON.stringify(getLogOfferte(), null, 2));
+    await writable.close();
+  } catch (err) {
+    console.warn('Scrittura automatica del log su disco non riuscita:', err);
+  }
+}
+
+function updateLogFolderStatus(needsConfirm) {
+  var el = document.getElementById('log-folder-status');
+  if (!el) return;
+  if (!fsAccessSupported()) {
+    el.innerHTML = '<span style="font-size:11px;color:#999">Salvataggio automatico su cartella non supportato da questo browser: usa "⬇️ Esporta log" / "⬆️ Importa log".</span>';
+  } else if (!_logDirHandle) {
+    el.innerHTML = '<button class="btn-gray" onclick="linkLogFolder()" style="width:auto;padding:8px 12px">🔗 Collega cartella per salvataggio automatico</button>';
+  } else if (needsConfirm) {
+    el.innerHTML = '<button class="btn-gray" onclick="confirmLogFolderAccess()" style="width:auto;padding:8px 12px;border-color:#F90032;color:#F90032">🔓 Confermo accesso alla cartella collegata</button>';
+  } else {
+    el.innerHTML = '<span style="font-size:11px;color:#1E9E5A">🔗 Salvataggio automatico attivo su "' + LOG_FILE_NAME + '"</span>';
+  }
+}
+
+
 // RICARICA DA PDF — legge un PDF già generato dal tool e ricompila il preventivatore
 // ============================================================
 
@@ -1874,6 +1983,7 @@ document.addEventListener('DOMContentLoaded', function() {
   renderTable('marketing', 'tbody-marketing');
   renderTable('integrazioni', 'tbody-integrazioni-spark');
   calculateAll();
+  tryRestoreLogFolder();
 });
 </script>
 </body>
