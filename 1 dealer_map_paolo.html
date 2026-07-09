@@ -13,9 +13,16 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:system-ui,sans-serif;background:#f5f5f0;height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
-#toolbar{background:#fff;border-bottom:1px solid #e0e0d8;padding:6px 10px;display:flex;flex-wrap:nowrap;gap:4px;align-items:center;z-index:1000;flex-shrink:0;overflow-x:auto}
-#bottom-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid #1a5cb8;padding:8px 10px;display:flex;gap:6px;align-items:center;z-index:2000;flex-shrink:0;flex-wrap:wrap}
-#map{flex:1;min-height:0;margin-bottom:70px}
+#toolbar{background:#fff;border-bottom:1px solid #e0e0d8;display:flex;flex-direction:column;gap:0;z-index:1000;flex-shrink:0}
+#toolbar-row1,#toolbar-row2{display:flex;flex-wrap:nowrap;gap:4px;align-items:center;padding:5px 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+#toolbar-row1::-webkit-scrollbar,#toolbar-row2::-webkit-scrollbar{display:none}
+#toolbar-row2{border-top:1px solid #f0f0ea;padding-top:4px;padding-bottom:4px}
+#bottom-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid #1a5cb8;z-index:2000;flex-shrink:0;display:flex;flex-direction:column;gap:0}
+#omw-row1,#omw-row2{display:flex;gap:5px;align-items:center;padding:5px 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap}
+#omw-row1::-webkit-scrollbar,#omw-row2::-webkit-scrollbar{display:none}
+#omw-row2{border-top:1px solid #e8eaf0;padding-top:4px;padding-bottom:4px}
+#map{flex:1;min-height:0;margin-bottom:80px}
+#map{flex:1;min-height:0;margin-bottom:80px}
 #omw-partenza,#omw-arrivo,#omw-via{border:1px solid #ccc;border-radius:6px;padding:5px 8px;font-size:13px;width:120px;outline:none}
 #omw-via{border-color:#f57c00;width:110px}
 #omw-via:focus{border-color:#f57c00;box-shadow:0 0 0 2px rgba(245,124,0,.2)}
@@ -82,41 +89,46 @@ input[type=text]{border:1px solid #ddd;border-radius:6px;padding:5px 10px;font-s
 </head>
 <body>
 <div id="toolbar">
-  <button class="btn btn-blue" onclick="document.getElementById('csv-input').click()">📂 Carica CSV</button>
-  <button class="btn btn-red" id="clear-btn" onclick="clearCache()">🗑 Svuota cache</button>
-  <input type="file" id="csv-input" accept=".csv,text/csv,text/plain,application/csv,application/vnd.ms-excel" style="display:none">
-  <span id="status">Carica un CSV per iniziare</span>
-  <div class="divider"></div>
-  <input type="text" id="search" placeholder="Cerca dealer…" oninput="filterMarkers()">
-  <button id="ai-search-toggle" onclick="toggleAiSearch()" title="Ricerca AI">🤖 AI Search</button>
-  <div class="divider"></div>
-  <span class="tb-label">Tipo</span>
-  <button class="btn" style="font-size:10px;padding:3px 6px" onclick="selAllTypes()">✓</button>
-  <button class="btn" style="font-size:10px;padding:3px 6px" onclick="selNoneTypes()">✗</button>
-  <div id="type-filters" style="display:flex;gap:3px;flex-wrap:wrap"></div>
-  <div class="divider"></div>
-  <span class="tb-label">Rating</span>
-  <div id="rating-filters" style="display:flex;gap:3px;flex-wrap:nowrap"></div>
+  <div id="toolbar-row1">
+    <button class="btn btn-blue" onclick="document.getElementById('csv-input').click()">📂 Carica CSV</button>
+    <button class="btn btn-red" id="clear-btn" onclick="clearCache()">🗑 Svuota cache</button>
+    <input type="file" id="csv-input" accept=".csv,text/csv,text/plain,application/csv,application/vnd.ms-excel" style="display:none">
+    <span id="status" style="white-space:nowrap;font-size:12px;color:#666">Carica un CSV</span>
+    <input type="text" id="search" placeholder="Cerca dealer…" oninput="filterMarkers()" style="min-width:120px">
+    <button id="ai-search-toggle" onclick="toggleAiSearch()" title="Ricerca AI">🤖 AI</button>
+  </div>
+  <div id="toolbar-row2">
+    <span class="tb-label">TIPO</span>
+    <button class="btn" style="font-size:10px;padding:2px 5px" onclick="selAllTypes()">✓</button>
+    <button class="btn" style="font-size:10px;padding:2px 5px" onclick="selNoneTypes()">✗</button>
+    <div id="type-filters" style="display:flex;gap:3px;flex-wrap:nowrap"></div>
+    <div class="divider" style="flex-shrink:0"></div>
+    <span class="tb-label">RATING</span>
+    <div id="rating-filters" style="display:flex;gap:3px;flex-wrap:nowrap"></div>
+  </div>
 </div>
 <div id="miss-bar" style="display:none"><span id="miss-text"></span><button onclick="downloadErrors()" style="font-size:10px;padding:2px 7px;border:1px solid #856404;border-radius:4px;background:#fff;color:#856404;cursor:pointer;white-space:nowrap">⬇ Scarica errori</button></div>
 <div id="map"></div>
 <!-- ON MY WAY BAR -->
 <div id="bottom-bar">
-  <span class="omw-label">🚗 On My Way</span>
-  <input type="text" id="omw-partenza" placeholder="Partenza…" value="">
-  <input type="text" id="omw-via" placeholder="Via… (opz.)" title="Passa per questo comune o concessionaria">
-  <input type="text" id="omw-arrivo" placeholder="Arrivo…" value="Gorle">
-  <select id="omw-km">
-    <option value="5" selected>± 5 km</option>
-    <option value="10">± 10 km</option>
-    <option value="15">± 15 km</option>
-    <option value="20">± 20 km</option>
-    <option value="30">± 30 km</option>
-    <option value="50">± 50 km</option>
-  </select>
-  <button id="omw-go" onclick="runOnMyWay()">🔍 Cerca</button>
-  <button id="omw-clear" onclick="clearRoute()">✕ Pulisci</button>
-  <button id="omw-export" onclick="exportUnified()">⬇ Export DOCX</button>
+  <div id="omw-row1">
+    <span class="omw-label">🚗</span>
+    <input type="text" id="omw-partenza" placeholder="Partenza…" value="" style="width:90px">
+    <input type="text" id="omw-via" placeholder="Via…" title="Passa per questo comune o concessionaria" style="width:70px">
+    <input type="text" id="omw-arrivo" placeholder="Arrivo…" value="Gorle" style="width:80px">
+    <select id="omw-km">
+      <option value="5" selected>± 5 km</option>
+      <option value="10">± 10 km</option>
+      <option value="15">± 15 km</option>
+      <option value="20">± 20 km</option>
+      <option value="30">± 30 km</option>
+      <option value="50">± 50 km</option>
+    </select>
+    <button id="omw-go" onclick="runOnMyWay()">🔍 Cerca</button>
+    <button id="omw-clear" onclick="clearRoute()">✕</button>
+    <button id="omw-export" onclick="exportUnified()">⬇ DOCX</button>
+  </div>
+  <div id="omw-row2">
   <button class="btn" style="background:#f5f5f0;padding:5px 8px;font-size:16px;line-height:1" onclick="locateMe()" title="Centra sulla mia posizione">📍</button>
   <select id="nearme-km" onchange="searchNearMe()" style="border:1px solid #ccc;border-radius:6px;padding:5px 6px;font-size:12px;background:#fff;cursor:pointer">
     <option value="">Vicino a me…</option>
@@ -128,7 +140,8 @@ input[type=text]{border:1px solid #ddd;border-radius:6px;padding:5px 10px;font-s
     <option value="50">± 50 km</option>
   </select>
   <button class="btn" style="background:#f5f5f0;padding:5px 8px;font-size:13px;font-weight:700" onclick="zoomToVisible()" title="Zoom sui dealer visibili">⛶ Zoom</button>
-  <span style="margin-left:auto;font-size:13px;font-weight:700;color:#1a5cb8;white-space:nowrap" id="visible-count-bar">0</span>
+    <span style="margin-left:auto;font-size:13px;font-weight:700;color:#1a5cb8;white-space:nowrap" id="visible-count-bar">0</span>
+  </div>
 </div>
 
 <!-- RESULT PANEL -->
@@ -610,6 +623,7 @@ function filterMarkers(){
   updateVisibleCount(visible);
   // Se il pannello mappa è aperto, aggiorna la lista laterale
   if(mapPanelOpen) refreshMapPanel();
+  autoZoomToVisible();
 }
 
 function refreshOmwWithFilters(q){
@@ -756,6 +770,20 @@ function updateSmartLabels(){
     pt.marker.bindTooltip(pt.marker._dealerName||'',{permanent:true,direction:dir,className:'dealer-label',offset:offset});
     pt.marker.openTooltip();
   });
+}
+
+var _autoZoomTimer = null;
+function autoZoomToVisible(){
+  clearTimeout(_autoZoomTimer);
+  _autoZoomTimer = setTimeout(function(){
+    var latlngs = [];
+    markerLayer.eachLayer(function(m){ if(m.getLatLng) latlngs.push(m.getLatLng()); });
+    if(latlngs.length === 0) return;
+    if(latlngs.length === 1){ map.setView(latlngs[0], 13); return; }
+    var bounds = L.latLngBounds(latlngs);
+    var z = map.getBoundsZoom(bounds, false);
+    map.setView(bounds.getCenter(), z);
+  }, 200);
 }
 
 function zoomToVisible(){
@@ -970,7 +998,13 @@ async function runOnMyWay() {
   var arrivoRaw = document.getElementById('omw-arrivo').value.trim();
   var kmRange = parseInt(document.getElementById('omw-km').value);
 
-  if (!partenzaRaw || !arrivoRaw) { toast('⚠ Inserisci partenza e arrivo'); return; }
+  if (!arrivoRaw) { toast('⚠ Inserisci almeno il comune di arrivo/destinazione'); return; }
+
+  // Solo arrivo compilato → radar attorno al comune di arrivo
+  if (!partenzaRaw) {
+    runRadar(arrivoRaw, kmRange);
+    return;
+  }
 
   var partenzaNorm = normalizeCity(partenzaRaw);
   var arrivoNorm = normalizeCity(arrivoRaw);
