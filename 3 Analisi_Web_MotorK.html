@@ -136,20 +136,24 @@
 
     <div class="grid2">
       <div class="field">
-        <label>URL sito web</label>
+        <label>URL sito web (home page)</label>
         <input id="sito" type="text" placeholder="https://...">
+      </div>
+      <div class="field">
+        <label>URL scheda veicolo (per test velocità)</label>
+        <input id="veicolo" type="text" placeholder="https://... una pagina di dettaglio auto">
       </div>
       <div class="field">
         <label>URL scheda Google (GMB)</label>
         <input id="gmb" type="text" placeholder="https://www.google.com/search?q=...">
       </div>
       <div class="field">
-        <label>URL pagina AutoScout24</label>
-        <input id="autoscout" type="text" placeholder="https://www.autoscout24.it/concessionari/...">
+        <label>URL pagina/e AutoScout24</label>
+        <textarea id="autoscout" rows="2" placeholder="una per riga, se più sedi/province"></textarea>
       </div>
       <div class="field">
-        <label>URL pagina social</label>
-        <input id="social" type="text" placeholder="https://www.facebook.com/...">
+        <label>URL pagina/e social</label>
+        <textarea id="social" rows="2" placeholder="una per riga, se più pagine/sedi"></textarea>
       </div>
     </div>
     <div class="field">
@@ -382,6 +386,44 @@ function backToSearch(){
   document.getElementById('searchCard').classList.remove('hidden');
 }
 
+async function getPageSpeedScore(url, strategy){
+  if(!url) return null;
+  try{
+    const api = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=' + encodeURIComponent(url) + '&strategy=' + strategy + '&category=performance';
+    const res = await fetch(api);
+    if(!res.ok) return null;
+    const data = await res.json();
+    const score = data.lighthouseResult && data.lighthouseResult.categories && data.lighthouseResult.categories.performance
+      ? data.lighthouseResult.categories.performance.score : null;
+    return score != null ? Math.round(score * 100) : null;
+  }catch(e){ return null; }
+}
+
+async function runPageSpeedTests(sitoUrl, veicoloUrl){
+  const result = { sitoDesktop:null, sitoMobile:null, veicoloDesktop:null, veicoloMobile:null };
+  if(sitoUrl){
+    result.sitoDesktop = await getPageSpeedScore(sitoUrl, 'desktop');
+    result.sitoMobile = await getPageSpeedScore(sitoUrl, 'mobile');
+  }
+  if(veicoloUrl){
+    result.veicoloDesktop = await getPageSpeedScore(veicoloUrl, 'desktop');
+    result.veicoloMobile = await getPageSpeedScore(veicoloUrl, 'mobile');
+  }
+  return result;
+}
+
+function pageSpeedSummary(ps, sitoUrl, veicoloUrl){
+  const lines = [];
+  if(sitoUrl){
+    lines.push('- Home page (' + sitoUrl + '): desktop ' + (ps.sitoDesktop != null ? ps.sitoDesktop + '/100' : 'non disponibile') + ', mobile ' + (ps.sitoMobile != null ? ps.sitoMobile + '/100' : 'non disponibile') + ' (dati reali PageSpeed Insights/Lighthouse)');
+  }
+  if(veicoloUrl){
+    lines.push('- Scheda veicolo (' + veicoloUrl + '): desktop ' + (ps.veicoloDesktop != null ? ps.veicoloDesktop + '/100' : 'non disponibile') + ', mobile ' + (ps.veicoloMobile != null ? ps.veicoloMobile + '/100' : 'non disponibile') + ' (dati reali PageSpeed Insights/Lighthouse)');
+  }
+  if(lines.length === 0) return '';
+  return 'Punteggi PageSpeed reali già misurati (usa ESATTAMENTE questi numeri, non stimarli né cercarli altrove):\n' + lines.join('\n');
+}
+
 async function callClaudeOnce(promptText, useSearch){
   const body = {
     model: "claude-sonnet-4-6",
@@ -454,22 +496,39 @@ function buildProductConstraint(){
 
 async function runAnalysis(){
   const nome = lastName;
-  const sito = val('sito'), gmb = val('gmb'), autoscout = val('autoscout'), social = val('social'), note = val('note');
+  const sito = val('sito'), veicolo = val('veicolo'), gmb = val('gmb'), autoscout = val('autoscout'), social = val('social'), note = val('note');
 
   document.getElementById('runBtn').disabled = true;
+  setStatus('<span class="spinner"></span>Misuro la velocità reale con PageSpeed Insights...');
+
+  let psSummary = '';
+  try{
+    const ps = await runPageSpeedTests(sito, veicolo);
+    psSummary = pageSpeedSummary(ps, sito, veicolo);
+  }catch(e){ /* se falliscono le chiamate PageSpeed, si procede senza: il modello stimerà via ricerca web */ }
+
   setStatus('<span class="spinner"></span>Ricerca e analisi in corso, può richiedere un minuto...');
 
   const productConstraint = buildProductConstraint();
 
   const prompt1 = 'Sei un analista digitale automotive che lavora per un Dealer Coach MotorK. Analizza in modo approfondito ma sintetico (massimo 550 parole, per punti/sezioni brevi, senza premesse tipo "ecco l\'analisi") la presenza digitale del concessionario "' + nome + '".' + (note ? ' Note: ' + note : '') + '\n\n' +
 productConstraint + '\n\n' +
-'Dati da analizzare (usa la ricerca web; se un URL non è indicato, cercalo online per "' + nome + '" e usa il risultato più plausibile, segnalando se un dato non è verificabile):\n' +
+(psSummary ? psSummary + '\n\n' : '') +
+'Dati da analizzare (usa la ricerca web; se un URL non è indicato, cercalo online per "' + nome + '" e usa il risultato più plausibile, segnalando se un dato non è verificabile; se sono indicati più URL per AutoScout o social, uno per riga, considerali TUTTI — potrebbero essere sedi/province diverse dello stesso gruppo):\n' +
 '- Sito web: ' + (sito || 'da cercare online') + '\n' +
 '- Scheda Google (GMB): ' + (gmb || 'da cercare online') + '\n' +
-'- Pagina AutoScout24: ' + (autoscout || 'da cercare online') + '\n' +
-'- Pagina social (Facebook/Instagram): ' + (social || 'da cercare online') + '\n\n' +
-'Valuta questi punti, uno per sezione con titolo "## ":\n' +
-'1. Salute generale del sito: leggerezza del codice, SEO on-page, velocità di caricamento desktop/mobile (usa o stima i dati di PageSpeed Insights) confrontandola con questa demo MotorK come benchmark: https://demo-dealer-5.demo.web.motork.io/\n' +
+'- Pagina/e AutoScout24: ' + (autoscout || 'da cercare online') + '\n' +
+'- Pagina/e social (Facebook/Instagram): ' + (social || 'da cercare online') + '\n\n' +
+'Valuta questi punti, uno per sezione con titolo "## ". Per OGNI sezione usa questo formato, senza eccezioni:\n' +
+'1) un riassunto di 2-3 righe che inquadra la situazione\n' +
+'2) un elenco di punti concreti in stile diretto, ognuno con un dato/fatto specifico seguito dalla sua implicazione di business, sul modello di questi esempi:\n' +
+'   "Il sito è più lento della media (PageSpeed Google: 48/100)"\n' +
+'   "Non c\'è un configuratore auto nuove: si rimanda al sito della casa madre, perdendo traffico e lead"\n' +
+'   "Per l\'usato si rimanda a portali esterni, perdendo traffico e potenzialmente dando la lead ai concorrenti"\n' +
+'   "100 recensioni non sono molte considerando che l\'azienda opera da anni sul territorio, e 4,2 è un voto sotto la soglia (4,3)"\n' +
+'Ogni punto deve essere una riga breve, concreta, con numeri quando disponibili — mai generico o vago. Evita frasi lunghe o descrittive: vai dritto al dato e alla conseguenza.\n\n' +
+'Sezioni da trattare:\n' +
+'1. Salute generale del sito: leggerezza del codice, SEO on-page, velocità di caricamento desktop/mobile — usa i punteggi PageSpeed reali indicati sopra se presenti (sia per la home che per la scheda veicolo), altrimenti stimali/cercali online; confronta con questa demo MotorK come benchmark: https://demo-dealer-5.demo.web.motork.io/\n' +
 '2. Usato: quante auto, quante foto, presenza di video, oppure rimando a portali esterni tipo AutoScout24 (che regala lead ai competitor)\n' +
 '3. Solo se concessionario ufficiale: auto nuove con configuratore interno oppure rimando al sito della casa auto (che regala lead alla casa)\n' +
 '4. Cookie policy corretta (es. tipo Iubenda) o rischio sanzioni\n' +
@@ -477,7 +536,7 @@ productConstraint + '\n\n' +
 '6. Recensioni Google: quante, voto medio (sotto 4,3 = criticità, sopra 4,3 = punto di forza), se il dealer risponde alle recensioni\n' +
 '7. AutoScout24: numero auto, numero foto, sfondo professionale o no, numero recensioni e voto medio\n' +
 '8. Social: data ultimo post e frequenza di pubblicazione\n\n' +
-'Per ogni criticità rilevante aggiungi una riga così: "*Come MotorK può aiutare: ...*" collegando UNO dei prodotti sotto (rispettando il vincolo sopra sui prodotti già attivi), in modo specifico e concreto, senza mai citare prezzi.\n\n' +
+'Per ogni criticità rilevante aggiungi come ultimo punto dell\'elenco della sezione una riga così: "*Come MotorK può aiutare: ...*" collegando UNO dei prodotti sotto (rispettando il vincolo sopra sui prodotti già attivi), in modo specifico e concreto, senza mai citare prezzi.\n\n' +
 MOTORK_CONTEXT + '\n\n' +
 'Scrivi in italiano, tono professionale, costruttivo, mai umiliante verso il dealer.';
 
