@@ -841,6 +841,14 @@ function selNoneTypes(){
   document.getElementById('type-filters').querySelectorAll('.pill').forEach(function(p){activeTypes.delete(p.textContent.trim());p.classList.add('off');});
   filterMarkers();
 }
+function selAllRatings(){
+  activeRatings=new Set([...document.getElementById('rating-filters').querySelectorAll('.pill')].map(function(p){var v=p.textContent.trim();p.classList.remove('off');return v;}));
+  filterMarkers();
+}
+function selNoneRatings(){
+  document.getElementById('rating-filters').querySelectorAll('.pill').forEach(function(p){activeRatings.delete(p.textContent.trim());p.classList.add('off');});
+  filterMarkers();
+}
 
 async function processCSVText(csvText){
   markers=[];activeTypes=new Set();activeRatings=new Set();
