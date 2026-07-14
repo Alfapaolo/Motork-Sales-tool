@@ -17,48 +17,31 @@ body{font-family:system-ui,sans-serif;background:#f5f5f0;height:100vh;height:100
 #toolbar-row1,#toolbar-row2{display:flex;flex-wrap:nowrap;gap:4px;align-items:center;padding:5px 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 #toolbar-row1::-webkit-scrollbar,#toolbar-row2::-webkit-scrollbar{display:none}
 #toolbar-row2{border-top:1px solid #f0f0ea;padding-top:4px;padding-bottom:4px}
-#bottom-bar{display:flex;flex-direction:column}
+
+/* BOTTOM BAR - mobile first */
+#bottom-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid #1a5cb8;z-index:2000;flex-shrink:0;display:flex;flex-direction:column}
 #omw-row1,#omw-row2{display:flex;flex-wrap:nowrap;gap:5px;align-items:center;padding:5px 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 #omw-row1::-webkit-scrollbar,#omw-row2::-webkit-scrollbar{display:none}
 #omw-row2{border-top:1px solid #e8eaf0}
+#map{flex:1;min-height:0;margin-bottom:76px}
 @media(min-width:768px){
-  #toolbar{flex-direction:row;padding:5px 8px;overflow-x:auto}
-  #toolbar-row1,#toolbar-row2{padding:0;border:none;overflow:visible}
+  #toolbar{flex-direction:row;padding:5px 8px;overflow-x:auto;flex-wrap:nowrap;align-items:center}
+  #toolbar-row1,#toolbar-row2{padding:0;border:none;overflow:visible;flex-shrink:0}
   #toolbar-row2{border-top:none}
-  #toolbar-row1::after{content:"";display:block;width:1px;height:18px;background:#e0e0d8;margin:0 2px;flex-shrink:0}
-  #bottom-bar{flex-direction:row;padding:6px 10px;border-top:2px solid #1a5cb8;align-items:center;gap:6px}
-  #omw-row1,#omw-row2{padding:0;border:none;overflow:visible;gap:6px}
+  #toolbar-row1::after{content:"";display:block;width:1px;height:18px;background:#e0e0d8;margin:0 4px;flex-shrink:0}
+  #toolbar-row2::before{content:"";display:block;width:1px;height:18px;background:#e0e0d8;margin:0 4px;flex-shrink:0}
+  #bottom-bar{flex-direction:row;padding:5px 10px;align-items:center;gap:6px;overflow-x:auto}
+  #omw-row1,#omw-row2{padding:0;border:none;overflow:visible;gap:6px;flex-shrink:0}
   #omw-row2{border-top:none}
   #omw-row1::after{content:"";display:block;width:1px;height:18px;background:#c8cce0;margin:0 2px;flex-shrink:0}
-  #map{margin-bottom:52px}
+  #map{margin-bottom:44px}
 }
-#bottom-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid #1a5cb8;z-index:2000;flex-shrink:0;display:flex;flex-direction:column;gap:0}
-#omw-row1,#omw-row2{display:flex;gap:5px;align-items:center;padding:5px 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap}
-#omw-row1::-webkit-scrollbar,#omw-row2::-webkit-scrollbar{display:none}
-#omw-row2{border-top:1px solid #e8eaf0;padding-top:4px;padding-bottom:4px}
-#map{flex:1;min-height:0;margin-bottom:80px}
-#map{flex:1;min-height:0;margin-bottom:80px}
+
 #omw-partenza,#omw-arrivo,#omw-via{border:1px solid #ccc;border-radius:6px;padding:5px 8px;font-size:13px;width:120px;outline:none}
 #omw-via{border-color:#f57c00;width:110px}
 #omw-via:focus{border-color:#f57c00;box-shadow:0 0 0 2px rgba(245,124,0,.2)}
 #omw-partenza:focus,#omw-arrivo:focus{border-color:#1a5cb8}
 .omw-via-label{font-size:10px;color:#f57c00;font-weight:700;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
-#ai-search-panel{position:fixed;left:0;top:50px;bottom:70px;width:300px;background:#fff;border-right:2px solid #7b1fa2;z-index:1400;display:none;flex-direction:column;box-shadow:4px 0 16px rgba(0,0,0,.15)}
-#ai-search-header{background:#7b1fa2;color:#fff;padding:10px 12px;font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
-#ai-search-close{background:none;border:none;color:#fff;font-size:18px;cursor:pointer;padding:0 2px;line-height:1}
-#ai-search-body{padding:10px;display:flex;flex-direction:column;gap:8px;flex:1;overflow:hidden}
-#ai-search-input{width:100%;border:1px solid #ce93d8;border-radius:6px;padding:7px 10px;font-size:13px;outline:none;resize:none;font-family:inherit;height:70px}
-#ai-search-input:focus{border-color:#7b1fa2}
-#ai-search-btn{background:#7b1fa2;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;align-self:flex-end}
-#ai-search-btn:active{transform:scale(.96)}
-#ai-search-results{overflow-y:auto;flex:1}
-#ai-search-status{font-size:11px;color:#888;padding:4px 0}
-.ai-item{border:1px solid #e0e0d8;border-radius:8px;padding:8px 10px;margin-bottom:6px;cursor:pointer;transition:background .15s}
-.ai-item:hover{background:#f9f0ff}
-.ai-item-name{font-weight:700;font-size:13px;color:#111;margin-bottom:3px}
-.ai-item-meta{font-size:11px;color:#666}
-.ai-item-badge{display:inline-block;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;margin-right:4px}
-#ai-search-toggle{background:#7b1fa2;color:#fff;border:none;border-radius:6px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
 #map.ai-open{margin-left:300px}
 
 #omw-partenza:focus,#omw-arrivo:focus{border-color:#1a5cb8}
@@ -78,7 +61,7 @@ body{font-family:system-ui,sans-serif;background:#f5f5f0;height:100vh;height:100
 .omw-item-meta{font-size:11px;color:#666}
 .omw-item-dist{font-size:11px;color:#1a5cb8;font-weight:600;margin-top:3px}
 input[type=text]{border:1px solid #ddd;border-radius:6px;padding:5px 10px;font-size:13px;width:150px;outline:none}
-.btn{border:none;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;white-space:nowrap;font-weight:500;transition:opacity .15s,transform .1s}
+.btn{border:none;border-radius:6px;padding:3px 7px;font-size:10px;cursor:pointer;white-space:nowrap;font-weight:500;transition:opacity .15s,transform .1s}
 .btn:active{transform:scale(.96)}
 .btn-blue{background:#1a5cb8;color:#fff}
 .btn-red{background:#e53935;color:#fff}
@@ -110,15 +93,16 @@ input[type=text]{border:1px solid #ddd;border-radius:6px;padding:5px 10px;font-s
     <input type="file" id="csv-input" accept=".csv,text/csv,text/plain,application/csv,application/vnd.ms-excel" style="display:none">
     <span id="status" style="white-space:nowrap;font-size:12px;color:#666">Carica un CSV</span>
     <input type="text" id="search" placeholder="Cerca dealer…" oninput="filterMarkers()" style="min-width:120px">
-    <button id="ai-search-toggle" onclick="toggleAiSearch()" title="Ricerca AI">🤖 AI</button>
   </div>
   <div id="toolbar-row2">
     <span class="tb-label">TIPO</span>
-    <button class="btn" style="font-size:10px;padding:2px 5px" onclick="selAllTypes()">✓</button>
-    <button class="btn" style="font-size:10px;padding:2px 5px" onclick="selNoneTypes()">✗</button>
+    <button class="btn" style="font-size:9px;padding:2px 4px" onclick="selAllTypes()">✓</button>
+    <button class="btn" style="font-size:9px;padding:2px 4px" onclick="selNoneTypes()">✗</button>
     <div id="type-filters" style="display:flex;gap:3px;flex-wrap:nowrap"></div>
     <div class="divider" style="flex-shrink:0"></div>
     <span class="tb-label">RATING</span>
+    <button class="btn" style="font-size:9px;padding:2px 4px" onclick="selAllRatings()">✓</button>
+    <button class="btn" style="font-size:9px;padding:2px 4px" onclick="selNoneRatings()">✗</button>
     <div id="rating-filters" style="display:flex;gap:3px;flex-wrap:nowrap"></div>
   </div>
 </div>
@@ -154,6 +138,7 @@ input[type=text]{border:1px solid #ddd;border-radius:6px;padding:5px 10px;font-s
     <option value="30">± 30 km</option>
     <option value="50">± 50 km</option>
   </select>
+  <button class="btn" style="background:#e53935;color:#fff;padding:5px 8px;font-size:12px;font-weight:700" onclick="clearAll()" title="Pulisci tutti i campi di ricerca">✕ Pulisci</button>
   <button class="btn" style="background:#f5f5f0;padding:5px 8px;font-size:13px;font-weight:700" onclick="zoomToVisible()" title="Zoom sui dealer visibili">⛶ Zoom</button>
     <span style="margin-left:auto;font-size:13px;font-weight:700;color:#1a5cb8;white-space:nowrap" id="visible-count-bar">0</span>
   </div>
@@ -166,22 +151,6 @@ input[type=text]{border:1px solid #ddd;border-radius:6px;padding:5px 10px;font-s
     <button id="omw-panel-close" onclick="document.getElementById('omw-result-panel').style.display='none'">✕</button>
   </div>
   <div id="omw-panel-list"></div>
-</div>
-
-<!-- AI SEARCH PANEL -->
-<div id="ai-search-panel">
-  <div id="ai-search-header">
-    <span>🤖 Ricerca AI Dealer</span>
-    <button id="ai-search-close" onclick="toggleAiSearch()">✕</button>
-  </div>
-  <div id="ai-search-body">
-    <textarea id="ai-search-input" placeholder="Es: concessionari Customer con WebSparK a Bergamo&#10;oppure: dealer senza LeadSparK in Piemonte con rating Hot"></textarea>
-    <div style="display:flex;gap:6px;align-items:center">
-      <button id="ai-search-btn" onclick="runAiSearch()">🔍 Cerca</button>
-      <span id="ai-search-status"></span>
-    </div>
-    <div id="ai-search-results"></div>
-  </div>
 </div>
 
 <div id="toast"></div>
@@ -199,7 +168,7 @@ var CITIES={};
 (function(){
 var raw=[
 "agrate brianza,45.5763,9.3525","alba,44.7008,8.0360","alessandria,44.9124,8.6151",
-"alpignano,45.0997,7.5244","aosta,45.7372,7.3205","arcore,45.6297,9.3203",
+"alpignano,45.0997,7.5244","aosta,45.7372,7.3205","saint-christophe,45.7333,7.3667","saint christophe,45.7333,7.3667","quart,45.7167,7.4167","charvensod,45.7167,7.3333","gressan,45.7000,7.3167","sarre,45.7167,7.2833","jovençan,45.7000,7.3000","jovencan,45.7000,7.3000","pollein,45.7333,7.3833","brissogne,45.7167,7.4500","fénis,45.7500,7.4833","fenis,45.7500,7.4833","nus,45.7333,7.4667","pavone canavese,45.4333,7.8500","albano sant'alessandro,45.7167,9.7833","almè,45.75,9.6833","bagnolo cremasco,45.3667,9.6833","bagnolo mella,45.4333,10.1833","barzanò,45.7167,9.3167","besana in brianza,45.7,9.2833","bovisio-masciago,45.6167,9.1333","brignano gera d'adda,45.5333,9.6333","brissago-valtravaglia,46.0167,8.7167","cadegliano-viconago,45.95,8.8333","calusco d'adda,45.6833,9.4833","casale corte cerro,45.9167,8.45","cassano d'adda,45.5167,9.5167","cassina de' pecchi,45.5,9.3833","cassina rizzardi,45.75,9.0167","castel boglione,44.7167,8.3833","castel d'ario,45.1667,10.9833","castel goffredo,45.3,10.4667","castel rozzone,45.5667,9.6167","castelletto di branduzzo,45.0667,9.1","castelnuovo bozzente,45.75,8.9167","castiglione d'adda,45.3167,9.7","castione andevenno,46.1833,9.95","cavenago brianza,45.5833,9.3667","cerro al lambro,45.3333,9.35","ciriè,45.2333,7.6","costa sant'abramo,45.25,10.1667","cuorgnè,45.3833,7.65","fara gera d'adda,45.55,9.5333","gambolò,45.25,8.8667","gazzada schiano,45.7667,8.8","la loggia,44.95,7.6667","lurago d'erba,45.7333,9.2167","madonna dell'olmo,44.3667,7.5167","mondovì,44.3833,7.8167","monticello d'alba,44.6667,7.9333","muggiò,45.5833,9.2333","osio sotto,45.6167,9.5833","palazzolo sull'oglio,45.6,9.8833","pian camuno,45.8667,10.1333","pieve fissiraga,45.2833,9.4833","pont saint martin,45.5833,7.7833","ponte nossa,45.8333,9.85","quinzano d'oglio,45.3167,10.1667","riva presso chieri,44.9667,7.8333","rivolta d'adda,45.4833,9.5","roè volciano,45.6,10.4333","salò,45.6,10.5167","san donato milanese,45.4167,9.2667","san maurizio d'opaglio,45.7167,8.4167","san paolo d'argon,45.7,9.75","san sebastiano da po,45.1833,7.9333","san secondo di pinerolo,44.8667,7.2667","sannazzaro de' burgondi,45.1167,8.9","settimo milanese,45.4833,9.0333","torre de roveri,45.7167,9.75","trescore cremasco,45.3833,9.7333","trezzo sull'adda,45.6,9.5167","vaprio d'agogna,45.6667,8.5833","villa carcina,45.65,10.2167","villa d'almè,45.7667,9.6833","villa di serio,45.7333,9.75","villa di tirano,46.2167,10.1333","villanova d'asti,44.9333,8.0","zibido san giacomo,45.35,9.0667","zingonia,45.5667,9.65","zingonia-verdellino,45.5667,9.65","cantù,45.7333,9.1333","cantu,45.7333,9.1333","cantã¹,45.7333,9.1333","muggiò,45.5833,9.2333","muggiã²,45.5833,9.2333","fenegrò,45.6833,9.1333","fenegrã²,45.6833,9.1333","gambolò,45.25,8.8667","gambolã²,45.25,8.8667","montà,44.6167,7.9667","montã ,44.6167,7.9667","riva di pinerolo,44.8500,7.2833","piano di valeriano,44.1167,9.8833","vezzano ligure,44.1167,9.8833","zibido san giacomo,45.35,9.0667","madonna dell'olmo,44.3667,7.5167","roè volciano,45.6,10.4333","roe' volciano,45.6,10.4333","arcore,45.6297,9.3203",
 "arconate,45.5500,8.8500","arenzano,44.4017,8.6836","arona,45.7597,8.5569",
 "asti,44.9003,8.2069","bareggio,45.4667,8.9833","barge,44.7167,7.3167",
 "baveno,45.9000,8.5000","bergamo,45.6983,9.6773","biella,45.5628,8.0530",
@@ -515,7 +484,7 @@ var raw=[
 "ravenna,44.4184,12.2035",
 "cesena,44.1396,12.2463"
 ];
-raw.forEach(function(l){var p=l.split(',');if(p.length===3)CITIES[p[0].trim()]=[parseFloat(p[1]),parseFloat(p[2])];});
+raw.forEach(function(l){var p=l.split(',');if(p.length===3){var k=normalizeCity(p[0]);CITIES[k]=[parseFloat(p[1]),parseFloat(p[2])];CITIES[p[0].trim().toLowerCase()]=[parseFloat(p[1]),parseFloat(p[2])];}});
 })();
 
 function normalizeCity(c){
@@ -579,19 +548,41 @@ function makeIcon(d){
   return L.divIcon({html:svg,className:'',iconSize:[s*2,s*2],iconAnchor:[s,s],popupAnchor:[0,-s]});
 }
 
+function getPhysicalAddress(d){
+  var physStreet=(d['Addresses__r.records.0.Street__c']||'').trim();
+  var physCity=(d['Addresses__r.records.0.City__c']||'').trim();
+  var physProv=(d['Addresses__r.records.0.State_Province__c']||'').trim();
+  var billStreet=(d.BillingStreet||'').trim();
+  var billCity=(d.BillingCity||'').trim();
+  var billProv=(d.BillingState||'').trim();
+  // Se la sede fisica è valorizzata ed è diversa dalla legale, usa quella fisica
+  var hasDiff = physStreet && physCity && (physStreet.toLowerCase()!==billStreet.toLowerCase()||physCity.toLowerCase()!==billCity.toLowerCase());
+  return {
+    street: hasDiff ? physStreet : billStreet,
+    city:   hasDiff ? physCity   : billCity,
+    prov:   hasDiff ? physProv   : billProv,
+    isDiff: hasDiff
+  };
+}
+
 function buildPopup(d){
   var col=tc(d.Customer_Type__c);
-  var nav='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent((d.BillingStreet||'')+' '+(d.BillingCity||'')+' Italy');
+  var addr=getPhysicalAddress(d);
+  var nav='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(addr.street+' '+addr.city+' Italy');
   var website=d.Website||d.Website__c||d.URL__c||'';
   var websiteUrl=website ? (website.indexOf('http')===0?website:'https://'+website) : '';
+  var arr=parseFloat(d.Committed_ARR__c)||0;
+  var arrFmt=arr>0?'€'+arr.toLocaleString('it-IT',{maximumFractionDigits:0}):'—';
+  var csm=d['Success_Manager__r.Name']||'';
   var html='<div class="popup-title">'+d.Name+'</div>'
-    +'<div class="popup-row"><span class="popup-label">Città</span><span>'+(d.BillingCity||'—')+'</span></div>'
+    +'<div class="popup-row"><span class="popup-label">Città</span><span>'+addr.city+(addr.isDiff?' <span style="font-size:10px;color:#e65100">(sede fisica)</span>':'')+'</span></div>'
     +'<div class="popup-row"><span class="popup-label">Tipo</span><span class="popup-badge" style="background:'+col+'22;color:'+col+';border:1px solid '+col+'44">'+(d.Customer_Type__c||'—')+'</span></div>'
     +'<div class="popup-row"><span class="popup-label">Rating</span><span>'+(d.Rating||'—')+'</span></div>'
     +'<div class="popup-row"><span class="popup-label">Azienda</span><span>'+(d.Company_type__c||'—')+'</span></div>'
     +'<div class="popup-row"><span class="popup-label">Brand</span><span>'+(d.Official_brand__c||'—')+'</span></div>'
     +'<div class="popup-row"><span class="popup-label">Provider</span><span>'+(d.Website_Provider__c||'—')+'</span></div>'
-    +'<div class="popup-row"><span class="popup-label">Prodotti</span><span style="max-width:160px;word-break:break-word">'+(d.Active_Products_List__c||'—')+'</span></div>';
+    +(arr>0?'<div class="popup-row"><span class="popup-label">ARR</span><span style="font-weight:600;color:#1a5cb8">'+arrFmt+'</span></div>':'')
+    +(csm?'<div class="popup-row"><span class="popup-label">CSM</span><span>'+csm+'</span></div>':'');
   if(website){
     html+='<a class="popup-btn-web" href="'+websiteUrl+'" target="_blank">🌐 Vedi sito web</a>';
   }
@@ -859,18 +850,78 @@ async function processCSVText(csvText){
   document.getElementById('miss-bar').style.display='none';
   document.getElementById('status').textContent='Elaborazione…';
   Papa.parse(csvText,{header:true,skipEmptyLines:true,complete:async function(res){
-    var dealers=res.data.filter(function(d){return d.Name&&d.BillingCity;});
+    var dealers=res.data.filter(function(d){return d.Name&&d.BillingCity&&(d.Status__c||'Open')==='Open';});
     buildFilters(dealers);
     var toGeocode=[];
-    dealers.forEach(function(d){var c=getCityCoords(d.BillingCity);if(c)placeMarker(d,c);else toGeocode.push(d);});
+    dealers.forEach(function(d){
+      var physCity=(d['Addresses__r.records.0.City__c']||'').trim();
+      var billCity=(d.BillingCity||'').trim();
+      // Prova: 1) città fisica 2) città legale 3) aggiungi a geocode queue
+      var c=null;
+      if(physCity) c=getCityCoords(physCity);
+      if(!c && billCity) c=getCityCoords(billCity);
+      if(c) placeMarker(d,c); else toGeocode.push(d);
+    });
     document.getElementById('status').textContent=markers.length+' dealer';
     updateVisibleCount(markers.length);
     if(markers.length>0){var g=L.featureGroup(markers.map(function(o){return o.marker;}));map.fitBounds(g.getBounds().pad(.1));}
     var stillMissed=[];
     if(toGeocode.length>0){
-      var uniq=[...new Set(toGeocode.map(function(d){return d.BillingCity;}))];
+      // Geocodifica sia città fisica che legale per coprire tutti i casi
+      var physCities=toGeocode.map(function(d){return (d['Addresses__r.records.0.City__c']||'').trim();}).filter(Boolean);
+      var billCities=toGeocode.map(function(d){return d.BillingCity||'';}).filter(Boolean);
+      var uniq=[...new Set([...physCities,...billCities])];
       for(var i=0;i<uniq.length;i+=80){await geocodeCitiesBatch(uniq.slice(i,i+80));await sleep(200);}
-      toGeocode.forEach(function(d){var c=getCityCoords(d.BillingCity);if(c)placeMarker(d,c);else stillMissed.push(d.BillingCity);});
+      toGeocode.forEach(function(d){
+        var physCity=(d['Addresses__r.records.0.City__c']||'').trim();
+        var c=null;
+        if(physCity) c=getCityCoords(physCity);
+        if(!c) c=getCityCoords(d.BillingCity);
+        if(!c) {
+          // Fallback: usa il capoluogo della provincia
+          var PROV_CAPS = {
+            'AG':'Agrigento','AL':'Alessandria','AN':'Ancona','AO':'Aosta','AR':'Arezzo',
+            'AP':'Ascoli Piceno','AT':'Asti','AV':'Avellino','BA':'Bari','BT':'Barletta',
+            'BL':'Belluno','BN':'Benevento','BG':'Bergamo','BI':'Biella','BO':'Bologna',
+            'BZ':'Bolzano','BS':'Brescia','BR':'Brindisi','CA':'Cagliari','CL':'Caltanissetta',
+            'CB':'Campobasso','CE':'Caserta','CT':'Catania','CZ':'Catanzaro','CH':'Chieti',
+            'CO':'Como','CS':'Cosenza','CR':'Cremona','KR':'Crotone','CN':'Cuneo',
+            'EN':'Enna','FM':'Fermo','FE':'Ferrara','FI':'Firenze','FG':'Foggia',
+            'FC':'Forlì','FR':'Frosinone','GE':'Genova','GO':'Gorizia','GR':'Grosseto',
+            'IM':'Imperia','IS':'Isernia','SP':'La Spezia','AQ':'L Aquila','LT':'Latina',
+            'LE':'Lecce','LC':'Lecco','LI':'Livorno','LO':'Lodi','LU':'Lucca',
+            'MC':'Macerata','MN':'Mantova','MS':'Massa','MT':'Matera','ME':'Messina',
+            'MI':'Milano','MO':'Modena','MB':'Monza','NA':'Napoli','NO':'Novara',
+            'NU':'Nuoro','OR':'Oristano','PD':'Padova','PA':'Palermo','PR':'Parma',
+            'PV':'Pavia','PG':'Perugia','PU':'Pesaro','PE':'Pescara','PC':'Piacenza',
+            'PI':'Pisa','PT':'Pistoia','PN':'Pordenone','PZ':'Potenza','PO':'Prato',
+            'RG':'Ragusa','RA':'Ravenna','RC':'Reggio Calabria','RE':'Reggio Emilia',
+            'RI':'Rieti','RN':'Rimini','RM':'Roma','RO':'Rovigo','SA':'Salerno',
+            'SS':'Sassari','SV':'Savona','SI':'Siena','SR':'Siracusa','SO':'Sondrio',
+            'SU':'Sud Sardegna','TA':'Taranto','TE':'Teramo','TR':'Terni','TO':'Torino',
+            'TP':'Trapani','TN':'Trento','TV':'Treviso','TS':'Trieste','UD':'Udine',
+            'VA':'Varese','VE':'Venezia','VB':'Verbania','VC':'Vercelli','VR':'Verona',
+            'VV':'Vibo Valentia','VI':'Vicenza','VT':'Viterbo'
+          };
+          // Prova la città legale come testo grezzo (senza l'indirizzo specifico)
+          var billCity = (d.BillingCity||'').trim();
+          if(billCity) c = getCityCoords(billCity);
+          if(!c) {
+            // Ultimo fallback: capoluogo di provincia
+            var prov = (d.BillingState||'').toUpperCase().trim();
+            var capName = PROV_CAPS[prov];
+            if(capName) c = getCityCoords(capName);
+          }
+          if(c) {
+            placeMarker(d, c);
+            stillMissed.push(d.Name+' → posizionato a '+billCity+' (indirizzo esatto non trovato)');
+          } else {
+            stillMissed.push(d.Name+' ('+billCity+')');
+          }
+        } else {
+          // già trovato sopra
+        }
+      });
       filterMarkers();
       document.getElementById('status').textContent=markers.length+' dealer';
       updateVisibleCount(markers.length);
@@ -1585,6 +1636,19 @@ function highlightAiResults(results) {
     markerLayer.addLayer(o.marker);
   });
 }
+function clearAll(){
+  // Pulisce On My Way
+  document.getElementById('omw-partenza').value='';
+  document.getElementById('omw-via').value='';
+  document.getElementById('omw-arrivo').value='Gorle';
+  // Pulisce Vicino a me
+  document.getElementById('nearme-km').value='';
+  // Pulisce ricerca testo
+  document.getElementById('search').value='';
+  // Pulisce rotta/radar
+  clearRoute();
+}
+
 // ===== END AI SEARCH =====
 
 async function runRadar(comuneRaw, kmRange) {
