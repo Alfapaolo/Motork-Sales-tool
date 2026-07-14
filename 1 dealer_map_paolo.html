@@ -51,7 +51,7 @@ body{font-family:system-ui,sans-serif;background:#f5f5f0;height:100vh;height:100
 #omw-clear{background:#e53935;color:#fff;border:none;border-radius:6px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer;display:none}
 #omw-export{background:#388e3c;color:#fff;border:none;border-radius:6px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer}
 .omw-label{font-size:10px;color:#1a5cb8;font-weight:700;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
-#omw-result-panel{position:fixed;right:0;top:0;bottom:70px;width:280px;background:#fff;border-left:2px solid #1a5cb8;z-index:1500;display:none;flex-direction:column;box-shadow:-4px 0 16px rgba(0,0,0,.15)}
+#omw-result-panel{position:fixed;right:0;top:var(--toolbar-h,72px);bottom:var(--bottombar-h,76px);width:300px;background:#fff;border-left:2px solid #1a5cb8;z-index:1500;display:none;flex-direction:column;box-shadow:-4px 0 16px rgba(0,0,0,.15)}
 #omw-panel-header{background:#1a5cb8;color:#fff;padding:10px 12px;font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
 #omw-panel-close{background:none;border:none;color:#fff;font-size:18px;cursor:pointer;padding:0 2px;line-height:1}
 #omw-panel-list{overflow-y:auto;flex:1;padding:8px}
@@ -60,6 +60,13 @@ body{font-family:system-ui,sans-serif;background:#f5f5f0;height:100vh;height:100
 .omw-item-name{font-weight:700;font-size:13px;color:#111;margin-bottom:3px}
 .omw-item-meta{font-size:11px;color:#666}
 .omw-item-dist{font-size:11px;color:#1a5cb8;font-weight:600;margin-top:3px}
+.omw-item-row{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-top:2px}
+.omw-item-badge{font-size:10px;font-weight:600;padding:1px 5px;border-radius:3px;white-space:nowrap}
+.prod-count{font-size:11px;color:#555;cursor:default;text-decoration:underline dotted;position:relative}
+.prod-count:hover .prod-tooltip{display:block}
+.prod-tooltip{display:none;position:absolute;left:0;top:18px;background:#333;color:#fff;font-size:10px;padding:5px 8px;border-radius:6px;white-space:pre-wrap;max-width:240px;z-index:9999;box-shadow:0 2px 8px rgba(0,0,0,.3);line-height:1.5}
+.omw-item-website{font-size:11px;color:#388e3c;text-decoration:none;font-weight:500}
+.omw-item-website:hover{text-decoration:underline}
 input[type=text]{border:1px solid #ddd;border-radius:6px;padding:5px 10px;font-size:13px;width:150px;outline:none}
 .btn{border:none;border-radius:6px;padding:3px 7px;font-size:10px;cursor:pointer;white-space:nowrap;font-weight:500;transition:opacity .15s,transform .1s}
 .btn:active{transform:scale(.96)}
@@ -148,7 +155,7 @@ input[type=text]{border:1px solid #ddd;border-radius:6px;padding:5px 10px;font-s
 <div id="omw-result-panel">
   <div id="omw-panel-header">
     <span id="omw-panel-title">Dealer lungo il percorso</span>
-    <button id="omw-panel-close" onclick="document.getElementById('omw-result-panel').style.display='none'">✕</button>
+    <button id="omw-panel-close" onclick="document.getElementById('omw-result-panel').style.display='none';mapPanelOpen=false;">✕</button>
   </div>
   <div id="omw-panel-list"></div>
 </div>
@@ -527,6 +534,13 @@ function tc(t){return TC[t]||TC.default;}
 function ri(r){return RI[r]||RI.default;}
 
 // Rimuovi zoom controls, aggiunge seleziona/deseleziona tipo
+function updatePanelBounds(){
+  var tb = document.getElementById('toolbar');
+  var bb = document.getElementById('bottom-bar');
+  if(tb) document.documentElement.style.setProperty('--toolbar-h', tb.offsetHeight+'px');
+  if(bb) document.documentElement.style.setProperty('--bottombar-h', bb.offsetHeight+'px');
+}
+
 function initMap(){
   if(map) return;
   map=L.map('map',{zoomControl:false}).setView([45.4,9.2],7);
@@ -537,6 +551,8 @@ function initMap(){
     clearTimeout(labelDebounce);
     labelDebounce=setTimeout(updateSmartLabels,150);
   });
+  updatePanelBounds();
+  window.addEventListener('resize', updatePanelBounds);
 }
 
 function makeIcon(d){
@@ -570,7 +586,7 @@ function buildPopup(d){
   var addr=getPhysicalAddress(d);
   var nav='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(addr.street+' '+addr.city+' Italy');
   var website=d.Website||d.Website__c||d.URL__c||'';
-  var websiteUrl=website ? (website.indexOf('http')===0?website:'https://'+website) : '';
+  var websiteUrl=(website && website.toUpperCase()!=='NO SITO' && website.trim()!=='-') ? (website.indexOf('http')===0?website:'https://'+website) : '';
   var arr=parseFloat(d.Committed_ARR__c)||0;
   var arrFmt=arr>0?'€'+arr.toLocaleString('it-IT',{maximumFractionDigits:0}):'—';
   var csm=d['Success_Manager__r.Name']||'';
@@ -583,8 +599,10 @@ function buildPopup(d){
     +'<div class="popup-row"><span class="popup-label">Provider</span><span>'+(d.Website_Provider__c||'—')+'</span></div>'
     +(arr>0?'<div class="popup-row"><span class="popup-label">ARR</span><span style="font-weight:600;color:#1a5cb8">'+arrFmt+'</span></div>':'')
     +(csm?'<div class="popup-row"><span class="popup-label">CSM</span><span>'+csm+'</span></div>':'');
-  if(website){
+  if(websiteUrl){
     html+='<a class="popup-btn-web" href="'+websiteUrl+'" target="_blank">🌐 Vedi sito web</a>';
+  } else {
+    html+='<div style="margin-top:6px;font-size:12px;color:#999;text-align:center">🚫 Nessun sito web</div>';
   }
   html+='<a class="popup-btn" href="'+nav+'" target="_blank">🗺 Naviga con Google Maps</a>';
   return html;
@@ -610,6 +628,60 @@ function buildFilters(dealers){
   });
 }
 
+function buildItemHTML(idx, d, dist, col) {
+  // Prodotti attivi (escludi rumore)
+  var EXCLUDE_PROD = ['iubenda','accessibility','add-on','feed','livespark','sellspark','cloudflare','trainspark','training','onboarding','gestionale'];
+  var rawProds = (d.Active_Products_List__c||'').split(';').map(function(s){return s.trim();}).filter(function(s){
+    if(!s || s.length < 2) return false;
+    var sl = s.toLowerCase();
+    return !EXCLUDE_PROD.some(function(ex){return sl.indexOf(ex)>=0;});
+  });
+  var prodCount = rawProds.length;
+  var prodList = rawProds.join('\n');
+
+  var csm = d['Success_Manager__r.Name'] || '';
+  var website = d.Website || d.Website__c || d.URL__c || '';
+  var websiteUrl = (website && website.toUpperCase()!=='NO SITO' && website.trim()!=='-') ? (website.indexOf('http')===0 ? website : 'https://'+website) : '';
+  var compType = d.Company_type__c || '';
+  var rating = d.Rating || '—';
+
+  var html = '<div class="omw-item-name">'+(idx+1)+'. '+d.Name+'</div>';
+
+  // Riga 1: tipo colore + azienda + rating
+  html += '<div class="omw-item-row">';
+  html += '<span class="omw-item-badge" style="background:'+col+'22;color:'+col+';border:1px solid '+col+'44">'+(d.Customer_Type__c||'—')+'</span>';
+  if(compType) html += '<span class="omw-item-meta">'+compType+'</span>';
+  html += '<span class="omw-item-meta">'+rating+'</span>';
+  html += '</div>';
+
+  // Riga 2: città + DSM
+  html += '<div class="omw-item-row">';
+  html += '<span class="omw-item-meta">📍 '+(d.BillingCity||'—')+'</span>';
+  if(csm) html += '<span class="omw-item-meta" style="color:#7b1fa2">👤 '+csm+'</span>';
+  html += '</div>';
+
+  // Riga 3: n° prodotti con tooltip + sito web
+  html += '<div class="omw-item-row">';
+  if(prodCount > 0) {
+    html += '<span class="prod-count">'+prodCount+' prodotti attivi<span class="prod-tooltip">'+prodList+'</span></span>';
+  } else {
+    html += '<span class="omw-item-meta" style="color:#aaa">Nessun prodotto</span>';
+  }
+  if(websiteUrl) {
+    html += '<a class="omw-item-website" href="'+websiteUrl+'" target="_blank" onclick="event.stopPropagation()">🌐 Sito</a>';
+  } else {
+    html += '<span style="font-size:10px;color:#bbb">no sito</span>';
+  }
+  html += '</div>';
+
+  // Distanza
+  if(dist !== null) {
+    html += '<div class="omw-item-dist">~'+dist.toFixed(1)+' km dal centro</div>';
+  }
+
+  return html;
+}
+
 function filterMarkers(){
   var q=document.getElementById('search').value.toLowerCase().trim();
   markerLayer.clearLayers();
@@ -617,6 +689,13 @@ function filterMarkers(){
   // Se c'è una rotta attiva, ricalcola i dealer nel range rispettando i filtri correnti
   if(routeLayer && omwDealers.length > 0){
     refreshOmwWithFilters(q);
+    return;
+  }
+  // Se c'è un radar attivo, ricalcola i dealer nel raggio rispettando i filtri
+  if(window._radarCircle && window._radarCenter){
+    var kmRange=parseInt(document.getElementById('omw-km').value);
+    var label=window._radarLabel||'qui';
+    runRadarFromCoords(window._radarCenter, kmRange, label);
     return;
   }
   markers.forEach(function(o){
@@ -685,11 +764,7 @@ function refreshOmwWithFilters(q){
       var col=tc(d.Customer_Type__c);
       var el=document.createElement('div');
       el.className='omw-item';
-      el.innerHTML='<div class="omw-item-name">'+(idx+1)+'. '+d.Name+'</div>'
-        +'<div class="omw-item-meta" style="color:'+col+';font-weight:600">'+(d.Customer_Type__c||'—')+'</div>'
-        +'<div class="omw-item-meta">📍 '+(d.BillingCity||'—')+' · '+(d.Rating||'—')+'</div>'
-        +'<div class="omw-item-meta" style="color:#555">'+(d.Active_Products_List__c||'—')+'</div>'
-        +'<div class="omw-item-dist">~'+item.dist.toFixed(1)+' km dalla strada</div>';
+      el.innerHTML=buildItemHTML(idx, d, item.dist, col);
       el.onclick=(function(o){return function(){map.setView(o.marker.getLatLng(),13);o.marker.openPopup();};})(item.o);
       list.appendChild(el);
     });
@@ -716,10 +791,7 @@ function refreshMapPanel(){
     var col=tc(d.Customer_Type__c);
     var el=document.createElement('div');
     el.className='omw-item';
-    el.innerHTML='<div class="omw-item-name">'+(idx+1)+'. '+d.Name+'</div>'
-      +'<div class="omw-item-meta" style="color:'+col+';font-weight:600">'+(d.Customer_Type__c||'—')+'</div>'
-      +'<div class="omw-item-meta">📍 '+(d.BillingCity||'—')+' · '+(d.Rating||'—')+'</div>'
-      +'<div class="omw-item-meta" style="color:#555">'+(d.Active_Products_List__c||'—')+'</div>';
+    el.innerHTML=buildItemHTML(idx, d, item.dist, col);
     el.onclick=(function(o){return function(){map.setView(o.marker.getLatLng(),13);o.marker.openPopup();};})(item.o);
     list.appendChild(el);
   });
@@ -1057,6 +1129,7 @@ function distFromRoute(lat, lng, routePoints) {
 function clearRoute() {
   if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
   if (window._radarCircle) { map.removeLayer(window._radarCircle); window._radarCircle = null; }
+  window._radarCenter = null; window._radarLabel = null;
   omwMarkers.forEach(function(m) { map.removeLayer(m); });
   omwMarkers = [];
   omwDealers = [];
@@ -1229,11 +1302,7 @@ async function runOnMyWay() {
       var col = tc(d.Customer_Type__c);
       var el = document.createElement('div');
       el.className = 'omw-item';
-      el.innerHTML = '<div class="omw-item-name">' + (idx+1) + '. ' + d.Name + '</div>'
-        + '<div class="omw-item-meta" style="color:'+col+';font-weight:600">'+(d.Customer_Type__c||'—')+'</div>'
-        + '<div class="omw-item-meta">📍 ' + (d.BillingCity||'—') + ' · ' + (d.Rating||'—') + '</div>'
-        + '<div class="omw-item-meta" style="color:#555">' + (d.Active_Products_List__c||'—') + '</div>'
-        + '<div class="omw-item-dist">~' + item.dist.toFixed(1) + ' km dalla strada</div>';
+      el.innerHTML = buildItemHTML(idx, d, item.dist, col);
       el.onclick = (function(o){ return function(){ map.setView(o.marker.getLatLng(), 13); o.marker.openPopup(); }; })(item.o);
       list.appendChild(el);
     });
@@ -1671,7 +1740,11 @@ async function runRadar(comuneRaw, kmRange) {
 }
 
 function runRadarFromCoords(pCoords, kmRange, labelText) {
-  clearRoute();
+  // Salva contesto radar per refresh automatico su cambio filtri
+  window._radarCenter = pCoords;
+  window._radarLabel = labelText;
+  if(routeLayer){map.removeLayer(routeLayer);routeLayer=null;}
+  omwMarkers=[];omwDealers=[];
   toast('🔄 Ricerca dealer nel raggio di ' + kmRange + ' km…');
 
   // Cerchio visivo sulla mappa
@@ -1729,11 +1802,7 @@ function runRadarFromCoords(pCoords, kmRange, labelText) {
       var col = tc(d.Customer_Type__c);
       var el = document.createElement('div');
       el.className = 'omw-item';
-      el.innerHTML = '<div class="omw-item-name">' + (idx+1) + '. ' + d.Name + '</div>'
-        + '<div class="omw-item-meta" style="color:'+col+';font-weight:600">' + (d.Customer_Type__c||'—') + '</div>'
-        + '<div class="omw-item-meta">📍 ' + (d.BillingCity||'—') + ' · ' + (d.Rating||'—') + '</div>'
-        + '<div class="omw-item-meta" style="color:#555">' + (d.Active_Products_List__c||'—') + '</div>'
-        + '<div class="omw-item-dist">~' + item.dist.toFixed(1) + ' km dal centro</div>';
+      el.innerHTML = buildItemHTML(idx, d, item.dist, col);
       el.onclick = (function(o){ return function(){ map.setView(o.marker.getLatLng(),13); o.marker.openPopup(); }; })(item.o);
       list.appendChild(el);
     });
