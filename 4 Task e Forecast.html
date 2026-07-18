@@ -169,12 +169,12 @@
   select.cat-input{ font-size:11px; padding:3px 6px; }
 
   .totals-bar{
-    display:flex; justify-content:space-between; align-items:center;
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(88px, 1fr)); gap:10px;
     background:var(--panel2); border:1px solid var(--border); border-radius:10px;
     padding:14px 16px; margin-bottom:14px;
   }
-  .totals-bar .num{ font-family:var(--mono); font-weight:700; font-size:22px; }
-  .totals-bar .lbl{ color:var(--text-dim); font-size:11px; text-transform:uppercase; letter-spacing:0.5px; }
+  .totals-bar .num{ font-family:var(--mono); font-weight:700; font-size:22px; white-space:nowrap; }
+  .totals-bar .lbl{ color:var(--text-dim); font-size:11px; text-transform:uppercase; letter-spacing:0.5px; white-space:nowrap; }
 
   .filter-chips{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
   .chip{
@@ -238,7 +238,35 @@
   @media (max-width: 480px){
     .task-meta-row{ flex-direction:column; align-items:flex-start; }
     .task-actions{ width:100%; justify-content:flex-start; }
-    .action-btn{ flex:1; justify-content:center; }
+    .action-btn{ flex:1; justify-content:center; font-size:12px; padding:0 8px; }
+
+    .app{ padding:14px 12px 50px; }
+    .brand h1{ font-size:15px; }
+    .brand small{ font-size:10px; }
+    .sync-status{ font-size:10px; }
+
+    .tabs{ flex-wrap:wrap; gap:6px; padding:5px; }
+    .tabs input[type=file]{ display:none; }
+    .tab{ font-size:11.5px; padding:9px 4px; gap:4px; }
+    .tab.import-tab-btn{ flex:1 1 100%; order:1; }
+    .tab[data-sheetconfigbtn]{ flex:0 0 auto; order:2; padding:9px 14px; }
+    .tab[data-tab]{ flex:1 1 auto; order:3; min-width:0; }
+    .tab .badge{ font-size:10px; padding:1px 5px; }
+
+    .totals-bar{ grid-template-columns:repeat(2, 1fr); gap:12px 8px; padding:12px; }
+    .totals-bar .num{ font-size:18px; }
+    .totals-bar .lbl{ font-size:9.5px; }
+
+    .panel-title{ font-size:11px; }
+    .filter-chips{ gap:5px; }
+    .chip{ font-size:11px; padding:5px 9px; }
+
+    .task-dealer{ font-size:12.5px; }
+    .task-note{ font-size:12px; }
+    .opp-dealer{ font-size:12.5px; }
+    .opp-prod, .opp-note{ font-size:11.5px; }
+    .group-title{ font-size:12px; }
+    .group-total{ font-size:12px; }
   }
 
   .toast{
@@ -285,7 +313,7 @@ let STATE = {
   undoStack: [],
   callModal: null,
   callModalRecording: false,
-  sheetConfig: { sheetId: null, gidTask: null, gidOpp: null },
+  sheetConfig: { sheetId: '18vIfwCnBM9PWgDL8_vk5SxvSRsbXC7w8Ouu4G90greo', gidTask: '595528304', gidOpp: '1721033441' },
   sheetConfigModal: null,
   emailModal: null
 };
@@ -310,14 +338,10 @@ async function loadState(){
     }
   }catch(e){ console.error('Errore caricamento dati:', e); }
 
-  // The Google Sheet config (id + tab gids) is device-local on purpose: you
-  // set it up once per device, exactly like the daily file used to be
-  // loaded once per device — but from here on, data itself comes live from
-  // the same shared Sheet, so both devices show the same thing.
-  try{
-    const rawCfg = localStorage.getItem('pipeline-sync-sheet-config');
-    if(rawCfg) STATE.sheetConfig = JSON.parse(rawCfg);
-  }catch(e){ /* defaults */ }
+  // The Google Sheet ID and tab gids are fixed directly in the code above
+  // (not read from per-device local storage) so every copy of this file,
+  // on any device, reads the exact same source — no per-device setup that
+  // could get out of sync or be pasted incorrectly.
 
   // migration: old single task_next_step field -> tasks[] array (nothing gets lost)
   let migrated = false;
@@ -483,13 +507,12 @@ function totalTaskCount(){
 function renderTabs(){
   const oc = overdueCount();
   const tc = totalTaskCount();
-  const configured = STATE.sheetConfig && STATE.sheetConfig.sheetId;
-  const syncLabel = STATE.importLoading ? (STATE.importLoadingLabel||'Elaborazione…') : (configured ? '🔄 Sincronizza' : '🔗 Collega Google Sheet');
+  const syncLabel = STATE.importLoading ? (STATE.importLoadingLabel||'Elaborazione…') : '🔄 Sincronizza';
   return `
   <div class="tabs">
     <input type="file" id="dailyFileInput" accept=".xlsx,.xls" style="display:none;">
     <div class="tab import-tab-btn" data-syncbtn="1">${syncLabel}</div>
-    <div class="tab" data-sheetconfigbtn="1" style="flex:0 0 auto; padding:9px 12px;" title="Configura Google Sheet / carica manualmente">⚙️</div>
+    <div class="tab" data-sheetconfigbtn="1" style="flex:0 0 auto; padding:9px 12px;" title="Carica manualmente invece">📎</div>
     <div class="tab ${STATE.activeTab==='task'?'active':''}" data-tab="task">Solleciti / Task <span class="badge ${oc>0?'urgent':''}">${tc}</span></div>
     <div class="tab ${STATE.activeTab==='pipeline'?'active':''}" data-tab="pipeline">OPP/Pipeline <span class="badge">${STATE.opportunities.length}</span></div>
   </div>`;
@@ -1334,44 +1357,12 @@ function attachHandlers(){
   if(syncBtn){
     syncBtn.addEventListener('click', () => {
       if(STATE.importLoading) return;
-      const configured = STATE.sheetConfig && STATE.sheetConfig.sheetId;
-      if(configured) syncFromSheet(false);
-      else { STATE.sheetConfigModal = {}; render(); }
+      syncFromSheet(false);
     });
   }
   const sheetConfigBtn = document.querySelector('[data-sheetconfigbtn]');
   if(sheetConfigBtn){
-    sheetConfigBtn.addEventListener('click', () => { STATE.sheetConfigModal = {}; render(); });
-  }
-  const sheetConfigCancel = document.getElementById('sheetConfigCancel');
-  if(sheetConfigCancel){
-    sheetConfigCancel.addEventListener('click', () => { STATE.sheetConfigModal = null; render(); });
-  }
-  const sheetConfigSave = document.getElementById('sheetConfigSave');
-  if(sheetConfigSave){
-    sheetConfigSave.addEventListener('click', async () => {
-      const taskUrl = document.getElementById('sheetTaskUrlInput').value;
-      const oppUrl = document.getElementById('sheetOppUrlInput').value;
-      const taskInfo = extractSheetIdAndGid(taskUrl);
-      const oppInfo = extractSheetIdAndGid(oppUrl);
-      const sheetId = taskInfo.sheetId || oppInfo.sheetId || (STATE.sheetConfig && STATE.sheetConfig.sheetId);
-      STATE.sheetConfig = {
-        sheetId,
-        gidTask: taskInfo.gid || (STATE.sheetConfig && STATE.sheetConfig.gidTask) || null,
-        gidOpp: oppInfo.gid || (STATE.sheetConfig && STATE.sheetConfig.gidOpp) || null
-      };
-      await saveSheetConfig();
-      STATE.sheetConfigModal = null;
-      render();
-    });
-  }
-  const sheetManualUploadBtn = document.getElementById('sheetManualUploadBtn');
-  if(sheetManualUploadBtn){
-    sheetManualUploadBtn.addEventListener('click', () => {
-      STATE.sheetConfigModal = null;
-      render();
-      document.getElementById('dailyFileInput').click();
-    });
+    sheetConfigBtn.addEventListener('click', () => { document.getElementById('dailyFileInput').click(); });
   }
   const confirmBtn = document.getElementById('confirmImportBtn');
   if(confirmBtn){
