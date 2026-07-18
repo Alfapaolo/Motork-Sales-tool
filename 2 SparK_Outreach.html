@@ -95,17 +95,17 @@ textarea{height:90px;resize:vertical;line-height:1.5}
     <div class="sec">
       <div class="sec-t">File dati</div>
       <div class="frow">
-        <span class="flbl">Account</span>
+        <span class="flbl">Account SF</span>
         <span class="fst ko" id="st-account">Non caricato</span>
         <div class="file-input-wrap"><span class="fake-btn">Carica</span><input type="file" id="inp-account" accept=".csv,text/plain"></div>
       </div>
       <div class="frow">
-        <span class="flbl">Contatti</span>
+        <span class="flbl">Contact SF</span>
         <span class="fst ko" id="st-contact">Non caricato</span>
         <div class="file-input-wrap"><span class="fake-btn">Carica</span><input type="file" id="inp-contact" accept=".csv,text/plain"></div>
       </div>
       <div class="frow">
-        <span class="flbl">Database</span>
+        <span class="flbl">DB Clienti</span>
         <span class="fst ko" id="st-database">Non caricato</span>
         <div class="file-input-wrap"><span class="fake-btn">Carica</span><input type="file" id="inp-database" accept=".csv,text/plain"></div>
       </div>
@@ -114,7 +114,7 @@ textarea{height:90px;resize:vertical;line-height:1.5}
       <div class="sec-t" style="margin-bottom:6px">Modalità dati</div>
       <div style="display:flex;gap:0;border:1px solid #1a5cb8;border-radius:6px;overflow:hidden">
         <button id="mode-db" onclick="setMode('db')" style="flex:1;padding:6px 4px;font-size:11px;font-weight:600;border:none;background:#1a5cb8;color:#fff;cursor:pointer">&#128196; DB Clienti</button>
-        <button id="mode-sf" onclick="setMode('sf')" style="flex:1;padding:6px 4px;font-size:11px;font-weight:600;border:none;background:#fff;color:#1a5cb8;cursor:pointer">&#9729; Account SF</button>
+        <button id="mode-sf" onclick="setMode('sf')" style="flex:1;padding:6px 4px;font-size:11px;font-weight:600;border:none;background:#fff;color:#1a5cb8;cursor:pointer">&#9729; Account/Contact</button>
       </div>
       <div id="mode-desc" style="font-size:10px;color:#888;margin-top:4px;text-align:center">Clienti curati · mail mirate</div>
     </div>
@@ -450,20 +450,69 @@ var COMUNE_PROV={
   'cantù':'CO','mariano comense':'CO','limbiate':'MB'
 };
 var PROD_MAP={
-  'webspark sales':'WS','ws revolution - core':'REV','ws revolution':'REV','ws - privacy policy':'WS','ws privacy':'WS','webspark accessibility':'WS','webspark add-on':'WS','webspark':'WS','sito web':'LIV','sito':'LIV',
-  'webspark rent':'RENT','webspark b2b':'B2B','ws b2b':'B2B','webspark servizi':'SERV','ws servizi':'SERV','webspark rent':'RENT','ws rent':'RENT','webspark servizi':'SERV','sellspark':'SELL',
-  'livespark':'LVS','creative pack':'CP','cloudflare':'CF','cloudfare':'CF',
-  'background removal':'BGR','ai video':'VIDEO','video':'VIDEO','revolution':'REV',
-  'stockspark app':'APP','stockspark advanced':'SSK BI','stockspark bi':'SSK BI','stockspark':'SSK',
-  'leadspark essential':'LS','ls - professional':'LS','ls - standard':'LS','ls - premium':'LS','ls - telephone':'LS','ls professional':'LS','ls standard':'LS','ls premium':'LS','ls essential':'LS','ls - essential':'LS','ls1':'LS','lse':'LS',
-  'ls - standard':'LS','ls - premium':'LS','ls - telephone':'LS','ls 1':'LS',
-  'leadspark revolution':'LSR','ls revolution':'LSR','ls 2':'LSR','ls2':'LSR',
-  'ls 2 - premium':'LSR','ls 2 - standard':'LSR','lsr':'LSR','leadspark':'LS',
-  'whatsapp business':'WAPP','whatsapp':'WAPP','tip report':'TIP','tip':'TIP',
-  'marketing automation':'M.AUT','marketing management fee':'MKTG','marketing tech fee':'MKTG','campaign budget':'MKTG','marketing management':'MKTG','marketing tech':'MKTG','fidspark':'FSK','predictspark':'PSK','callspark':'CSK',
-  'agentspark':'AGEN','customer data platform':'CDP','cdp':'CDP',
-  'seospark':'SEO','seo':'SEO','lead generation':'MKTG','adspark':'MKTG',
-  'gestionale auto':'GEST','gestionale dealer':'GEST','gestionale web':'GEST','gestionale':'GEST'
+  // WebSparK
+  'ws - core':'WS','ws - easy':'WS','ws - advanced':'WS','ws - premium':'WS',
+  'webspark sales':'WS','webspark revolution - advanced':'WS','webspark revolution - core':'WS','webspark revolution - premium':'WS',
+  'ws revolution - core':'WS','ws revolution - advanced':'WS','ws revolution - premium':'WS',
+  'ws - customization fee (monthly)':'WS','webspark - multilanguage':'WS',
+  'ws - car configurator':'WS','webspark - car configurator':'WS','ws - 3rd level dominio car configurator':'WS',
+  'ws - rent website':'RENT','ws revolution - rent website':'RENT','webspark revolution - mobility':'RENT','webspark revolution - rent website':'RENT',
+  'ws - service website':'SERV','webspark revolution - service':'SERV',
+  'ws revolution - truck':'TRUCK','webspark revolution - truck':'TRUCK',
+  'webspark b2b':'B2B','ws b2b':'B2B',
+  'webspark - ai content generator tool':'CP','ws - ai content generator tool':'CP',
+  'webspark - elementor pro':'CP','ws - elementor pro':'CP',
+  'webspark - online sales':'SELL',
+  'cloudflare':'CF','cloudFlare':'CF',
+  // LeadSparK
+  'ls - premium':'LS','ls - professional':'LS','ls - professional smtp':'LS',
+  'ls - pillar':'LS','ls - lead manager':'LS','ls - bdc bundle':'LS',
+  'ls - customization fee (monthly)':'LS','ls - db read replica':'LS',
+  'leadspark essential':'LS','leadspark essential - professional':'LS','leadspark automation':'LS',
+  'leadspark revolution':'LSR','ls 2 - premium':'LSR','leadspark revolution - data warehouse':'LSR',
+  'ls1 reporting':'TIP','reportspark':'TIP',
+  'lsk - whatsapp business api':'WAPP','lsk - whatsapp business premium':'WAPP',
+  'ls - telephone system integration and maintenance':'CSK',
+  'leadspark training - small':'TRAIN','leadspark training - medium':'TRAIN','leadspark training - large':'TRAIN',
+  // StockSparK
+  'stockspark':'SSK','stockspark (ws - multipublication)':'SSK','stockspark - customization fee (monthly)':'SSK',
+  'stockspark advanced':'SSK BI',
+  'stockspark app':'APP','carspark app':'APP',
+  'ssk - background removal':'BGR','ssk - background removal - small':'BGR','ssk - background removal - custom':'BGR',
+  'ssk - background removal 1 - 100 images':'BGR','ssk - background removal 100 - 250 images':'BGR',
+  'ssk - background removal 250 - 500 images':'BGR','ssk - branded showrooms background removal':'BGR',
+  'stockspark - custom showrooms background removal':'BGR',
+  'ssk - ai videos':'VIDEO','ssk - ai videos - 20 videos':'VIDEO',
+  'stockspark training':'TRAIN',
+  // CallSparK
+  'callspark':'CSK','callspark - 100 calls':'CSK','callspark - 200 calls':'CSK','callspark - custom':'CSK',
+  // FidSparK
+  'fidspark':'FSK','fidspark premium':'FSK','fidspark advanced':'FSK',
+  // SeoSparK
+  'seospark premium':'SEO','seospark x advanced':'SEO','seospark x premium':'SEO',
+  // PredictSparK
+  'predictspark':'PSK','predictspark advanced':'PSK','predictspark premium':'PSK',
+  // Other products
+  'agentspark':'AGEN','customer data platform':'CDP','livespark':'LIV',
+  'sellspark (online sales)':'SELL',
+  'marketing management fee':'MKTG','marketing management fee (extra)':'MKTG',
+  'marketing tech fee':'MKTG','marketing tech fee (extra)':'MKTG','campaign budget':'MKTG',
+  'facebook automotive feed':'FB','facebook automotive feed - large':'FB','facebook automotive feed - small':'FB',
+  'google feed vehicle ads - large':'GV','google feed vehicle ads - small':'GV',
+  'trainspark (training as a service)':'TRAIN','trainspark platform onboarding - large':'TRAIN',
+  'trainspark platform onboarding - small':'TRAIN','trainspark silver':'TRAIN',
+  'webspark training':'TRAIN',
+  'gestionale auto':'GA','gestionale dealer':'GA','gestionale web':'GA',
+  'gestionale other services':'GA','gestionale ads':'GA',
+  'cdk - stock management and negotiation data':'INT',
+  'keyloop - (windrakar - autoline) vehicle stock data integration':'INT',
+  'keyloop - (windrakar - autoline) workshop order reservation - service booking data integration':'INT',
+  'toshiko - offers and contracts connector':'INT',
+  'mercedes benz - lead management data integration':'INT',
+  'cross - offers, contracts and workshop orders data integration':'INT',
+  'customer first - offers and contracts data import':'INT',
+  'visual software infinity - database connector':'INT',
+  'full platform':'FULL','ai creative studio':'AI','powerbi licences':'BI'
 };
 var PROD_LABELS={
   'LIV':'Sito Web','WS':'WebSparK Sales','REV':'WS Revolution','CP':'Creative Pack',
@@ -560,9 +609,35 @@ function parseCSV(text,cb){
 function afterLoad(type){
   var n=DATA[type]?DATA[type].length:0;
   var el=document.getElementById('st-'+type);
-  if(el){el.textContent=n>0?n+' righe':'Errore';el.className='fst '+(n>0?'ok':'ko');}
-  // Merge when we have at least account or database
+  if(el){
+    var date=localStorage.getItem?localStorage.getItem('spark_'+type+'_date')||'':'';
+    el.textContent=n>0?n+' righe'+(date?' ('+date+')':''):'Errore';
+    el.className='fst '+(n>0?'ok':'ko');
+    el.title=date?'Aggiornato il '+date:'';
+  }
   if(DATA.account||DATA.database) merge();
+}
+
+function saveToStorage(type,text){
+  try{localStorage.setItem('spark_'+type,text);localStorage.setItem('spark_'+type+'_date',new Date().toLocaleDateString('it-IT'));}catch(e){}
+}
+
+function loadFromStorage(){
+  var loaded=0;
+  ['account','contact','database'].forEach(function(t){
+    try{
+      var saved=localStorage.getItem('spark_'+t);
+      var date=localStorage.getItem('spark_'+t+'_date')||'';
+      if(saved){
+        parseCSV(saved,function(rows){DATA[t]=rows;afterLoad(t);});
+        loaded++;
+        var el=document.getElementById('st-'+t);
+        if(el) el.title='Salvato il '+date;
+      }
+    }catch(e){}
+  });
+  if(loaded>0) toast('Dati caricati dalla cache locale ('+loaded+'/3) ✓',3000);
+  else document.getElementById('rcount').textContent='Carica i file CSV dalla sidebar';
 }
 
 function setupInputs(){
@@ -572,7 +647,7 @@ function setupInputs(){
     el.addEventListener('change',function(){
       if(!el.files||!el.files[0]) return;
       var fr=new FileReader();
-      fr.onload=function(e){var txt=e.target.result;parseCSV(txt,function(rows){DATA[pair[1]]=rows;afterLoad(pair[1]);});};
+      fr.onload=function(e){var txt=e.target.result;saveToStorage(pair[1],txt);parseCSV(txt,function(rows){DATA[pair[1]]=rows;afterLoad(pair[1]);});};
       fr.readAsText(el.files[0],'UTF-8');
       el.value='';
     });
@@ -1534,7 +1609,7 @@ function renderTxtModal(found,notFound){
     // CONTATTI
     html+='<div style="padding:10px 14px">';
     html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
-    html+='<div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;flex:1">Contatti</div>';
+    html+='<div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;flex:1">Contact SF</div>';
     html+='<button onclick="excludeAll('+idx+')" style="font-size:10px;padding:2px 8px;border:1px solid #e53935;border-radius:4px;background:#fff;color:#e53935;cursor:pointer">✕ Escludi tutti</button>';
     html+='</div>';
     if(!state.contacts.filter(function(x){return x.email;}).length){
@@ -1979,59 +2054,8 @@ window.addEventListener('DOMContentLoaded',function(){
     });
   });
 
-  // Auto-load from Google Drive via CORS proxy
-  var DRIVE_URLS={
-    account:'https://docs.google.com/spreadsheets/d/18vIfwCnBM9PWgDL8_vk5SxvSRsbXC7w8Ouu4G90greo/export?format=csv&gid=1412554961',
-    contact:'https://docs.google.com/spreadsheets/d/18vIfwCnBM9PWgDL8_vk5SxvSRsbXC7w8Ouu4G90greo/export?format=csv&gid=374587942',
-    database:'https://docs.google.com/spreadsheets/d/1Y-PRdKjclVCRyO2gBCNIQZ5zcgM-tvX96FLMcqbCCZw/export?format=csv&gid=2089600509'
-  };
-  var PROXIES=[
-    'https://corsproxy.io/?url=',
-    'https://api.allorigins.win/raw?url=',
-    'https://cors-anywhere.herokuapp.com/'
-  ];
 
-  function fetchWithProxy(url,proxyIdx){
-    proxyIdx=proxyIdx||0;
-    if(proxyIdx>=PROXIES.length) return Promise.reject(new Error('All proxies failed'));
-    var proxyUrl=PROXIES[proxyIdx]+encodeURIComponent(url);
-    return fetch(proxyUrl)
-      .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();})
-      .catch(function(){
-        return fetchWithProxy(url,proxyIdx+1);
-      });
-  }
-  function loadOneDrive(type){
-    return fetchWithProxy(DRIVE_URLS[type])
-      .then(function(text){
-        parseCSV(text,function(rows){DATA[type]=rows;afterLoad(type);});
-        return true;
-      }).catch(function(){return false;});
-  }
-
-  function loadFromDrive(){
-    document.getElementById('rcount').textContent='Aggiornamento da Google Drive...';
-    var types=['account','contact','database'];
-    var ok=0;
-    // Load sequentially to avoid rate limits
-    loadOneDrive('account').then(function(r){
-      if(r) ok++;
-      return new Promise(function(res){setTimeout(res,800);});
-    }).then(function(){
-      return loadOneDrive('contact');
-    }).then(function(r){
-      if(r) ok++;
-      return new Promise(function(res){setTimeout(res,800);});
-    }).then(function(){
-      return loadOneDrive('database');
-    }).then(function(r){
-      if(r) ok++;
-      if(ok===3) toast('Dati aggiornati ✓',3000);
-      else if(ok>0) toast('Aggiornamento parziale ('+ok+'/3) — carica i file mancanti',4000);
-      else document.getElementById('rcount').textContent='Drive non raggiungibile — carica manualmente';
-    });
-  }
-  loadFromDrive();
+  loadFromStorage();
 });
 </script>
 </body>
