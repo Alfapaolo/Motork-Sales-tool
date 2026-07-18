@@ -110,6 +110,14 @@ textarea{height:90px;resize:vertical;line-height:1.5}
         <div class="file-input-wrap"><span class="fake-btn">Carica</span><input type="file" id="inp-database" accept=".csv,text/plain"></div>
       </div>
     </div>
+    <div class="sec" style="padding:8px 12px">
+      <div class="sec-t" style="margin-bottom:6px">Modalità dati</div>
+      <div style="display:flex;gap:0;border:1px solid #1a5cb8;border-radius:6px;overflow:hidden">
+        <button id="mode-db" onclick="setMode('db')" style="flex:1;padding:6px 4px;font-size:11px;font-weight:600;border:none;background:#1a5cb8;color:#fff;cursor:pointer">&#128196; DB Clienti</button>
+        <button id="mode-sf" onclick="setMode('sf')" style="flex:1;padding:6px 4px;font-size:11px;font-weight:600;border:none;background:#fff;color:#1a5cb8;cursor:pointer">&#9729; Account SF</button>
+      </div>
+      <div id="mode-desc" style="font-size:10px;color:#888;margin-top:4px;text-align:center">Clienti curati · mail mirate</div>
+    </div>
     <div class="sec">
       <div class="sec-t">Filtri</div>
       <div style="margin-bottom:6px">
@@ -501,6 +509,28 @@ var DSM_DIRECTORY=[
 ];
 
 var DATA={account:null,contact:null,database:null};
+var CURRENT_MODE='db'; // 'db' = DB Clienti, 'sf' = Account SF
+var COMPANIES_DB=[]; // from database
+var COMPANIES_SF=[]; // from account+contact
+
+function setMode(mode){
+  CURRENT_MODE=mode;
+  var btnDB=document.getElementById('mode-db');
+  var btnSF=document.getElementById('mode-sf');
+  var desc=document.getElementById('mode-desc');
+  if(mode==='db'){
+    btnDB.style.background='#1a5cb8';btnDB.style.color='#fff';
+    btnSF.style.background='#fff';btnSF.style.color='#1a5cb8';
+    desc.textContent='Clienti curati · mail mirate';
+    COMPANIES=COMPANIES_DB;
+  } else {
+    btnSF.style.background='#1a5cb8';btnSF.style.color='#fff';
+    btnDB.style.background='#fff';btnDB.style.color='#1a5cb8';
+    desc.textContent='Tutti gli account SF · invii massivi';
+    COMPANIES=COMPANIES_SF;
+  }
+  buildFilters();applyFilters();
+}
 var COMPANIES=[],FILTERED=[],SELECTED=new Set();
 var ACT={type:new Set(),region:new Set(),province:new Set(),products:new Set(),contact:new Set(['any'])};
 var WA_QUEUE=[],WA_IDX=0;
@@ -530,9 +560,9 @@ function parseCSV(text,cb){
 function afterLoad(type){
   var n=DATA[type]?DATA[type].length:0;
   var el=document.getElementById('st-'+type);
-  el.textContent=n>0?n+' righe':'Errore';
-  el.className='fst '+(n>0?'ok':'ko');
-  if(DATA.account&&DATA.contact) merge();
+  if(el){el.textContent=n>0?n+' righe':'Errore';el.className='fst '+(n>0?'ok':'ko');}
+  // Merge when we have at least account or database
+  if(DATA.account||DATA.database) merge();
 }
 
 function setupInputs(){
@@ -558,6 +588,7 @@ function fuzzy(a,b){
 }
 
 function merge(){
+  // Build SF companies from Account + Contact
   var co={};
   DATA.account.forEach(function(a){
     if(!a.Name) return;
@@ -608,7 +639,38 @@ function merge(){
       }
     });
   }
-  COMPANIES=Object.values(co);
+  COMPANIES_SF=Object.values(co);
+
+  // Build DB companies from database file only
+  var coDB={};
+  if(DATA.database){
+    DATA.database.forEach(function(r){
+      var an=r['RAGIONE SOCIALE']||'';if(!an||an==='RAGIONE SOCIALE') return;
+      var k=norm(an);
+      if(!coDB[k]) coDB[k]={name:an,type:'Customer',rating:'',region:'',province:(r['PV']||'').toUpperCase(),products:'',mappedProds:[],brands:'',website:'',webProvider:'',contacts:[],dsm:[{name:'',email:'',role:'DSM',src:'dsm'}]};
+      var fn=(r['NOME']||'').trim(),ln=(r['COGNOME']||'').trim();
+      if(fn==='XXX'||ln==='XXX') return;
+      var email=(r['MAIL']||'').trim(),phone=(r['CELLULARE']||'').trim(),role=(r['RUOLO']||'').trim();
+      if(!email&&!phone) return;
+      var ex=coDB[k].contacts.find(function(x){return x.email&&x.email===email;});
+      if(!ex) coDB[k].contacts.push({name:(fn+' '+ln).trim(),first:fn,email:email,phone:phone,role:role,src:'db'});
+      // Assign DSM from SF data if available
+      var sfMatch=COMPANIES_SF.find(function(c){return norm(c.name)===k||fuzzy(c.name,an);});
+      if(sfMatch){
+        coDB[k].dsm=sfMatch.dsm;
+        coDB[k].brands=sfMatch.brands;
+        coDB[k].website=sfMatch.website;
+        coDB[k].mappedProds=sfMatch.mappedProds;
+        coDB[k].type=sfMatch.type||coDB[k].type;
+        coDB[k].province=sfMatch.province||coDB[k].province;
+        coDB[k].region=sfMatch.region||coDB[k].region;
+      }
+    });
+  }
+  COMPANIES_DB=Object.values(coDB);
+
+  // Set active list based on current mode
+  COMPANIES=CURRENT_MODE==='db'?COMPANIES_DB:COMPANIES_SF;
   buildFilters();applyFilters();
 }
 
@@ -1917,7 +1979,29 @@ window.addEventListener('DOMContentLoaded',function(){
     });
   });
 
-  document.getElementById('rcount').textContent='Carica i file dalla sidebar';
+  // Auto-load from Google Drive via CORS proxy
+  var DRIVE_URLS={
+    account:'https://docs.google.com/spreadsheets/d/18vIfwCnBM9PWgDL8_vk5SxvSRsbXC7w8Ouu4G90greo/export?format=csv&gid=1412554961',
+    contact:'https://docs.google.com/spreadsheets/d/18vIfwCnBM9PWgDL8_vk5SxvSRsbXC7w8Ouu4G90greo/export?format=csv&gid=374587942',
+    database:'https://docs.google.com/spreadsheets/d/1Y-PRdKjclVCRyO2gBCNIQZ5zcgM-tvX96FLMcqbCCZw/export?format=csv&gid=2089600509'
+  };
+  var PROXY='https://corsproxy.io/?url=';
+  function loadFromDrive(){
+    document.getElementById('rcount').textContent='Aggiornamento da Google Drive...';
+    Promise.all(['account','contact','database'].map(function(t){
+      return fetch(PROXY+encodeURIComponent(DRIVE_URLS[t]))
+        .then(function(r){if(!r.ok)throw new Error();return r.text();})
+        .then(function(text){return {type:t,text:text,ok:true};})
+        .catch(function(){return {type:t,text:null,ok:false};});
+    })).then(function(results){
+      var ok=results.filter(function(r){return r.ok;}).length;
+      results.forEach(function(r){if(r.text) parseCSV(r.text,function(rows){DATA[r.type]=rows;afterLoad(r.type);});});
+      if(ok===3) toast('Dati aggiornati ✓',3000);
+      else if(ok>0) toast('Aggiornamento parziale ('+ok+'/3)',3000);
+      else document.getElementById('rcount').textContent='Drive non raggiungibile — carica i file manualmente';
+    });
+  }
+  loadFromDrive();
 });
 </script>
 </body>
