@@ -1985,10 +1985,24 @@ window.addEventListener('DOMContentLoaded',function(){
     contact:'https://docs.google.com/spreadsheets/d/18vIfwCnBM9PWgDL8_vk5SxvSRsbXC7w8Ouu4G90greo/export?format=csv&gid=374587942',
     database:'https://docs.google.com/spreadsheets/d/1Y-PRdKjclVCRyO2gBCNIQZ5zcgM-tvX96FLMcqbCCZw/export?format=csv&gid=2089600509'
   };
-  var PROXY='https://corsproxy.io/?url=';
-  function loadOneDrive(type){
-    return fetch(PROXY+encodeURIComponent(DRIVE_URLS[type]))
+  var PROXIES=[
+    'https://corsproxy.io/?url=',
+    'https://api.allorigins.win/raw?url=',
+    'https://cors-anywhere.herokuapp.com/'
+  ];
+
+  function fetchWithProxy(url,proxyIdx){
+    proxyIdx=proxyIdx||0;
+    if(proxyIdx>=PROXIES.length) return Promise.reject(new Error('All proxies failed'));
+    var proxyUrl=PROXIES[proxyIdx]+encodeURIComponent(url);
+    return fetch(proxyUrl)
       .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();})
+      .catch(function(){
+        return fetchWithProxy(url,proxyIdx+1);
+      });
+  }
+  function loadOneDrive(type){
+    return fetchWithProxy(DRIVE_URLS[type])
       .then(function(text){
         parseCSV(text,function(rows){DATA[type]=rows;afterLoad(type);});
         return true;
