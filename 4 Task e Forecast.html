@@ -285,6 +285,8 @@ let STATE = {
   undoStack: [],
   callModal: null,
   callModalRecording: false,
+  sheetConfig: { sheetId: null, gidTask: null, gidOpp: null },
+  sheetConfigModal: null,
   emailModal: null
 };
 
@@ -307,6 +309,15 @@ async function loadState(){
       }
     }
   }catch(e){ console.error('Errore caricamento dati:', e); }
+
+  // The Google Sheet config (id + tab gids) is device-local on purpose: you
+  // set it up once per device, exactly like the daily file used to be
+  // loaded once per device — but from here on, data itself comes live from
+  // the same shared Sheet, so both devices show the same thing.
+  try{
+    const rawCfg = localStorage.getItem('pipeline-sync-sheet-config');
+    if(rawCfg) STATE.sheetConfig = JSON.parse(rawCfg);
+  }catch(e){ /* defaults */ }
 
   // migration: old single task_next_step field -> tasks[] array (nothing gets lost)
   let migrated = false;
@@ -354,6 +365,10 @@ async function saveState(){
   }catch(e){ console.error('Errore salvataggio dati:', e); }
 }
 async function saveOpportunities(){ await saveState(); }
+async function saveSheetConfig(){
+  try{ localStorage.setItem('pipeline-sync-sheet-config', JSON.stringify(STATE.sheetConfig)); }
+  catch(e){ console.error('Errore salvataggio config foglio:', e); }
+}
 async function saveMeta(){ await saveState(); }
 async function saveCompletedLog(){ await saveState(); }
 
@@ -371,6 +386,7 @@ function render(){
     <div class="view ${STATE.activeTab==='pipeline'?'active':''}">${renderPipelineView()}</div>
     ${renderCallModal()}
     ${renderEmailModal()}
+    ${renderSheetConfigModal()}
   `;
   attachHandlers();
 }
@@ -467,10 +483,13 @@ function totalTaskCount(){
 function renderTabs(){
   const oc = overdueCount();
   const tc = totalTaskCount();
+  const configured = STATE.sheetConfig && STATE.sheetConfig.sheetId;
+  const syncLabel = STATE.importLoading ? (STATE.importLoadingLabel||'Elaborazione…') : (configured ? '🔄 Sincronizza' : '🔗 Collega Google Sheet');
   return `
   <div class="tabs">
     <input type="file" id="dailyFileInput" accept=".xlsx,.xls" style="display:none;">
-    <div class="tab import-tab-btn" data-importbtn="1">${STATE.importLoading?(STATE.importLoadingLabel||'Elaborazione…'):'📎 Carica file di oggi (.xlsx)'}</div>
+    <div class="tab import-tab-btn" data-syncbtn="1">${syncLabel}</div>
+    <div class="tab" data-sheetconfigbtn="1" style="flex:0 0 auto; padding:9px 12px;" title="Configura Google Sheet / carica manualmente">⚙️</div>
     <div class="tab ${STATE.activeTab==='task'?'active':''}" data-tab="task">Solleciti / Task <span class="badge ${oc>0?'urgent':''}">${tc}</span></div>
     <div class="tab ${STATE.activeTab==='pipeline'?'active':''}" data-tab="pipeline">OPP/Pipeline <span class="badge">${STATE.opportunities.length}</span></div>
   </div>`;
@@ -885,6 +904,97 @@ function renderEmailModal(){
   </div>`;
 }
 
+function renderSheetConfigModal(){
+  if(!STATE.sheetConfigModal) return '';
+  const cfg = STATE.sheetConfig || {};
+  return `
+  <div class="modal-overlay" id="sheetConfigOverlay">
+    <div class="modal-box">
+      <div class="modal-title">🔗 Collega Google Sheet</div>
+      <div style="font-size:12.5px; color:var(--text-dim); margin-bottom:12px; line-height:1.5;">
+        Metti i dati di Task e Opp in due tab dello stesso Google Sheet, condiviso come "Chiunque abbia il link — Visualizzatore".
+        Incolla qui il link dello Sheet (mentre hai aperto il tab Task) e poi il link mentre hai aperto il tab Opp — prendo io i codici che servono.
+      </div>
+      <div style="margin-bottom:10px;">
+        <div style="font-size:11.5px; color:var(--text-dim); margin-bottom:4px;">Link con il tab "Task" aperto</div>
+        <input type="text" id="sheetTaskUrlInput" value="" placeholder="https://docs.google.com/spreadsheets/d/.../edit#gid=..." style="width:100%;">
+      </div>
+      <div style="margin-bottom:10px;">
+        <div style="font-size:11.5px; color:var(--text-dim); margin-bottom:4px;">Link con il tab "Opp" aperto</div>
+        <input type="text" id="sheetOppUrlInput" value="" placeholder="https://docs.google.com/spreadsheets/d/.../edit#gid=..." style="width:100%;">
+      </div>
+      ${cfg.sheetId ? `<div style="font-size:11px; color:var(--text-dim); margin-bottom:10px;">Attualmente collegato: ID ${escapeHtml(cfg.sheetId)} (Task gid ${escapeHtml(cfg.gidTask||'—')}, Opp gid ${escapeHtml(cfg.gidOpp||'—')})</div>` : ''}
+      <div class="row" style="margin-top:12px; justify-content:space-between;">
+        <button class="secondary" id="sheetManualUploadBtn">📎 Carica manualmente invece</button>
+        <div class="row">
+          <button class="secondary" id="sheetConfigCancel">Chiudi</button>
+          <button id="sheetConfigSave">Salva</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function extractSheetIdAndGid(url){
+  if(!url) return { sheetId: null, gid: null };
+  const idMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  const gidMatch = url.match(/[?#&]gid=([0-9]+)/);
+  return { sheetId: idMatch ? idMatch[1] : null, gid: gidMatch ? gidMatch[1] : '0' };
+}
+
+async function fetchSheetTabAsWorkbook(sheetId, gid){
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+  const resp = await fetch(url);
+  if(!resp.ok) throw new Error('HTTP ' + resp.status);
+  const text = await resp.text();
+  return XLSX.read(text, { type: 'string' });
+}
+
+async function syncFromSheet(silent){
+  const cfg = STATE.sheetConfig || {};
+  if(!cfg.sheetId){
+    STATE.sheetConfigModal = {};
+    render();
+    return;
+  }
+  STATE.importLoading = true;
+  STATE.importError = null;
+  STATE.importLoadingLabel = '🔄 Caricamento da Google Sheet…';
+  render();
+
+  try{
+    let allItems = [];
+    if(cfg.gidTask){
+      const wb = await fetchSheetTabAsWorkbook(cfg.sheetId, cfg.gidTask);
+      const sheetName = wb.SheetNames[0];
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, blankrows: false });
+      allItems = allItems.concat(parseTaskSheetRows(rows));
+    }
+    if(cfg.gidOpp){
+      const wb = await fetchSheetTabAsWorkbook(cfg.sheetId, cfg.gidOpp);
+      const sheetName = wb.SheetNames[0];
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, blankrows: false });
+      allItems = allItems.concat(parseOppSheetRows(rows));
+    }
+    if(allItems.length === 0) throw new Error('Nessuna riga letta dal foglio.');
+
+    allItems.forEach(it => {
+      const match = STATE.opportunities.find(o => o.dealer && it.dealer && o.dealer.toLowerCase() === it.dealer.toLowerCase());
+      it._matchedId = match ? match.id : null;
+    });
+
+    await applyImportBatch(allItems);
+    STATE.importLoading = false;
+    render();
+  }catch(e){
+    STATE.importLoading = false;
+    if(!silent){
+      STATE.importError = 'Google Sheet non raggiungibile (' + e.message + '). Uso i dati già salvati su questo dispositivo; puoi anche caricare il file manualmente con ⚙️.';
+    }
+    render();
+  }
+}
+
 function showToast(text){
   const existing = document.querySelector('.toast');
   if(existing) existing.remove();
@@ -1212,14 +1322,55 @@ function attachHandlers(){
     extractBtn.addEventListener('click', runExtraction);
   }
 
-  const importTabBtn = document.querySelector('[data-importbtn]');
   const dailyFileInput = document.getElementById('dailyFileInput');
-  if(importTabBtn && dailyFileInput){
-    importTabBtn.addEventListener('click', () => { if(!STATE.importLoading) dailyFileInput.click(); });
+  if(dailyFileInput){
     dailyFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if(file) runDailyFileImport(file);
       e.target.value = '';
+    });
+  }
+  const syncBtn = document.querySelector('[data-syncbtn]');
+  if(syncBtn){
+    syncBtn.addEventListener('click', () => {
+      if(STATE.importLoading) return;
+      const configured = STATE.sheetConfig && STATE.sheetConfig.sheetId;
+      if(configured) syncFromSheet(false);
+      else { STATE.sheetConfigModal = {}; render(); }
+    });
+  }
+  const sheetConfigBtn = document.querySelector('[data-sheetconfigbtn]');
+  if(sheetConfigBtn){
+    sheetConfigBtn.addEventListener('click', () => { STATE.sheetConfigModal = {}; render(); });
+  }
+  const sheetConfigCancel = document.getElementById('sheetConfigCancel');
+  if(sheetConfigCancel){
+    sheetConfigCancel.addEventListener('click', () => { STATE.sheetConfigModal = null; render(); });
+  }
+  const sheetConfigSave = document.getElementById('sheetConfigSave');
+  if(sheetConfigSave){
+    sheetConfigSave.addEventListener('click', async () => {
+      const taskUrl = document.getElementById('sheetTaskUrlInput').value;
+      const oppUrl = document.getElementById('sheetOppUrlInput').value;
+      const taskInfo = extractSheetIdAndGid(taskUrl);
+      const oppInfo = extractSheetIdAndGid(oppUrl);
+      const sheetId = taskInfo.sheetId || oppInfo.sheetId || (STATE.sheetConfig && STATE.sheetConfig.sheetId);
+      STATE.sheetConfig = {
+        sheetId,
+        gidTask: taskInfo.gid || (STATE.sheetConfig && STATE.sheetConfig.gidTask) || null,
+        gidOpp: oppInfo.gid || (STATE.sheetConfig && STATE.sheetConfig.gidOpp) || null
+      };
+      await saveSheetConfig();
+      STATE.sheetConfigModal = null;
+      render();
+    });
+  }
+  const sheetManualUploadBtn = document.getElementById('sheetManualUploadBtn');
+  if(sheetManualUploadBtn){
+    sheetManualUploadBtn.addEventListener('click', () => {
+      STATE.sheetConfigModal = null;
+      render();
+      document.getElementById('dailyFileInput').click();
     });
   }
   const confirmBtn = document.getElementById('confirmImportBtn');
@@ -1897,6 +2048,9 @@ async function applyImportBatch(items){
 (async function init(){
   await loadState();
   render();
+  if(STATE.sheetConfig && STATE.sheetConfig.sheetId){
+    syncFromSheet(true);
+  }
 })();
 </script>
 </body>
