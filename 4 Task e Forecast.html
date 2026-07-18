@@ -2,352 +2,1756 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Sales Command Center</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pipeline Sync — Paolo</title>
 <style>
-:root{
-  --bg:#f5f4f1;--surface:#fff;--surface2:#efefeb;--surface0:#e8e7e2;
-  --border:rgba(0,0,0,.09);--border-strong:rgba(0,0,0,.16);
-  --text:#0b0b0b;--text-sec:#52514e;--text-muted:#949290;
-  --accent:#1a56db;--accent-bg:#eff4ff;--accent-text:#1e40af;
-  --success:#0e6245;--success-bg:#d1fae5;--success-text:#065f46;
-  --danger:#b91c1c;--danger-bg:#fee2e2;
-  --warning:#92400e;--warning-bg:#fef3c7;
-  --red:#f90032;--radius:12px;--radius-sm:8px;
-}
-@media(prefers-color-scheme:dark){:root{
-  --bg:#161615;--surface:#222221;--surface2:#2a2a28;--surface0:#1e1e1c;
-  --border:rgba(255,255,255,.09);--border-strong:rgba(255,255,255,.16);
-  --text:#f3f2ee;--text-sec:#b8b7b0;--text-muted:#6e6d6a;
-  --accent:#4f7ef8;--accent-bg:#1a2d5a;--accent-text:#93b4fd;
-  --success:#34d399;--success-bg:#064e3b;--success-text:#6ee7b7;
-  --danger:#f87171;--danger-bg:#7f1d1d;
-  --warning:#fbbf24;--warning-bg:#78350f;
-}}
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif}
-body{display:flex;flex-direction:column;overflow:hidden}
+  :root{
+    --bg: #f6f7f9;
+    --panel: #ffffff;
+    --panel2: #f0f1f4;
+    --border: #e0e2e8;
+    --text: #17181c;
+    --text-dim: #6b6e78;
+    --red: #F90032;
+    --red-dim: #c40028;
+    --amber: #b96e00;
+    --green: #1c9a56;
+    --blue: #1a6fd1;
+    --mono: 'SF Mono', 'Consolas', monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.4;
+    padding: 0;
+  }
+  .app{ max-width: 1100px; margin: 0 auto; padding: 20px 16px 60px; }
 
-/* HEADER */
-.header{background:var(--surface);border-bottom:.5px solid var(--border);padding:0 1rem;display:flex;align-items:center;height:50px;flex-shrink:0}
-.logo{display:flex;align-items:center;gap:7px;font-size:15px;font-weight:600}
-.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--red)}
-.note{margin-left:auto;font-size:11px;color:var(--text-muted);background:var(--surface2);padding:4px 10px;border-radius:20px}
+  /* Header */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--border);
+  }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand .dot{ width:10px; height:10px; border-radius:50%; background:var(--red); box-shadow:0 0 12px var(--red); }
+  .brand h1{ font-size:16px; font-weight:700; letter-spacing:0.3px; }
+  .brand small{ color:var(--text-dim); display:block; font-size:11px; margin-top:1px; }
+  .sync-status{ font-size:11px; color:var(--text-dim); text-align:right; }
+  .sync-status span{ display:block; }
 
-/* SCROLL */
-.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px}
-.stack{display:flex;flex-direction:column;gap:12px}
+  /* Tabs */
+  .tabs{ display:flex; gap:4px; margin-bottom:18px; background:var(--panel); padding:4px; border-radius:10px; border:1px solid var(--border); }
+  .tab{
+    flex:1; text-align:center; padding:9px 6px; border-radius:7px; cursor:pointer;
+    color:var(--text-dim); font-weight:600; font-size:12.5px; transition:all .15s;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .tab:hover{ color:var(--text); }
+  .tab.active{ background:var(--red); color:#fff; }
+  .tab.import-tab-btn{ background:var(--red); color:#fff; }
+  .tab.import-tab-btn:hover{ background:var(--red-dim); }
+  .tab .badge{
+    background:rgba(255,255,255,0.18); border-radius:20px; padding:1px 7px; font-size:10.5px; font-weight:700;
+  }
+  .tab:not(.active) .badge{ background:var(--border); }
+  .tab.active .badge.urgent{ background:#fff; color:var(--red); }
+  .tab:not(.active) .badge.urgent{ background:var(--red); color:#fff; }
 
-/* DROP */
-.drop-zone{border:1.5px dashed var(--border-strong);border-radius:var(--radius);padding:2.5rem 1rem;text-align:center;cursor:pointer;background:var(--surface);transition:all .15s}
-.drop-zone.drag-over{border-color:var(--accent);background:var(--accent-bg)}
-.drop-zone.loaded{border-color:var(--success);background:var(--success-bg)}
-.drop-zone i{font-size:30px;color:var(--text-muted);display:block;margin-bottom:8px}
-.drop-zone.loaded i{color:var(--success)}
-.dt{font-size:14px;color:var(--text-sec);font-weight:500}
-.ds{font-size:12px;color:var(--text-muted);margin-top:3px}
-#fi{display:none}
+  .view{ display:none; }
+  .view.active{ display:block; }
 
-/* PROGRESS */
-.prog-card{background:var(--surface);border-radius:var(--radius);padding:14px 16px;border:.5px solid var(--border)}
-.prog-row{display:flex;justify-content:space-between;margin-bottom:8px}
-.prog-label{font-size:13px;font-weight:500;color:var(--text)}
-.prog-count{font-size:12px;color:var(--text-muted)}
-.prog-bar{height:4px;background:var(--surface0);border-radius:2px;overflow:hidden}
-.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}
-.prog-stats{display:flex;gap:16px;margin-top:10px}
-.ps{font-size:12px;color:var(--text-muted)}
-.ps strong{font-size:14px;font-weight:500;color:var(--text);display:block}
+  /* Cards / panels */
+  .panel{
+    background:var(--panel); border:1px solid var(--border); border-radius:12px;
+    padding:16px; margin-bottom:14px;
+  }
+  .panel-title{ font-size:12px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:10px; }
 
-/* UNDO */
-.undo-bar{background:var(--warning-bg);border-radius:var(--radius);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;border:.5px solid rgba(146,64,14,.3)}
-.undo-text{font-size:13px;color:var(--warning)}
-.undo-btn{padding:7px 14px;border-radius:var(--radius-sm);border:.5px solid rgba(146,64,14,.4);background:transparent;font-size:13px;font-weight:500;cursor:pointer;color:var(--warning);white-space:nowrap;display:flex;align-items:center;gap:5px}
+  textarea{
+    width:100%; min-height:160px; background:var(--panel2); border:1px solid var(--border);
+    border-radius:8px; color:var(--text); font-family:var(--mono); font-size:12.5px; padding:12px;
+    resize:vertical;
+  }
+  textarea:focus{ outline:none; border-color:var(--red-dim); }
 
-/* TASK CARD */
-.task-card{background:var(--surface);border-radius:var(--radius);border:.5px solid var(--border);overflow:hidden}
-.tc-head{padding:16px 16px 0}
-.tc-num{font-size:11px;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
-.tc-name{font-size:22px;font-weight:600;color:var(--text);line-height:1.2;margin-bottom:3px;letter-spacing:-.4px}
-.tc-prod{font-size:12px;color:var(--accent-text);margin-bottom:10px}
-.badge{display:inline-flex;font-size:11px;padding:2px 9px;border-radius:20px;font-weight:600;margin-bottom:12px}
-.b-high{background:var(--danger-bg);color:var(--danger)}
-.b-norm{background:var(--surface2);color:var(--text-muted)}
-.b-done{background:var(--success-bg);color:var(--success-text)}
-.tc-note{margin:0 16px 14px;padding:12px;background:var(--surface2);border-radius:var(--radius-sm);font-size:13px;color:var(--text-sec);line-height:1.55;border-left:3px solid var(--border-strong)}
-.tc-note.empty{display:none}
+  select, input[type=text], input[type=number]{
+    background:var(--panel2); border:1px solid var(--border); color:var(--text);
+    border-radius:7px; padding:7px 10px; font-size:13px; font-family:inherit;
+  }
+  select:focus, input:focus{ outline:none; border-color:var(--red-dim); }
 
-/* ACTIONS */
-.tc-actions{padding:0 12px 14px;display:flex;flex-direction:column;gap:8px}
-.abtn{width:100%;padding:14px;border-radius:var(--radius-sm);border:.5px solid var(--border-strong);background:var(--surface2);font-size:14px;font-weight:500;cursor:pointer;color:var(--text);display:flex;align-items:center;justify-content:center;gap:8px;-webkit-appearance:none}
-.abtn:active{opacity:.65;transform:scale(.98)}
-.abtn.primary{background:var(--accent);color:#fff;border-color:transparent;font-size:15px;padding:16px}
-.abtn i{font-size:17px}
-.abtn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.abtn-row .abtn{padding:12px 8px;font-size:13px}
-.abtn-row .abtn i{font-size:15px}
+  button{
+    background:var(--red); color:#fff; border:none; border-radius:8px;
+    padding:9px 16px; font-size:13px; font-weight:600; cursor:pointer; transition:background .15s;
+    font-family:inherit;
+  }
+  button:hover{ background:var(--red-dim); }
+  button:disabled{ background:var(--border); color:var(--text-dim); cursor:not-allowed; }
+  button.secondary{ background:var(--panel2); color:var(--text); border:1px solid var(--border); }
+  button.secondary:hover{ background:var(--border); }
+  button.ghost{ background:transparent; color:var(--text-dim); padding:4px 8px; font-size:12px; }
+  button.ghost:hover{ background:var(--panel2); color:var(--text); }
+  button.small{ padding:5px 10px; font-size:11.5px; }
 
-/* SKIP */
-.skip-sheet{display:none;padding:0 12px 12px;flex-direction:column;gap:8px}
-.skip-sheet.open{display:flex}
-.skip-label{font-size:11px;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.04em}
-.skip-opts{display:flex;gap:6px;flex-wrap:wrap}
-.skip-opt{padding:8px 14px;border-radius:20px;border:.5px solid var(--border-strong);background:var(--surface2);font-size:13px;cursor:pointer;color:var(--text-sec);font-weight:500}
-.skip-opt:active{opacity:.7}
+  .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .row-between{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
 
-/* INPUT */
-.tc-input{padding:0 12px 14px}
-.input-row{display:flex;gap:8px;align-items:flex-end}
-textarea{flex:1;padding:11px 12px;border-radius:var(--radius-sm);border:.5px solid var(--border-strong);background:var(--surface2);color:var(--text);font-size:14px;font-family:inherit;resize:none;min-height:44px;line-height:1.4}
-textarea:focus{outline:none;border-color:var(--accent)}
-.sbtn{padding:11px 16px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer;flex-shrink:0}
-.sbtn:disabled{opacity:.3;cursor:default}
+  .empty{ text-align:center; padding:40px 20px; color:var(--text-dim); }
+  .empty .big{ font-size:32px; margin-bottom:8px; }
 
-/* NAV */
-.nav-card{background:var(--surface);border-radius:var(--radius);border:.5px solid var(--border);display:flex;align-items:center}
-.nbtn{flex:1;padding:14px;border:none;background:transparent;font-size:14px;font-weight:500;cursor:pointer;color:var(--accent);display:flex;align-items:center;justify-content:center;gap:6px}
-.nbtn:active{opacity:.6}
-.nbtn:disabled{opacity:.2;cursor:default}
-.ndiv{width:.5px;height:24px;background:var(--border-strong)}
-.ninfo{font-size:12px;color:var(--text-muted);text-align:center;min-width:60px}
+  .loading{ display:flex; align-items:center; gap:10px; color:var(--text-dim); font-size:13px; padding:12px 0; }
+  .spinner{
+    width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--red);
+    border-radius:50%; animation:spin .7s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
 
-/* LOG */
-.log-card{background:var(--surface);border-radius:var(--radius);border:.5px solid var(--border);overflow:hidden}
-.log-head{padding:10px 14px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:.5px solid var(--border)}
-.log-item{padding:10px 14px;border-bottom:.5px solid var(--border);display:flex;gap:8px;align-items:flex-start}
-.log-item:last-child{border-bottom:none}
-.li-c{font-size:13px;font-weight:600;color:var(--text);min-width:90px}
-.li-a{font-size:12px;color:var(--text-muted);flex:1}
-.li-t{font-size:11px;color:var(--text-muted);white-space:nowrap}
+  /* Task rows */
+  .task-row, .opp-row{
+    display:flex; align-items:flex-start; gap:10px; padding:11px 4px;
+    border-bottom:1px solid var(--border);
+  }
+  .task-row:last-child, .opp-row:last-child{ border-bottom:none; }
+  .task-row.overdue{ background:rgba(249,0,50,0.06); border-radius:8px; padding-left:10px; margin:0 -6px; }
+  .task-row.today{ background:rgba(245,166,35,0.06); border-radius:8px; padding-left:10px; margin:0 -6px; }
 
-/* TOAST */
-#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.85);color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;font-weight:500;z-index:999;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
+  .task-check{
+    width:20px; height:20px; border-radius:50%; border:2px solid var(--border);
+    flex-shrink:0; cursor:pointer; margin-top:2px; transition:all .15s;
+  }
+  .task-check:hover{ border-color:var(--green); }
 
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
-.pulse{animation:pulse 1s infinite}
+  .task-body{ flex:1; min-width:0; }
+  .task-dealer{ font-weight:700; font-size:13.5px; }
+  .task-note{ color:var(--text-dim); font-size:12.5px; margin-top:2px; }
+  .task-meta{ display:flex; gap:8px; align-items:center; margin-top:5px; flex-wrap:wrap; }
+
+  .pill{
+    display:inline-block; padding:2px 8px; border-radius:20px; font-size:10.5px; font-weight:700;
+    text-transform:uppercase; letter-spacing:0.3px;
+  }
+  .pill.overdue{ background:var(--red); color:#fff; }
+  .pill.today{ background:var(--amber); color:#fff; }
+  .pill.soon{ background:var(--panel2); color:var(--text-dim); border:1px solid var(--border); }
+  .pill.high{ background:rgba(249,0,50,0.15); color:var(--red); border:1px solid var(--red-dim); }
+  .pill.nb{ background:rgba(74,158,255,0.15); color:var(--blue); }
+  .pill.up{ background:rgba(46,204,113,0.15); color:var(--green); }
+  .pill.stage{ background:var(--panel2); color:var(--text-dim); border:1px solid var(--border); }
+
+  .task-date{ font-family:var(--mono); font-size:11.5px; color:var(--text-dim); white-space:nowrap; }
+
+  /* Pipeline groups */
+  .group{ margin-bottom:10px; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+  .group-header{
+    display:flex; justify-content:space-between; align-items:center; padding:11px 14px;
+    background:var(--panel2); cursor:pointer; user-select:none;
+  }
+  .group-header:hover{ background:#22252f; }
+  .group-title{ font-weight:700; font-size:13px; display:flex; align-items:center; gap:8px; }
+  .group-caret{ color:var(--text-dim); font-size:11px; transition:transform .15s; }
+  .group.collapsed .group-caret{ transform:rotate(-90deg); }
+  .group-total{ font-family:var(--mono); font-weight:700; color:var(--text); font-size:13px; }
+  .group-count{ color:var(--text-dim); font-size:11.5px; font-weight:400; }
+  .group-body{ padding:4px 14px; }
+  .group.collapsed .group-body{ display:none; }
+
+  .opp-row{ padding:10px 0; }
+  .opp-main{ flex:1; min-width:0; }
+  .opp-dealer{ font-weight:700; font-size:13px; }
+  .opp-prod{ color:var(--text-dim); font-size:12px; margin-top:1px; }
+  .opp-acv{ font-family:var(--mono); font-weight:700; font-size:13.5px; text-align:right; min-width:80px; }
+  .opp-note{ font-size:11.5px; color:var(--text-dim); margin-top:4px; font-style:italic; }
+
+  input.acv-input{ width:80px; text-align:right; font-family:var(--mono); font-size:13px; padding:4px 6px; }
+  select.cat-input{ font-size:11px; padding:3px 6px; }
+
+  .totals-bar{
+    display:flex; justify-content:space-between; align-items:center;
+    background:var(--panel2); border:1px solid var(--border); border-radius:10px;
+    padding:14px 16px; margin-bottom:14px;
+  }
+  .totals-bar .num{ font-family:var(--mono); font-weight:700; font-size:22px; }
+  .totals-bar .lbl{ color:var(--text-dim); font-size:11px; text-transform:uppercase; letter-spacing:0.5px; }
+
+  .filter-chips{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+  .chip{
+    padding:5px 11px; border-radius:20px; font-size:11.5px; font-weight:600; cursor:pointer;
+    background:var(--panel2); border:1px solid var(--border); color:var(--text-dim);
+  }
+  .chip.active{ background:var(--red); border-color:var(--red); color:#fff; }
+
+  /* preview table for import */
+  .preview-item{
+    background:var(--panel2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-bottom:6px;
+    display:flex; gap:10px; align-items:flex-start;
+  }
+  .preview-item.new{ border-left:3px solid var(--green); }
+  .preview-item.match{ border-left:3px solid var(--blue); }
+  .preview-fields{ flex:1; font-size:12px; }
+  .preview-fields .pf-dealer{ font-weight:700; font-size:13px; }
+  .preview-fields .pf-line{ color:var(--text-dim); margin-top:2px; }
+  .preview-tag{ font-size:9.5px; font-weight:700; padding:2px 6px; border-radius:4px; text-transform:uppercase; white-space:nowrap; }
+  .preview-tag.new{ background:rgba(46,204,113,0.15); color:var(--green); }
+  .preview-tag.match{ background:rgba(74,158,255,0.15); color:var(--blue); }
+
+  ::-webkit-scrollbar{ width:8px; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+  ::-webkit-scrollbar-thumb{ background:var(--border); border-radius:4px; }
+
+  .error-box{ background:rgba(249,0,50,0.1); border:1px solid var(--red-dim); border-radius:8px; padding:10px 12px; color:#ff8fa3; font-size:12.5px; margin-bottom:10px; }
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,0.45); display:flex;
+    align-items:center; justify-content:center; z-index:1000; padding:16px;
+  }
+  .modal-box{
+    background:var(--panel); border:1px solid var(--border); border-radius:14px;
+    padding:20px; width:100%; max-width:460px;
+  }
+  .modal-title{ font-weight:700; font-size:15px; margin-bottom:12px; }
+  .modal-box textarea{ min-height:130px; }
+  .mic-btn{ display:flex; align-items:center; gap:6px; }
+  .mic-btn.recording{ background:var(--red); animation:pulse 1.2s infinite; }
+  @keyframes pulse{ 0%,100%{ opacity:1; } 50%{ opacity:0.6; } }
+  .email-icon-btn{ color:var(--red); display:inline-flex; align-items:center; justify-content:center; padding:5px 8px; }
+  .email-icon-btn:hover{ background:var(--panel2); }
+
+  .task-actions{
+    display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;
+  }
+  .task-meta-row{
+    display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-top:5px;
+  }
+  .task-pills{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .action-btn{
+    display:inline-flex; align-items:center; gap:6px;
+    min-height:40px; padding:0 14px; border-radius:20px;
+    font-size:12.5px; font-weight:700; border:1.5px solid var(--border);
+    background:var(--panel2); color:var(--text); cursor:pointer;
+  }
+  .action-btn svg{ width:15px; height:15px; }
+  .action-btn.call-btn:hover, .action-btn.call-btn:active{ background:rgba(28,154,86,0.12); border-color:var(--green); color:var(--green); }
+  .action-btn.email-btn:hover, .action-btn.email-btn:active{ background:rgba(249,0,50,0.08); border-color:var(--red-dim); color:var(--red); }
+  @media (max-width: 480px){
+    .task-meta-row{ flex-direction:column; align-items:flex-start; }
+    .task-actions{ width:100%; justify-content:flex-start; }
+    .action-btn{ flex:1; justify-content:center; }
+  }
+
+  .toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+    background:var(--text); color:var(--panel); padding:10px 18px; border-radius:24px;
+    font-size:12.5px; font-weight:600; z-index:2000; box-shadow:0 4px 16px rgba(0,0,0,0.2);
+    opacity:0; transition:opacity .2s;
+  }
+  .toast.show{ opacity:1; }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
-
-<div class="header">
-  <div class="logo"><div class="logo-dot"></div> Sales Command Center</div>
-  <div class="note">incolla in Claude ↗</div>
-</div>
-
-<div class="scroll">
-<div class="stack">
-
-  <div class="drop-zone" id="dz" onclick="document.getElementById('fi').click()">
-    <i class="ti ti-file-spreadsheet"></i>
-    <div class="dt" id="dt">Carica il file Excel dei task</div>
-    <div class="ds">tocca o trascina il file</div>
-    <input type="file" id="fi" accept=".xlsx,.xls">
-  </div>
-
-  <div class="prog-card" id="pc" style="display:none">
-    <div class="prog-row">
-      <span class="prog-label" id="pl">—</span>
-      <span class="prog-count" id="pct">—</span>
-    </div>
-    <div class="prog-bar"><div class="prog-fill" id="pf" style="width:0%"></div></div>
-    <div class="prog-stats">
-      <div class="ps"><strong id="sd">0</strong>gestiti</div>
-      <div class="ps"><strong id="sr">0</strong>rimasti</div>
-      <div class="ps"><strong id="sh">0</strong>high</div>
-    </div>
-  </div>
-
-  <div id="tv" style="display:none;flex-direction:column;gap:12px">
-
-    <div class="undo-bar" id="ub" style="display:none">
-      <span class="undo-text">Annullo <strong id="uc"></strong>?</span>
-      <button class="undo-btn" onclick="undo()"><i class="ti ti-arrow-back-up"></i> Annulla</button>
-    </div>
-
-    <div class="task-card">
-      <div class="tc-head">
-        <div class="tc-num" id="tnum"></div>
-        <div class="tc-name" id="tname">—</div>
-        <div class="tc-prod" id="tprod"></div>
-        <div id="tbadge"></div>
-      </div>
-      <div class="tc-note" id="tnote"></div>
-
-      <div class="tc-actions">
-        <button class="abtn primary" onclick="act('procedi — scrivi tu la mail')">
-          <i class="ti ti-send"></i> Procedi — scrivi tu
-        </button>
-        <div class="abtn-row">
-          <button class="abtn" onclick="act('gestisco io')"><i class="ti ti-user"></i> Gestisco io</button>
-          <button class="abtn" onclick="act('skippa per oggi')"><i class="ti ti-arrow-right"></i> Skippa</button>
-          <button class="abtn" onclick="toggleSkip()"><i class="ti ti-clock"></i> Sposta</button>
-          <button class="abtn" onclick="act('lo chiamo io')"><i class="ti ti-phone"></i> Chiamo io</button>
-        </div>
-      </div>
-
-      <div class="skip-sheet" id="ss">
-        <div class="skip-label">Sposta avanti di</div>
-        <div class="skip-opts">
-          <button class="skip-opt" onclick="act('sposta +2 giorni')">+2 gg</button>
-          <button class="skip-opt" onclick="act('sposta +3 giorni')">+3 gg</button>
-          <button class="skip-opt" onclick="act('sposta +7 giorni')">+7 gg</button>
-          <button class="skip-opt" onclick="act('sposta +2 settimane')">+2 sett</button>
-          <button class="skip-opt" onclick="act('sposta a fine mese')">Fine mese</button>
-        </div>
-      </div>
-
-      <div class="tc-input">
-        <div class="input-row">
-          <textarea id="ti" placeholder="Scrivi istruzioni aggiuntive..." rows="2"></textarea>
-          <button class="sbtn" id="sb" onclick="sendCustom()" disabled>↗</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="nav-card">
-      <button class="nbtn" id="pb" onclick="nav(-1)" disabled><i class="ti ti-arrow-left"></i> Prec</button>
-      <div class="ndiv"></div>
-      <div class="ninfo" id="ni">— / —</div>
-      <div class="ndiv"></div>
-      <button class="nbtn" id="nb" onclick="nav(1)">Succ <i class="ti ti-arrow-right"></i></button>
-    </div>
-
-    <div class="log-card" id="lc" style="display:none">
-      <div class="log-head">Log sessione</div>
-      <div id="ll"></div>
-    </div>
-
-  </div>
-
-</div>
-</div>
-
-<div id="toast"></div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<div class="app" id="app"></div>
 <script>
-let tasks=[],cur=0,log=[],last=null;
+const EMAIL_ICON_SVG = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;"><rect x="2" y="4" width="20" height="16" rx="2.5" stroke="currentColor" stroke-width="2"/><path d="M3 6.5l9 6.5 9-6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
-const dz=document.getElementById('dz');
-const fi=document.getElementById('fi');
-dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over')});
-dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
-dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files[0])load(e.dataTransfer.files[0])});
-fi.addEventListener('change',e=>{if(e.target.files[0])load(e.target.files[0])});
-document.getElementById('ti').addEventListener('input',function(){document.getElementById('sb').disabled=!this.value.trim()});
+/* ====================== STATE & STORAGE ====================== */
+const STORAGE_KEY = 'pipeline_opportunities_v1';
+const META_KEY = 'pipeline_meta_v1';
+const COMPLETED_LOG_KEY = 'pipeline_completed_log_v1';
 
-function load(file){
-  const r=new FileReader();
-  r.onload=e=>{
-    try{
-      const wb=XLSX.read(e.target.result,{type:'array'});
-      const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
-      tasks=[];
-      rows.forEach((row,i)=>{
-        if(i===0)return;
-        const c=(row[3]||'').toString().trim();
-        if(!c||/^\d+$/.test(c))return;
-        tasks.push({c,prod:(row[4]||'').toString().trim(),note:(row[5]||'').toString().trim(),pri:(row[6]||'Normal').toString().trim(),done:false,azione:''});
+// Detects whether this file is running inside a claude.ai artifact (where
+// window.storage and direct api.anthropic.com calls work) or standalone
+// (e.g. hosted on GitHub Pages/Netlify), where it falls back to
+// localStorage and a Netlify Function proxy instead.
+const IS_CLAUDE_ENV = (typeof window.storage !== 'undefined');
+
+let STATE = {
+  opportunities: [], // golden records
+  meta: { lastImport: { task: null, opp: null, forecast: null } },
+  completedLog: [], // {ts, dealer, text} — permanent record of tasks marked done
+  activeTab: 'task',
+  importText: '',
+  importType: 'auto',
+  importLoading: false,
+  importError: null,
+  importPreview: null, // { items: [...], summary: '' }
+  taskFilter: 'all',
+  pipelineFilter: 'all',
+  pipelineStageFilter: 'all',
+  collapsedGroups: {},
+  undoStack: [],
+  callModal: null,
+  callModalRecording: false,
+  emailModal: null
+};
+
+async function loadState(){
+  try{
+    if(IS_CLAUDE_ENV){
+      const r = await window.storage.get(STORAGE_KEY);
+      if(r && r.value) STATE.opportunities = JSON.parse(r.value);
+      const r2 = await window.storage.get(META_KEY);
+      if(r2 && r2.value) STATE.meta = JSON.parse(r2.value);
+      const r3 = await window.storage.get(COMPLETED_LOG_KEY);
+      if(r3 && r3.value) STATE.completedLog = JSON.parse(r3.value);
+    } else {
+      const raw = localStorage.getItem('pipeline-sync-state');
+      if(raw){
+        const saved = JSON.parse(raw);
+        STATE.opportunities = saved.opportunities || [];
+        STATE.meta = saved.meta || STATE.meta;
+        STATE.completedLog = saved.completedLog || [];
+      }
+    }
+  }catch(e){ console.error('Errore caricamento dati:', e); }
+
+  // migration: old single task_next_step field -> tasks[] array (nothing gets lost)
+  let migrated = false;
+  STATE.opportunities.forEach(o => {
+    if(!o.tasks) o.tasks = [];
+    if(o.task_next_step && o.tasks.length === 0){
+      o.tasks.push({ id: uid(), text: o.task_next_step, due_date: o.task_due_date || null, priority: o.task_priority || null, createdAt: o.updatedAt || Date.now() });
+      migrated = true;
+    }
+    delete o.task_next_step; delete o.task_due_date; delete o.task_priority;
+
+    // migration: old single sf_stage/sf_acv/etc fields -> sf_opportunities[] array
+    // (a dealer can have several distinct open SF opportunities at once)
+    if(!o.sf_opportunities) o.sf_opportunities = [];
+    if((o.sf_stage || o.sf_acv || o.sf_opportunity_name) && o.sf_opportunities.length === 0){
+      o.sf_opportunities.push({
+        id: uid(),
+        name: o.sf_opportunity_name || o.prodotto || o.dealer,
+        stage: o.sf_stage || null,
+        close_date: o.sf_close_date || null,
+        acv: (o.sf_acv !== undefined ? o.sf_acv : null)
       });
-      if(!tasks.length){alert('Nessun task trovato. Controlla il file.');return}
-      dz.classList.add('loaded');
-      document.getElementById('dt').textContent='✓ '+tasks.length+' task — '+file.name;
-      cur=0;last=null;
-      document.getElementById('pc').style.display='block';
-      const tv=document.getElementById('tv');tv.style.display='flex';tv.style.flexDirection='column';
-      renderAll();
-    }catch(err){alert('Errore lettura file: '+err.message)}
+      migrated = true;
+    }
+    delete o.sf_stage; delete o.sf_close_date; delete o.sf_acv; delete o.sf_opportunity_name;
+  });
+  if(migrated) await saveOpportunities();
+}
+async function saveState(){
+  try{
+    if(IS_CLAUDE_ENV){
+      await window.storage.set(STORAGE_KEY, JSON.stringify(STATE.opportunities));
+      await window.storage.set(META_KEY, JSON.stringify(STATE.meta));
+      await window.storage.set(COMPLETED_LOG_KEY, JSON.stringify(STATE.completedLog));
+    } else {
+      localStorage.setItem('pipeline-sync-state', JSON.stringify({ opportunities: STATE.opportunities, meta: STATE.meta, completedLog: STATE.completedLog }));
+    }
+  }catch(e){ console.error('Errore salvataggio dati:', e); }
+}
+async function saveOpportunities(){ await saveState(); }
+async function saveMeta(){ await saveState(); }
+async function saveCompletedLog(){ await saveState(); }
+
+function uid(){ return 'o_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+/* ====================== RENDER ROOT ====================== */
+function render(){
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    ${renderTopbar()}
+    ${renderTabs()}
+    ${STATE.importPreview ? renderImportPreview() : ''}
+    <div class="view ${STATE.activeTab==='task'?'active':''}">${renderTaskView()}</div>
+    <div class="view ${STATE.activeTab==='pipeline'?'active':''}">${renderPipelineView()}</div>
+    ${renderCallModal()}
+    ${renderEmailModal()}
+  `;
+  attachHandlers();
+}
+
+function renderCallModal(){
+  if(!STATE.callModal) return '';
+  const m = STATE.callModal;
+  return `
+  <div class="modal-overlay" id="callModalOverlay">
+    <div class="modal-box">
+      <div class="modal-title">📞 Chiamata con ${escapeHtml(m.dealer)}</div>
+      <textarea id="callModalTextarea" placeholder="Scrivi cosa vi siete detti, oppure usa il microfono qui sotto...">${escapeHtml(m.text)}</textarea>
+      <div class="row-between" style="margin-top:12px;">
+        <button class="secondary mic-btn ${STATE.callModalRecording?'recording':''}" id="micBtn">
+          🎙️ ${STATE.callModalRecording ? 'Sto ascoltando… clicca per fermare' : 'Registra vocale'}
+        </button>
+      </div>
+      <div class="row" style="margin-top:14px; justify-content:flex-end;">
+        <button class="secondary" id="callModalCancel">Annulla</button>
+        <button id="callModalSave">Salva</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function fmtDate(d){
+  if(!d) return null;
+  const dt = new Date(d);
+  if(isNaN(dt)) return null;
+  return dt.toLocaleDateString('it-IT', {day:'2-digit', month:'2-digit'});
+}
+function daysDiff(dateStr){
+  if(!dateStr) return null;
+  const dt = new Date(dateStr);
+  if(isNaN(dt)) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  dt.setHours(0,0,0,0);
+  return Math.round((dt - today)/(1000*60*60*24));
+}
+function fmtEuro(n){
+  if(n===null || n===undefined || isNaN(n)) return '—';
+  return '€' + Number(n).toLocaleString('it-IT');
+}
+function lastImportLabel(){
+  const m = STATE.meta.lastImport;
+  const parts = [];
+  if(m.task) parts.push('Task ' + new Date(m.task).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}));
+  if(m.opp) parts.push('Opp ' + new Date(m.opp).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}));
+  if(m.forecast) parts.push('Forecast ' + new Date(m.forecast).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}));
+  return parts.length ? parts.join(' · ') : 'Nessun import ancora';
+}
+
+function renderTopbar(){
+  return `
+  <div class="topbar">
+    <div class="brand">
+      <div class="dot"></div>
+      <div>
+        <h1>Pipeline Sync</h1>
+        <small>Task · Opportunità SF · Forecast personale</small>
+      </div>
+    </div>
+    <div class="sync-status">
+      <span>Ultimo import</span>
+      <span style="color:var(--text)">${lastImportLabel()}</span>
+    </div>
+  </div>`;
+}
+
+function overdueCount(){
+  let n = 0;
+  STATE.opportunities.forEach(o => (o.tasks||[]).forEach(t => {
+    const d = daysDiff(t.due_date);
+    if(d !== null && d < 0) n++;
+  }));
+  return n;
+}
+
+function totalTaskCount(){
+  return STATE.opportunities.reduce((s,o) => s + (o.tasks||[]).length, 0);
+}
+
+function renderTabs(){
+  const oc = overdueCount();
+  const tc = totalTaskCount();
+  return `
+  <div class="tabs">
+    <input type="file" id="dailyFileInput" accept=".xlsx,.xls" style="display:none;">
+    <div class="tab import-tab-btn" data-importbtn="1">${STATE.importLoading?(STATE.importLoadingLabel||'Elaborazione…'):'📎 Carica file di oggi (.xlsx)'}</div>
+    <div class="tab ${STATE.activeTab==='task'?'active':''}" data-tab="task">Solleciti / Task <span class="badge ${oc>0?'urgent':''}">${tc}</span></div>
+    <div class="tab ${STATE.activeTab==='pipeline'?'active':''}" data-tab="pipeline">OPP/Pipeline <span class="badge">${STATE.opportunities.length}</span></div>
+  </div>`;
+}
+
+/* ====================== IMPORT VIEW ====================== */
+
+function renderImportPreview(){
+  const p = STATE.importPreview;
+  const newCount = p.items.filter(i => !i._matchedId).length;
+  const matchCount = p.items.filter(i => i._matchedId).length;
+  return `
+    <div class="panel">
+      <div class="row-between" style="margin-bottom:10px;">
+        <div class="panel-title" style="margin-bottom:0;">Anteprima import — ${p.items.length} righe</div>
+        <div style="font-size:11.5px; color:var(--text-dim);">
+          <span class="preview-tag new">${newCount} nuovi</span>&nbsp;
+          <span class="preview-tag match">${matchCount} aggiornati</span>
+        </div>
+      </div>
+      <div id="previewList">
+        ${p.items.map((item, idx) => renderPreviewItem(item, idx)).join('')}
+      </div>
+      <div class="row" style="margin-top:14px;">
+        <button id="confirmImportBtn">Conferma e salva (${p.items.filter(i=>!i._excluded).length})</button>
+        <button class="secondary" id="cancelImportBtn">Annulla</button>
+      </div>
+    </div>`;
+}
+
+function renderPreviewItem(item, idx){
+  const tagClass = item._matchedId ? 'match' : 'new';
+  const tagLabel = item._matchedId ? 'aggiorna' : 'nuovo';
+  const lines = [];
+  if(item.prodotto) lines.push('Prodotto: ' + item.prodotto);
+  if(item.sf_stage) lines.push('Fase: ' + item.sf_stage);
+  if(item.sf_acv !== undefined && item.sf_acv !== null) lines.push('ACV SF: ' + fmtEuro(item.sf_acv));
+  if(item.task_next_step) lines.push('Prossimo step: ' + item.task_next_step);
+  if(item.task_due_date) lines.push('Scadenza: ' + item.task_due_date);
+  if(item.forecast_categoria) lines.push('Temperatura: ' + item.forecast_categoria);
+  if(item.forecast_acv !== undefined && item.forecast_acv !== null) lines.push('ACV forecast: ' + fmtEuro(item.forecast_acv));
+  if(item.forecast_tipo) lines.push('Tipo: ' + item.forecast_tipo);
+  return `
+    <div class="preview-item ${item._excluded?'':(item._matchedId?'match':'new')}" style="${item._excluded?'opacity:0.4;':''}">
+      <input type="checkbox" data-idx="${idx}" class="preview-toggle" ${item._excluded?'':'checked'} style="margin-top:3px;">
+      <div class="preview-fields">
+        <div class="pf-dealer">${escapeHtml(item.dealer)} ${item._sourceType ? `<span class="pill stage" style="text-transform:uppercase;">${item._sourceType}</span>` : ''}</div>
+        ${lines.map(l => `<div class="pf-line">${escapeHtml(l)}</div>`).join('')}
+      </div>
+      <span class="preview-tag ${tagClass}">${tagLabel}</span>
+    </div>`;
+}
+
+/* ====================== TASK VIEW ====================== */
+function renderTaskView(){
+  let allItems = [];
+  STATE.opportunities.forEach(o => {
+    (o.tasks || []).forEach(t => {
+      allItems.push({ o, t, d: daysDiff(t.due_date) });
+    });
+  });
+
+  const totalCount = allItems.length;
+  const overdueCountN = allItems.filter(x => x.d !== null && x.d < 0).length;
+  const todayCountN = allItems.filter(x => x.d === 0).length;
+  const highCountN = allItems.filter(x => (x.t.priority||'').toLowerCase().includes('high') || (x.t.priority||'').toLowerCase().includes('alta')).length;
+
+  let items = allItems;
+  if(STATE.taskFilter === 'overdue') items = items.filter(x => x.d !== null && x.d < 0);
+  else if(STATE.taskFilter === 'today') items = items.filter(x => x.d === 0);
+  else if(STATE.taskFilter === 'high') items = items.filter(x => (x.t.priority||'').toLowerCase().includes('high') || (x.t.priority||'').toLowerCase().includes('alta'));
+
+  items.sort((a,b) => {
+    const da = a.d===null ? 9999 : a.d;
+    const db = b.d===null ? 9999 : b.d;
+    return da - db;
+  });
+
+  const chips = [
+    ['all','Tutti'],['overdue','Scaduti'],['today','Oggi'],['high','Alta priorità']
+  ];
+
+  if(STATE.opportunities.length === 0){
+    return `<div class="panel"><div class="empty"><div class="big">📋</div>Nessun dato ancora.<br>Vai su "Importa" e incolla i tuoi task da Salesforce.</div></div>`;
+  }
+
+  const totalsBar = `
+    <div class="totals-bar">
+      <div><div class="lbl">Totale solleciti</div><div class="num">${totalCount}</div></div>
+      <div><div class="lbl">Scaduti</div><div class="num" style="color:var(--red);">${overdueCountN}</div></div>
+      <div><div class="lbl">Oggi</div><div class="num" style="color:var(--amber);">${todayCountN}</div></div>
+      <div><div class="lbl">Alta priorità</div><div class="num">${highCountN}</div></div>
+    </div>
+    <div class="row" style="justify-content:flex-end; margin-bottom:12px; gap:8px;">
+      <button class="secondary small" id="exportDailyBtn">📋 Riepilogo di oggi</button>
+      <button class="secondary small" id="mailDailyBtn">📧 Invia via mail</button>
+      ${IS_CLAUDE_ENV ? `<button class="secondary small" id="exportDataBtn">⬇ Esporta dati per GitHub</button>` : ''}
+      <button class="secondary small" id="exportLogBtn">⬇ Esporta log chiamate</button>
+    </div>
+    ${renderDailySummaryPanel()}`;
+
+  if(items.length === 0){
+    return `
+      ${totalsBar}
+      ${renderChips(chips, STATE.taskFilter, 'taskFilter')}
+      <div class="panel"><div class="empty"><div class="big">✅</div>Nessun task in questa vista.</div></div>`;
+  }
+
+  return `
+    ${totalsBar}
+    ${renderChips(chips, STATE.taskFilter, 'taskFilter')}
+    ${STATE.undoStack.length > 0 ? `
+      <div class="panel" style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px; border-color:var(--green);">
+        <span style="font-size:12.5px;">✓ ${STATE.undoStack.length} task completat${STATE.undoStack.length===1?'o':'i'} di recente (${STATE.undoStack.map(u=>escapeHtml(u.dealer)).join(', ')})</span>
+        <button class="secondary small" id="undoAllBtn">Annulla</button>
+      </div>` : ''}
+    <div class="panel">
+      ${items.map(({o,t,d}) => renderTaskRow(o,t,d)).join('')}
+    </div>`;
+}
+
+function renderChips(chips, active, groupName){
+  return `<div class="filter-chips">
+    ${chips.map(([val,label]) => `<div class="chip ${active===val?'active':''}" data-filtergroup="${groupName}" data-filterval="${val}">${label}</div>`).join('')}
+  </div>`;
+}
+
+function renderTaskRow(o, t, d){
+  let dateClass = '';
+  let datePill = '';
+  if(d !== null){
+    if(d < 0){ dateClass='overdue'; datePill = `<span class="pill overdue">${Math.abs(d)}g fa</span>`; }
+    else if(d === 0){ dateClass='today'; datePill = `<span class="pill today">Oggi</span>`; }
+    else { datePill = `<span class="pill soon">in ${d}g</span>`; }
+  }
+  const prio = (t.priority||'').toLowerCase();
+  const highPill = (prio.includes('high')||prio.includes('alta')) ? `<span class="pill high">Alta</span>` : '';
+  const stagePill = o.sf_stage ? `<span class="pill stage">${escapeHtml(o.sf_stage)}</span>` : '';
+  const log = (o.contact_log || []).slice().sort((a,b) => b.ts - a.ts);
+
+  return `
+    <div class="task-row ${dateClass}">
+      <div class="task-check" data-donebtn="${o.id}" data-taskid="${t.id}" title="Completa / rimuovi task"></div>
+      <div class="task-body">
+        <div class="task-dealer">${escapeHtml(o.dealer)}${o.prodotto ? ' <span style="color:var(--text-dim); font-weight:400;">— '+escapeHtml(o.prodotto)+'</span>' : ''}</div>
+        <div class="task-note">${escapeHtml(t.text)}</div>
+        <div class="task-meta-row">
+          <div class="task-pills">
+            ${datePill}${highPill}${stagePill}
+            ${o.forecast_categoria ? `<span class="pill soon">${escapeHtml(o.forecast_categoria)}</span>` : ''}
+          </div>
+          <div class="task-actions">
+            <button class="action-btn call-btn" data-callbtn="${o.id}" title="Registra una chiamata">📞 Ho chiamato</button>
+            <button class="action-btn email-btn" data-emailbtn="${o.id}" title="Crea bozza di follow up in Gmail">${EMAIL_ICON_SVG} Mail</button>
+          </div>
+        </div>
+        ${log.length > 0 ? `
+          <div style="margin-top:4px;">
+            ${log.map(entry => `
+              <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">
+                <span style="font-family:var(--mono); color:var(--text);">${new Date(entry.ts).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit'})}</span>
+                — ${escapeHtml(entry.text)}
+              </div>`).join('')}
+          </div>` : ''}
+      </div>
+    </div>`;
+}
+
+const STAGE_ORDER = ['BDR Phase', 'Discovery Meeting', 'Demo Meeting', 'Proposal Meeting', 'Trade', 'Commit', 'Chiuso'];
+function stageRank(name){
+  if(name === 'Senza fase') return 999;
+  const lower = name.toLowerCase();
+  for(let i=0;i<STAGE_ORDER.length;i++){
+    if(lower.includes(STAGE_ORDER[i].toLowerCase())) return i;
+  }
+  return 500;
+}
+
+/* ====================== PIPELINE VIEW ====================== */
+function totalOppCount(){
+  return STATE.opportunities.reduce((s,o) => s + (o.sf_opportunities ? o.sf_opportunities.length : 0), 0);
+}
+
+function dealerAcv(o){
+  if(o.forecast_acv !== undefined && o.forecast_acv !== null) return o.forecast_acv;
+  return (o.sf_opportunities || []).reduce((s,x) => s + (x.acv || 0), 0);
+}
+
+function renderPipelineView(){
+  if(STATE.opportunities.length === 0){
+    return `<div class="panel"><div class="empty"><div class="big">📊</div>Nessuna opportunità ancora.<br>Importa il tuo forecast o le opportunità da Salesforce.</div></div>`;
+  }
+
+  // stage counts computed across every individual SF opportunity, not per dealer
+  // (a dealer can have several open opportunities in different stages at once)
+  const stageCounts = {};
+  STATE.opportunities.forEach(o => {
+    (o.sf_opportunities && o.sf_opportunities.length > 0 ? o.sf_opportunities : [{stage:null}]).forEach(x => {
+      const stage = x.stage || 'Senza fase';
+      stageCounts[stage] = (stageCounts[stage] || 0) + 1;
+    });
+  });
+  const stageNames = Object.keys(stageCounts).sort((a,b) => {
+    const ra = stageRank(a), rb = stageRank(b);
+    if(ra !== rb) return ra - rb;
+    return stageCounts[b] - stageCounts[a];
+  });
+  const totalOpps = totalOppCount();
+
+  let items = STATE.opportunities.slice();
+  if(STATE.pipelineStageFilter !== 'all'){
+    items = items.filter(o => (o.sf_opportunities||[]).some(x => (x.stage || 'Senza fase') === STATE.pipelineStageFilter));
+  }
+  if(STATE.pipelineFilter === 'nb') items = items.filter(o => o.forecast_tipo === 'NB');
+  else if(STATE.pipelineFilter === 'up') items = items.filter(o => o.forecast_tipo === 'UP');
+  else if(STATE.pipelineFilter === 'nocat') items = items.filter(o => !o.forecast_categoria);
+
+  const grandTotal = items.reduce((s,o) => s + (dealerAcv(o)||0), 0);
+
+  const groups = {};
+  items.forEach(o => {
+    const cat = o.forecast_categoria || 'Senza temperatura';
+    if(!groups[cat]) groups[cat] = { tier: o.forecast_tier ?? 999, items: [] };
+    groups[cat].items.push(o);
+  });
+  const groupNames = Object.keys(groups).sort((a,b) => groups[a].tier - groups[b].tier);
+
+  const chips = [
+    ['all','Tutti'],['nb','New Business'],['up','Upsell'],['nocat','Senza temperatura']
+  ];
+
+  const stageChipsHtml = `
+    <div class="filter-chips">
+      <div class="chip ${STATE.pipelineStageFilter==='all'?'active':''}" data-stagefilter="all">Tutte le fasi (${totalOpps})</div>
+      ${stageNames.map(s => `<div class="chip ${STATE.pipelineStageFilter===s?'active':''}" data-stagefilter="${escapeHtml(s)}">${escapeHtml(s)} (${stageCounts[s]})</div>`).join('')}
+    </div>`;
+
+  return `
+    <div class="totals-bar">
+      <div><div class="lbl">Totale OPP</div><div class="num">${totalOpps}</div></div>
+      <div><div class="lbl">Totale ACV OPP/Pipeline</div><div class="num">${fmtEuro(grandTotal)}</div></div>
+    </div>
+    ${stageChipsHtml}
+    ${renderChips(chips, STATE.pipelineFilter, 'pipelineFilter')}
+    ${groupNames.map(name => renderGroup(name, groups[name], dealerAcv)).join('')}
+  `;
+}
+
+function renderGroup(name, group, acvOf){
+  const total = group.items.reduce((s,o) => s + (acvOf(o)||0), 0);
+  const collapsed = !!STATE.collapsedGroups[name];
+  const sortedItems = group.items.slice().sort((a,b) => (acvOf(b)||0) - (acvOf(a)||0));
+  return `
+    <div class="group ${collapsed?'collapsed':''}">
+      <div class="group-header" data-grouptoggle="${escapeHtml(name)}">
+        <div class="group-title"><span class="group-caret">▾</span> ${escapeHtml(name)} <span class="group-count">(${group.items.length})</span></div>
+        <div class="group-total">${fmtEuro(total)}</div>
+      </div>
+      <div class="group-body">
+        ${sortedItems.map(o => renderOppRow(o)).join('')}
+      </div>
+    </div>`;
+}
+
+function renderOppRow(o){
+  const acv = dealerAcv(o) || '';
+  const log = (o.contact_log || []).slice().sort((a,b) => b.ts - a.ts);
+  const sfOpps = o.sf_opportunities || [];
+  return `
+    <div class="opp-row" style="flex-direction:column; align-items:stretch;">
+      <div style="display:flex; gap:10px; align-items:flex-start;">
+        <div class="opp-main">
+          <div class="opp-dealer">
+            ${o.forecast_tipo ? `<span class="pill ${o.forecast_tipo==='NB'?'nb':'up'}">${o.forecast_tipo}</span>` : ''}
+            ${escapeHtml(o.dealer)} ${sfOpps.length > 1 ? `<span class="pill soon">${sfOpps.length} opp SF</span>` : ''}
+          </div>
+          ${o.prodotto ? `<div class="opp-prod">${escapeHtml(o.prodotto)}</div>` : ''}
+          ${sfOpps.map(x => `<div class="opp-prod">${escapeHtml(x.name)} — ${escapeHtml(x.stage||'Senza fase')}${x.close_date?(' · chiusura '+(fmtDate(x.close_date)||x.close_date)):''}${x.acv?(' · '+fmtEuro(x.acv)):''}</div>`).join('')}
+          ${(o.tasks && o.tasks.length > 0) ? o.tasks.map(t => `<div class="opp-note">→ ${escapeHtml(t.text)}${t.due_date?(' ('+(fmtDate(t.due_date)||t.due_date)+')'):''}</div>`).join('') : ''}
+          ${o.forecast_note ? `<div class="opp-note">${escapeHtml(o.forecast_note)}</div>` : ''}
+        </div>
+        <input type="number" class="acv-input" data-acvfor="${o.id}" value="${acv}" placeholder="ACV">
+        <button class="ghost small" data-delete="${o.id}">✕</button>
+      </div>
+      ${log.length > 0 ? `
+        <div style="margin-top:6px; padding-left:2px;">
+          ${log.map(entry => `
+            <div style="font-size:11.5px; color:var(--text-dim); margin-top:3px;">
+              <span style="font-family:var(--mono); color:var(--text);">${new Date(entry.ts).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit'})}</span>
+              — ${escapeHtml(entry.text)}
+            </div>`).join('')}
+        </div>` : ''}
+    </div>`;
+}
+
+function escapeHtml(s){
+  if(s===null||s===undefined) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+const EMAIL_SYSTEM_PROMPT = `Sei l'assistente di Paolo Pesenti, Senior Dealer Coach / venditore MotorK (settore automotive). Paolo vende soluzioni tecnologiche (siti, CRM, tool AI) a concessionari auto e discute con i clienti quasi sempre argomenti commerciali: proposte di nuovi prodotti, upsell, demo, trattative, preventivi. NON si occupa di pagamenti, fatturazione o amministrazione: ignora completamente questi thread, non presentarli nemmeno come opzione tra cui scegliere.
+
+Quando ti viene chiesto di preparare una mail di follow up per un dealer:
+1. Cerca nella sua casella Gmail gli ultimi thread scambiati con quel cliente (usa il nome dell'azienda come chiave di ricerca).
+2. Considera SOLO i thread dove il dealer indicato è realmente destinatario o mittente diretto della mail (a lui, o scritta da lui). Ignora i thread dove il nome del dealer compare solo citato di passaggio in una conversazione con un'altra azienda o persona diversa, e ignora i thread puramente amministrativi/di pagamento.
+3. Se dopo questo filtro trovi un solo thread commerciale pertinente, leggilo per capire tono di voce, contenuto e chi era in copia (CC). Crea poi UNA bozza di risposta (draft, non inviarla) agganciata a quel thread come reply, con lo stesso destinatario e le stesse persone in CC, coerente per contenuto e tono con quel cliente.
+4. Se invece trovi più thread commerciali pertinenti su argomenti diversi tra loro, NON scegliere a caso: rispondi con una domanda breve chiedendo a Paolo su quale argomento vuole il follow up, elencando in una riga le opzioni trovate. Non creare nessuna bozza finché non ricevi la sua risposta.
+5. Se Paolo ti risponde dicendo che nessuno dei thread proposti è quello giusto, o ti dà indicazioni aggiuntive (anche dettate a voce, quindi possono contenere piccole imperfezioni di trascrizione), usa quel contesto per cercare meglio o per scrivere la bozza direttamente basandoti su quanto ti ha detto lui, anche se non hai trovato un thread preciso.
+Alla fine: se hai creato la bozza, rispondi con una riga di conferma sintetica. Se hai bisogno di chiarimenti, scrivi solo la domanda, niente altro.`;
+
+async function createFollowUpDraft(o, btnEl){
+  STATE.emailModal = {
+    oppId: o.id, dealer: o.dealer,
+    messages: [{ role: 'user', content: `Prepara una mail di follow up per il dealer ${o.dealer}.` }],
+    loading: true, question: null, draftCreated: false
   };
-  r.readAsArrayBuffer(file);
+  render();
+  await stepEmailFlow();
 }
 
-function renderAll(){renderProg();renderTask()}
+async function stepEmailFlow(){
+  if(!STATE.emailModal) return;
+  STATE.emailModal.loading = true;
+  STATE.emailModal.question = null;
+  render();
 
-function renderProg(){
-  const done=tasks.filter(t=>t.done).length;
-  const pct=tasks.length?Math.round(done/tasks.length*100):0;
-  document.getElementById('pf').style.width=pct+'%';
-  document.getElementById('pl').textContent=pct+'% completato';
-  document.getElementById('pct').textContent=done+'/'+tasks.length;
-  document.getElementById('sd').textContent=done;
-  document.getElementById('sr').textContent=tasks.length-done;
-  document.getElementById('sh').textContent=tasks.filter(t=>t.pri==='High'&&!t.done).length;
+  try{
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 4096,
+        system: EMAIL_SYSTEM_PROMPT,
+        messages: STATE.emailModal.messages,
+        mcp_servers: [{ type: "url", url: "https://gmailmcp.googleapis.com/mcp/v1", name: "gmail-mcp" }]
+      })
+    });
+    const data = await response.json();
+    const content = data.content || [];
+    const textSummary = content.filter(b => b.type === 'text').map(b => b.text).join(' ').trim();
+    const draftCreated = content.some(b => b.type === 'mcp_tool_use' && (b.name||'').toLowerCase().includes('draft'));
+
+    STATE.emailModal.messages.push({ role: 'assistant', content: textSummary || '(nessuna risposta testuale)' });
+    STATE.emailModal.loading = false;
+
+    if(draftCreated){
+      STATE.emailModal.draftCreated = true;
+      STATE.emailModal.question = null;
+      render();
+      setTimeout(() => { STATE.emailModal = null; render(); }, 2200);
+    } else {
+      STATE.emailModal.question = textSummary || 'Non ho trovato thread pertinenti. Vuoi darmi altre indicazioni?';
+      render();
+    }
+  }catch(e){
+    STATE.emailModal.loading = false;
+    STATE.emailModal.question = 'Errore: ' + e.message;
+    render();
+  }
 }
 
-function renderTask(){
-  const t=tasks[cur];if(!t)return;
-  document.getElementById('ni').textContent=(cur+1)+' / '+tasks.length;
-  document.getElementById('pb').disabled=cur===0;
-  document.getElementById('nb').disabled=cur===tasks.length-1;
-  document.getElementById('tnum').textContent='Task '+(cur+1)+' di '+tasks.length;
-  document.getElementById('tname').textContent=t.c;
-  document.getElementById('tprod').textContent=t.prod||'';
-  const ne=document.getElementById('tnote');
-  ne.textContent=t.note||'';ne.className='tc-note'+(t.note?'':' empty');
-  let b=`<span class="badge ${t.pri==='High'?'b-high':'b-norm'}">${t.pri}</span>`;
-  if(t.done)b+=` <span class="badge b-done">✓ ${t.azione.substring(0,20)}</span>`;
-  document.getElementById('tbadge').innerHTML=b;
-  document.getElementById('ti').value='';
-  document.getElementById('sb').disabled=true;
-  document.getElementById('ss').classList.remove('open');
-  renderUndo();
+function renderEmailModal(){
+  if(!STATE.emailModal) return '';
+  const m = STATE.emailModal;
+  return `
+  <div class="modal-overlay" id="emailModalOverlay">
+    <div class="modal-box">
+      <div class="modal-title">${EMAIL_ICON_SVG} Follow up — ${escapeHtml(m.dealer)}</div>
+      ${m.loading ? `
+        <div class="loading"><div class="spinner"></div> Cerco le mail e verifico…</div>
+      ` : m.draftCreated ? `
+        <div style="color:var(--green); font-weight:700; padding:10px 0;">✅ Bozza creata in Gmail.</div>
+      ` : `
+        <div style="font-size:13px; margin-bottom:12px; line-height:1.5;">${escapeHtml(m.question || '')}</div>
+        <textarea id="emailAnswerTextarea" placeholder="Scrivi qui la tua risposta, oppure usa il microfono..."></textarea>
+        <div class="row-between" style="margin-top:10px;">
+          <button class="secondary mic-btn ${STATE.callModalRecording?'recording':''}" id="emailMicBtn">
+            🎙️ ${STATE.callModalRecording ? 'Sto ascoltando… clicca per fermare' : 'Registra vocale'}
+          </button>
+        </div>
+        <div class="row-between" style="margin-top:12px;">
+          <button class="secondary" id="emailModalNone">Nessuno di questi</button>
+          <div class="row">
+            <button class="secondary" id="emailModalCancel">Annulla</button>
+            <button id="emailModalReply">Rispondi</button>
+          </div>
+        </div>
+      `}
+    </div>
+  </div>`;
 }
 
-function renderUndo(){
-  const ub=document.getElementById('ub');
-  if(last){document.getElementById('uc').textContent=last.c;ub.style.display='flex'}
-  else ub.style.display='none';
+function showToast(text){
+  const existing = document.querySelector('.toast');
+  if(existing) existing.remove();
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = text;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => el.remove(), 250);
+  }, 2500);
 }
 
-function act(azione){
-  const t=tasks[cur];
-  last={idx:cur,done:t.done,azione:t.azione,c:t.c};
-  t.done=true;t.azione=azione;
-  addLog(t.c,azione);
-  const msg='TASK: '+t.c+'\nProdotto: '+(t.prod||'—')+'\nNote CRM: '+(t.note||'—')+'\nPriorità: '+t.pri+'\nIstruzione: '+azione;
-  navigator.clipboard.writeText(msg).then(()=>showToast('Copiato — incolla in Claude ↗')).catch(()=>showToast('Copia il testo e incollalo in Claude'));
-  renderAll();
-  if(cur<tasks.length-1)setTimeout(()=>{cur++;renderTask()},400);
+let voiceRecognition = null;
+
+function startVoiceRecording(textareaId, micBtnId, onUpdate){
+  const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SpeechRecognitionAPI){
+    alert('Il riconoscimento vocale non è supportato in questo browser. Usa Chrome, oppure scrivi il testo a mano.');
+    return;
+  }
+  const existingTa = document.getElementById(textareaId);
+  let finalTranscript = existingTa ? existingTa.value : '';
+
+  voiceRecognition = new SpeechRecognitionAPI();
+  voiceRecognition.lang = 'it-IT';
+  voiceRecognition.continuous = true;
+  voiceRecognition.interimResults = true;
+
+  voiceRecognition.onresult = (event) => {
+    let interim = '';
+    for(let i = event.resultIndex; i < event.results.length; i++){
+      const transcript = event.results[i][0].transcript;
+      if(event.results[i].isFinal){
+        finalTranscript += (finalTranscript ? ' ' : '') + transcript.trim();
+      } else {
+        interim += transcript;
+      }
+    }
+    const ta = document.getElementById(textareaId);
+    if(ta) ta.value = finalTranscript + (interim ? ' ' + interim : '');
+    if(onUpdate) onUpdate(finalTranscript);
+  };
+  voiceRecognition.onerror = () => { /* ignora, l'utente può riprovare */ };
+  voiceRecognition.onend = () => {
+    STATE.callModalRecording = false;
+    const micBtn = document.getElementById(micBtnId);
+    if(micBtn){ micBtn.classList.remove('recording'); micBtn.textContent = '🎙️ Registra vocale'; }
+  };
+
+  voiceRecognition.start();
+  STATE.callModalRecording = true;
+  const micBtn = document.getElementById(micBtnId);
+  if(micBtn){ micBtn.classList.add('recording'); micBtn.textContent = '🎙️ Sto ascoltando… clicca per fermare'; }
 }
 
-function sendCustom(){const v=document.getElementById('ti').value.trim();if(v)act(v)}
-
-function undo(){
-  if(!last)return;
-  const t=tasks[last.idx];
-  t.done=last.done;t.azione=last.azione;
-  cur=last.idx;last=null;
-  log.shift();
-  renderAll();renderLog();
-  showToast('Azione annullata');
+function stopVoiceRecording(){
+  if(voiceRecognition){
+    try{ voiceRecognition.stop(); }catch(e){}
+    voiceRecognition = null;
+  }
+  STATE.callModalRecording = false;
 }
 
-function toggleSkip(){document.getElementById('ss').classList.toggle('open')}
-function nav(d){cur=Math.max(0,Math.min(tasks.length-1,cur+d));renderTask()}
-
-function addLog(c,a){
-  log.unshift({c,a,t:new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})});
-  renderLog();
+function isToday(ts){
+  const d = new Date(ts);
+  const today = new Date();
+  return d.getFullYear()===today.getFullYear() && d.getMonth()===today.getMonth() && d.getDate()===today.getDate();
 }
 
-function renderLog(){
-  const lc=document.getElementById('lc');
-  if(!log.length){lc.style.display='none';return}
-  lc.style.display='block';
-  document.getElementById('ll').innerHTML=log.slice(0,6).map(l=>`
-    <div class="log-item">
-      <span class="li-c">${l.c}</span>
-      <span class="li-a">${l.a}</span>
-      <span class="li-t">${l.t}</span>
-    </div>`).join('');
+function getTodaySummaryByDealer(){
+  const byDealer = {};
+  STATE.completedLog.filter(e => isToday(e.ts)).forEach(e => {
+    if(!byDealer[e.dealer]) byDealer[e.dealer] = { done: [], calls: [], emails: [] };
+    byDealer[e.dealer].done.push(e.text);
+  });
+  STATE.opportunities.forEach(o => {
+    (o.contact_log || []).filter(e => isToday(e.ts)).forEach(e => {
+      if(!byDealer[o.dealer]) byDealer[o.dealer] = { done: [], calls: [], emails: [] };
+      if(e.channel === 'email') byDealer[o.dealer].emails.push(e.text);
+      else byDealer[o.dealer].calls.push(e.text);
+    });
+  });
+  return byDealer;
 }
 
-function showToast(msg){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.style.opacity='1';
-  setTimeout(()=>t.style.opacity='0',2500);
+function renderDailySummaryPanel(){
+  const byDealer = getTodaySummaryByDealer();
+  const dealers = Object.keys(byDealer);
+  if(dealers.length === 0) return '';
+  return `
+    <div class="panel">
+      <div class="panel-title">Riepilogo di oggi — da aggiornare su Salesforce</div>
+      ${dealers.map(d => `
+        <div style="margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid var(--border);">
+          <div style="font-weight:700; font-size:13px; margin-bottom:4px;">${escapeHtml(d)}</div>
+          ${byDealer[d].done.map(t => `<div style="font-size:12px; color:var(--text-dim);">✅ ${escapeHtml(t)}</div>`).join('')}
+          ${byDealer[d].calls.map(t => `<div style="font-size:12px; color:var(--text-dim);">📞 ${escapeHtml(t)}</div>`).join('')}
+          ${byDealer[d].emails.map(t => `<div style="font-size:12px; color:var(--text-dim);">✉️ ${escapeHtml(t)}</div>`).join('')}
+        </div>
+      `).join('')}
+    </div>`;
 }
+
+function buildDailySummaryText(){
+  const byDealer = getTodaySummaryByDealer();
+  const dealers = Object.keys(byDealer);
+  if(dealers.length === 0) return null;
+  const lines = [`Riepilogo ${new Date().toLocaleDateString('it-IT')} — da aggiornare su Salesforce`, ''];
+  dealers.forEach(d => {
+    lines.push(d.toUpperCase());
+    byDealer[d].done.forEach(t => lines.push(`  [x] Task completato: ${t}`));
+    byDealer[d].calls.forEach(t => lines.push(`  [tel] Chiamata: ${t}`));
+    byDealer[d].emails.forEach(t => lines.push(`  [mail] Mail: ${t}`));
+    lines.push('');
+  });
+  return lines.join('\n');
+}
+
+function exportDailySummary(){
+  const content = buildDailySummaryText();
+  if(!content){
+    alert('Non hai ancora completato task o registrato chiamate/mail oggi.');
+    return;
+  }
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `riepilogo_${new Date().toISOString().slice(0,10)}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportFullData(){
+  const content = JSON.stringify({ opportunities: STATE.opportunities, meta: STATE.meta, completedLog: STATE.completedLog }, null, 2);
+  const blob = new Blob([content], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `pipeline-sync-dati_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function importFullData(file){
+  try{
+    const text = await file.text();
+    const parsed = JSON.parse(text);
+    STATE.opportunities = parsed.opportunities || [];
+    STATE.meta = parsed.meta || STATE.meta;
+    STATE.completedLog = parsed.completedLog || [];
+    await saveState();
+    showToast('✅ Dati importati');
+    STATE.activeTab = 'pipeline';
+    render();
+  }catch(e){
+    alert('Errore importando il file: ' + e.message);
+  }
+}
+
+function mailDailySummary(){
+  const content = buildDailySummaryText();
+  if(!content){
+    alert('Non hai ancora completato task o registrato chiamate/mail oggi.');
+    return;
+  }
+  const subject = `Riepilogo ${new Date().toLocaleDateString('it-IT')} — da aggiornare su SF`;
+  const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(content)}`;
+  window.location.href = mailtoUrl;
+}
+
+function exportCallLog(){
+  const rows = [];
+  STATE.opportunities.forEach(o => {
+    (o.contact_log || []).forEach(entry => {
+      rows.push({ ts: entry.ts, dealer: o.dealer, text: entry.text });
+    });
+  });
+  rows.sort((a,b) => b.ts - a.ts);
+
+  if(rows.length === 0){
+    alert('Non ci sono ancora chiamate registrate.');
+    return;
+  }
+
+  const lines = ['Data\tOra\tDealer\tNota'];
+  rows.forEach(r => {
+    const d = new Date(r.ts);
+    const data = d.toLocaleDateString('it-IT');
+    const ora = d.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'});
+    const nota = (r.text || '').replace(/\t/g, ' ').replace(/\r?\n/g, ' ');
+    lines.push(`${data}\t${ora}\t${r.dealer}\t${nota}`);
+  });
+  const content = lines.join('\n');
+
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `log_chiamate_${new Date().toISOString().slice(0,10)}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ====================== HANDLERS ====================== */
+function attachHandlers(){
+  document.querySelectorAll('[data-tab]').forEach(el => {
+    el.addEventListener('click', () => { STATE.activeTab = el.dataset.tab; render(); });
+  });
+
+  document.querySelectorAll('[data-filtergroup]').forEach(el => {
+    el.addEventListener('click', () => {
+      STATE[el.dataset.filtergroup] = el.dataset.filterval;
+      render();
+    });
+  });
+
+  document.querySelectorAll('[data-stagefilter]').forEach(el => {
+    el.addEventListener('click', () => {
+      STATE.pipelineStageFilter = el.dataset.stagefilter;
+      render();
+    });
+  });
+
+  document.querySelectorAll('[data-grouptoggle]').forEach(el => {
+    el.addEventListener('click', () => {
+      const name = el.dataset.grouptoggle;
+      STATE.collapsedGroups[name] = !STATE.collapsedGroups[name];
+      render();
+    });
+  });
+
+  const importTextarea = document.getElementById('importTextarea');
+  if(importTextarea){
+    importTextarea.addEventListener('input', (e) => { STATE.importText = e.target.value; });
+  }
+  const importTypeSel = document.getElementById('importTypeSel');
+  if(importTypeSel){
+    importTypeSel.addEventListener('change', (e) => { STATE.importType = e.target.value; });
+  }
+  const extractBtn = document.getElementById('extractBtn');
+  if(extractBtn){
+    extractBtn.addEventListener('click', runExtraction);
+  }
+
+  const importTabBtn = document.querySelector('[data-importbtn]');
+  const dailyFileInput = document.getElementById('dailyFileInput');
+  if(importTabBtn && dailyFileInput){
+    importTabBtn.addEventListener('click', () => { if(!STATE.importLoading) dailyFileInput.click(); });
+    dailyFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if(file) runDailyFileImport(file);
+      e.target.value = '';
+    });
+  }
+  const confirmBtn = document.getElementById('confirmImportBtn');
+  if(confirmBtn){
+    confirmBtn.addEventListener('click', confirmImport);
+  }
+  const cancelBtn = document.getElementById('cancelImportBtn');
+  if(cancelBtn){
+    cancelBtn.addEventListener('click', () => { STATE.importPreview = null; render(); });
+  }
+  document.querySelectorAll('.preview-toggle').forEach(el => {
+    el.addEventListener('change', (e) => {
+      const idx = parseInt(e.target.dataset.idx);
+      STATE.importPreview.items[idx]._excluded = !e.target.checked;
+      render();
+    });
+  });
+
+  document.querySelectorAll('[data-donebtn]').forEach(el => {
+    el.addEventListener('click', async () => {
+      const id = el.dataset.donebtn;
+      const taskId = el.dataset.taskid;
+      const o = STATE.opportunities.find(x => x.id === id);
+      if(o && o.tasks){
+        const idx = o.tasks.findIndex(t => t.id === taskId);
+        if(idx !== -1){
+          const [removed] = o.tasks.splice(idx, 1);
+          STATE.undoStack.push({ id, task: removed, dealer: o.dealer });
+          STATE.completedLog.push({ ts: Date.now(), dealer: o.dealer, text: removed.text });
+          await saveCompletedLog();
+        }
+      }
+      await saveOpportunities();
+      render();
+    });
+  });
+
+  const undoBtn = document.getElementById('undoAllBtn');
+  if(undoBtn){
+    undoBtn.addEventListener('click', async () => {
+      STATE.undoStack.forEach(entry => {
+        const o = STATE.opportunities.find(x => x.id === entry.id);
+        if(o){ if(!o.tasks) o.tasks = []; o.tasks.push(entry.task); }
+        const logIdx = STATE.completedLog.findIndex(c => c.dealer === entry.dealer && c.text === entry.task.text);
+        if(logIdx !== -1) STATE.completedLog.splice(logIdx, 1);
+      });
+      STATE.undoStack = [];
+      await saveOpportunities();
+      await saveCompletedLog();
+      render();
+    });
+  }
+
+  const exportLogBtn = document.getElementById('exportLogBtn');
+  if(exportLogBtn){
+    exportLogBtn.addEventListener('click', exportCallLog);
+  }
+  const exportDailyBtn = document.getElementById('exportDailyBtn');
+  if(exportDailyBtn){
+    exportDailyBtn.addEventListener('click', exportDailySummary);
+  }
+  const mailDailyBtn = document.getElementById('mailDailyBtn');
+  if(mailDailyBtn){
+    mailDailyBtn.addEventListener('click', mailDailySummary);
+  }
+
+  document.querySelectorAll('[data-callbtn]').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.dataset.callbtn;
+      const o = STATE.opportunities.find(x => x.id === id);
+      if(!o) return;
+      STATE.callModal = { oppId: id, dealer: o.dealer, text: '' };
+      STATE.callModalRecording = false;
+      render();
+    });
+  });
+
+  const callTextarea = document.getElementById('callModalTextarea');
+  if(callTextarea){
+    callTextarea.addEventListener('input', (e) => { STATE.callModal.text = e.target.value; });
+    callTextarea.focus();
+  }
+
+  const micBtn = document.getElementById('micBtn');
+  if(micBtn){
+    micBtn.addEventListener('click', () => {
+      if(STATE.callModalRecording) stopVoiceRecording();
+      else startVoiceRecording('callModalTextarea', 'micBtn', (text) => { if(STATE.callModal) STATE.callModal.text = text; });
+    });
+  }
+
+  const callModalCancel = document.getElementById('callModalCancel');
+  if(callModalCancel){
+    callModalCancel.addEventListener('click', () => {
+      stopVoiceRecording();
+      STATE.callModal = null;
+      render();
+    });
+  }
+
+  const callModalSave = document.getElementById('callModalSave');
+  if(callModalSave){
+    callModalSave.addEventListener('click', async () => {
+      stopVoiceRecording();
+      const ta = document.getElementById('callModalTextarea');
+      const text = (ta ? ta.value : (STATE.callModal.text || '')).trim();
+      if(text){
+        const o = STATE.opportunities.find(x => x.id === STATE.callModal.oppId);
+        if(o){
+          if(!o.contact_log) o.contact_log = [];
+          o.contact_log.push({ ts: Date.now(), text });
+          await saveOpportunities();
+        }
+      }
+      STATE.callModal = null;
+      render();
+    });
+  }
+
+  document.querySelectorAll('[data-emailbtn]').forEach(el => {
+    el.addEventListener('click', async () => {
+      const id = el.dataset.emailbtn;
+      const o = STATE.opportunities.find(x => x.id === id);
+      if(!o) return;
+      if(IS_CLAUDE_ENV){
+        createFollowUpDraft(o, el);
+      } else {
+        const text = prompt(`Cosa hai scritto nella mail a ${o.dealer}?`);
+        if(!text) return;
+        if(!o.contact_log) o.contact_log = [];
+        o.contact_log.push({ ts: Date.now(), text: text.trim(), channel: 'email' });
+        await saveOpportunities();
+        render();
+      }
+    });
+  });
+
+  const emailModalCancel = document.getElementById('emailModalCancel');
+  if(emailModalCancel){
+    emailModalCancel.addEventListener('click', () => { stopVoiceRecording(); STATE.emailModal = null; render(); });
+  }
+  const emailModalReply = document.getElementById('emailModalReply');
+  if(emailModalReply){
+    emailModalReply.addEventListener('click', async () => {
+      stopVoiceRecording();
+      const ta = document.getElementById('emailAnswerTextarea');
+      const answer = (ta ? ta.value : '').trim();
+      if(!answer) return;
+      STATE.emailModal.messages.push({ role: 'user', content: answer });
+      await stepEmailFlow();
+    });
+  }
+  const emailModalNone = document.getElementById('emailModalNone');
+  if(emailModalNone){
+    emailModalNone.addEventListener('click', async () => {
+      stopVoiceRecording();
+      STATE.emailModal.messages.push({ role: 'user', content: 'Nessuno di questi thread è quello giusto. Cerca meglio o chiedimi altre indicazioni.' });
+      await stepEmailFlow();
+    });
+  }
+  const emailMicBtn = document.getElementById('emailMicBtn');
+  if(emailMicBtn){
+    emailMicBtn.addEventListener('click', () => {
+      if(STATE.callModalRecording) stopVoiceRecording();
+      else startVoiceRecording('emailAnswerTextarea', 'emailMicBtn', () => {});
+    });
+  }
+
+  document.querySelectorAll('[data-delete]').forEach(el => {
+    el.addEventListener('click', async () => {
+      const id = el.dataset.delete;
+      const o = STATE.opportunities.find(x => x.id === id);
+      const label = o ? o.dealer : 'questa opportunità';
+      if(!confirm(`Eliminare definitivamente "${label}" dalla pipeline? Non potrai recuperarla, dovrai reimportarla.`)) return;
+      STATE.opportunities = STATE.opportunities.filter(x => x.id !== id);
+      await saveOpportunities();
+      render();
+    });
+  });
+
+  document.querySelectorAll('.acv-input').forEach(el => {
+    el.addEventListener('change', async (e) => {
+      const id = e.target.dataset.acvfor;
+      const o = STATE.opportunities.find(x => x.id === id);
+      if(o){
+        const val = e.target.value === '' ? null : Number(e.target.value);
+        o.forecast_acv = val;
+      }
+      await saveOpportunities();
+      render();
+    });
+  });
+}
+
+/* ====================== AI EXTRACTION ====================== */
+function extractJsonObjects(raw){
+  // Scans for complete top-level {...} objects even if the surrounding
+  // array or the very last object got truncated by a token limit.
+  const objects = [];
+  let depth = 0, start = -1, inStr = false, strCh = '', esc = false;
+  for(let i=0;i<raw.length;i++){
+    const c = raw[i];
+    if(inStr){
+      if(esc){ esc = false; }
+      else if(c === '\\'){ esc = true; }
+      else if(c === strCh){ inStr = false; }
+      continue;
+    }
+    if(c === '"'){ inStr = true; strCh = c; continue; }
+    if(c === '{'){ if(depth === 0) start = i; depth++; }
+    else if(c === '}'){ depth--; if(depth === 0 && start >= 0){ objects.push(raw.slice(start, i+1)); start = -1; } }
+  }
+  const parsed = [];
+  objects.forEach(s => { try{ parsed.push(JSON.parse(s)); }catch(e){ /* skip incomplete/malformed object */ } });
+  return parsed;
+}
+
+async function callClaude(systemPrompt, userText){
+  let data;
+  if(IS_CLAUDE_ENV){
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 8192,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userText }]
+      })
+    });
+    data = await response.json();
+  } else {
+    const response = await fetch("/api/extract", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ system: systemPrompt, userText })
+    });
+    data = await response.json();
+    if(data.error) throw new Error(data.error);
+  }
+  const textBlock = (data.content || []).find(b => b.type === 'text');
+  if(!textBlock) throw new Error('Nessuna risposta testuale dal modello');
+  return extractJsonObjects(textBlock.text);
+}
+
+function chunkText(text, linesPerChunk){
+  const allLines = text.split('\n');
+  const nonEmpty = allLines.filter(l => l.trim() !== '');
+  if(nonEmpty.length <= linesPerChunk) return [text];
+  const header = allLines[0];
+  const rest = allLines.slice(1);
+  const chunks = [];
+  for(let i=0;i<rest.length;i+=linesPerChunk){
+    const slice = rest.slice(i, i+linesPerChunk);
+    chunks.push(header + '\n' + slice.join('\n'));
+  }
+  return chunks;
+}
+
+function detectType(text){
+  const t = text.toLowerCase();
+  if(t.includes('fase') && (t.includes('acv') || t.includes('data chiusura'))) return 'opp';
+  if(t.includes('scadenza') && t.includes('oggetto')) return 'task';
+  if(/\bacv\b/.test(t) && (t.includes('nb') || t.includes('up'))) return 'forecast';
+  return 'auto';
+}
+
+const EXTRACTION_SYSTEM_BASE = `Sei un motore di estrazione dati per un tool CRM di un venditore automotive (MotorK). Riceverai testo incollato da Excel (colonne separate da TAB o spazi multipli) oppure da un export Salesforce. Devi restituire SOLO un array JSON valido, senza testo aggiuntivo, senza markdown, senza spiegazioni. Sii conciso: per ogni riga includi SOLO i campi che hanno un valore reale, ometti completamente (non scrivere null) i campi assenti.
+
+Campi possibili per ogni elemento:
+{
+  "dealer": "nome pulito del concessionario, SENZA il prodotto/servizio (es. 'BARCHETTI', non 'BARCHETTI SP LS PILLAR')",
+  "prodotto": "prodotto/servizio SparK menzionato, se presente",
+  "sf_opportunity_name": "nome opportunità originale se da Salesforce",
+  "sf_stage": "fase Salesforce se presente (es. Discovery Meeting, Trade, Commit)",
+  "sf_close_date": "data chiusura ISO yyyy-mm-dd se presente",
+  "sf_acv": numero,
+  "task_next_step": "testo del prossimo passo / follow up / commento",
+  "task_due_date": "data scadenza task ISO yyyy-mm-dd se presente",
+  "task_priority": "Normal/High se presente",
+  "forecast_categoria": "etichetta di temperatura/tier se presente (es. IN FIRMA, CALDE NEL MESE, DA SCALDARE)",
+  "forecast_tier": numero tier se presente,
+  "forecast_tipo": "NB o UP se presente",
+  "forecast_acv": numero,
+  "forecast_note": "nota personale se presente"
+}
+Il campo "dealer" è sempre obbligatorio, tutti gli altri sono opzionali.
+
+Regole di estrazione del dealer: il nome dealer è quasi sempre la parola o le prime parole in maiuscolo che identificano l'azienda. Non includere mai il prodotto nel campo dealer. Se una riga è chiaramente un'intestazione di categoria (non un'opportunità reale, es. riga con 'ACV' e 'NOTE' come placeholder), NON includerla come elemento ma usa il suo testo come forecast_categoria per le righe seguenti fino alla prossima intestazione.
+Ignora righe completamente vuote o placeholder come "Seleziona elemento N".`;
+
+async function runExtractionForText(text, forcedType){
+  const existingDealers = [...new Set(STATE.opportunities.map(o => o.dealer))];
+  const dealerListStr = existingDealers.length ? `Dealer già presenti nel sistema: ${existingDealers.join(', ')}.\nSe una riga si riferisce chiaramente a uno di questi dealer (anche con leggere variazioni di scrittura, MA attenzione: nomi con numeri o suffissi diversi come "BARCHETTI" e "BARCHETTI2" sono ENTITA' DIVERSE, non farli corrispondere), usa esattamente lo stesso nome dealer già presente. Altrimenti usa un nome nuovo pulito.` : '';
+
+  const detectedType = forcedType || detectType(text);
+
+  let typeHint = '';
+  if(detectedType === 'task') typeHint = 'Il testo è probabilmente un export Task di Salesforce con colonne come Scadenza, Oggetto, Correlato a, Follow up Description, Priorità, Stato.';
+  else if(detectedType === 'opp') typeHint = 'Il testo è probabilmente un export Opportunità di Salesforce con colonne come Nome opportunità, Nome account, Fase, Data chiusura, ACV. Le fasi possibili, in ordine di avanzamento, sono: BDR Phase, Discovery Meeting, Demo Meeting, Proposal Meeting, Trade, Commit (Sending Contract), Chiuso. Riporta la fase così come scritta nel testo.';
+  else if(detectedType === 'forecast') typeHint = 'Il testo è probabilmente il forecast personale del venditore, con colonne tipo: numero tier, tipo (NB/UP), nome dealer, ACV, nota. Alcune righe sono intestazioni di categoria (temperatura) che si applicano alle righe seguenti.';
+
+  const system = EXTRACTION_SYSTEM_BASE + '\n\n' + typeHint + '\n' + dealerListStr;
+
+  const chunks = chunkText(text, 25);
+  let allItems = [];
+  for(let i=0;i<chunks.length;i++){
+    if(chunks.length > 1){
+      STATE.importLoadingLabel = `Estrazione ${detectedType==='task'?'Task':detectedType==='opp'?'Opportunità':''} in corso… (blocco ${i+1}/${chunks.length})`;
+      render();
+    }
+    const chunkItems = await callClaude(system, chunks[i]);
+    allItems = allItems.concat(chunkItems);
+  }
+  allItems.forEach(it => { it._sourceType = detectedType; });
+  return allItems;
+}
+
+function sheetToText(ws){
+  return XLSX.utils.sheet_to_csv(ws, { FS: '\t', blankrows: false });
+}
+
+function findSheetByName(workbook, keyword){
+  const name = workbook.SheetNames.find(n => n.toLowerCase().includes(keyword));
+  return name ? workbook.Sheets[name] : null;
+}
+
+/* ====================== DETERMINISTIC EXCEL PARSING (no AI needed) ====================== */
+// The Task/Opp exports always use the same column headers, so we can read
+// them directly instead of calling an AI model — this works identically
+// everywhere (inside Claude, on GitHub, from PC or phone), with no API key.
+
+function findHeaderRowIdx(rows){
+  for(let i=0;i<Math.min(rows.length,3);i++){
+    const rowStr = (rows[i]||[]).join('|').toLowerCase();
+    if(rowStr.includes('scadenza') || rowStr.includes('oggetto') || rowStr.includes('fase') || rowStr.includes('account') || rowStr.includes('opportunit')) return i;
+  }
+  return -1;
+}
+
+function colIndexByKeywords(headerRow, keywords){
+  for(let i=0;i<headerRow.length;i++){
+    const cell = (headerRow[i]||'').toString().toLowerCase();
+    if(keywords.some(k => cell.includes(k))) return i;
+  }
+  return -1;
+}
+
+function extractDealerNameHeuristic(text){
+  if(!text) return null;
+  const s = text.toString().trim();
+  if(!s) return null;
+  const m = s.match(/^[A-Z0-9À-Ý&.\-'\s]+?(?=\s[a-z]|$)/);
+  let dealer = m ? m[0].trim() : s.split(' ')[0];
+  if(!dealer) dealer = s.split(' ')[0];
+  return dealer.trim() || null;
+}
+
+function parseItDate(v){
+  if(v === null || v === undefined || v === '') return null;
+  if(v instanceof Date) return v.toISOString().slice(0,10);
+  const s = v.toString().trim();
+  const m = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+  if(m){
+    let [, d, mo, y] = m;
+    if(y.length===2) y = '20'+y;
+    return `${y}-${mo.padStart(2,'0')}-${d.padStart(2,'0')}`;
+  }
+  if(!isNaN(s) && s !== ''){
+    const n = Number(s);
+    const excelEpoch = new Date(Date.UTC(1899,11,30));
+    const d = new Date(excelEpoch.getTime() + n*86400000);
+    if(!isNaN(d.getTime())) return d.toISOString().slice(0,10);
+  }
+  return null;
+}
+
+function parseAcvValue(v){
+  if(v === null || v === undefined || v === '') return null;
+  if(typeof v === 'number') return v;
+  const cleaned = v.toString().replace(/[^\d.,\-]/g,'').replace(/\.(?=\d{3},)/g,'').replace(',', '.');
+  const n = parseFloat(cleaned);
+  return isNaN(n) ? null : n;
+}
+
+function parseTaskSheetRows(rows){
+  const headerIdx = findHeaderRowIdx(rows);
+  const items = [];
+
+  if(headerIdx === -1){
+    // Fallback: some Salesforce exports have no header row at all — the
+    // columns are always in the same fixed positions in that case.
+    rows.forEach(r => {
+      if(!r || r.length < 4) return;
+      const scad = r[2], oggetto = r[3], correlato = r[4], followup = r[5], priorita = r[6];
+      if(!oggetto && !correlato) return;
+      const dealer = extractDealerNameHeuristic(correlato || oggetto);
+      if(!dealer) return;
+      items.push({ dealer, task_next_step: followup || oggetto || null, task_due_date: parseItDate(scad), task_priority: priorita || null, _sourceType: 'task' });
+    });
+    return items;
+  }
+
+  const header = rows[headerIdx];
+  const cScad = colIndexByKeywords(header, ['scadenza']);
+  const cOggetto = colIndexByKeywords(header, ['oggetto']);
+  const cCorrelato = colIndexByKeywords(header, ['correlato']);
+  const cFollowup = colIndexByKeywords(header, ['follow up','follow-up','descrizione','description']);
+  const cPriorita = colIndexByKeywords(header, ['priorit']);
+
+  for(let i=headerIdx+1;i<rows.length;i++){
+    const r = rows[i];
+    if(!r) continue;
+    const oggetto = cOggetto>=0 ? r[cOggetto] : null;
+    const correlato = cCorrelato>=0 ? r[cCorrelato] : null;
+    if(!oggetto && !correlato) continue;
+    const dealer = extractDealerNameHeuristic(correlato || oggetto);
+    if(!dealer) continue;
+    items.push({
+      dealer,
+      task_next_step: (cFollowup>=0 ? r[cFollowup] : null) || oggetto || null,
+      task_due_date: parseItDate(cScad>=0 ? r[cScad] : null),
+      task_priority: cPriorita>=0 ? r[cPriorita] : null,
+      _sourceType: 'task'
+    });
+  }
+  return items;
+}
+
+function parseOppSheetRows(rows){
+  const headerIdx = findHeaderRowIdx(rows);
+  if(headerIdx === -1) return [];
+  const header = rows[headerIdx];
+  const cOppName = colIndexByKeywords(header, ['nome opportunit','opportunity name']);
+  const cAccount = colIndexByKeywords(header, ['nome account','account']);
+  const cFase = colIndexByKeywords(header, ['fase','stage']);
+  const cChiusura = colIndexByKeywords(header, ['chiusura','close']);
+  const cAcv = colIndexByKeywords(header, ['acv']);
+
+  const items = [];
+  for(let i=headerIdx+1;i<rows.length;i++){
+    const r = rows[i];
+    if(!r) continue;
+    const account = cAccount>=0 ? r[cAccount] : null;
+    if(!account) continue;
+    items.push({
+      dealer: account.toString().trim(),
+      sf_opportunity_name: cOppName>=0 ? r[cOppName] : null,
+      sf_stage: cFase>=0 ? r[cFase] : null,
+      sf_close_date: parseItDate(cChiusura>=0 ? r[cChiusura] : null),
+      sf_acv: cAcv>=0 ? parseAcvValue(r[cAcv]) : null,
+      _sourceType: 'opp'
+    });
+  }
+  return items;
+}
+
+async function runDailyFileImport(file){
+  STATE.importLoading = true;
+  STATE.importError = null;
+  STATE.importLoadingLabel = 'Leggo il file…';
+  render();
+
+  try{
+    const buf = await file.arrayBuffer();
+    const workbook = XLSX.read(buf, { type: 'array' });
+
+    const taskSheet = findSheetByName(workbook, 'task');
+    const oppSheet = findSheetByName(workbook, 'opp');
+
+    if(!taskSheet && !oppSheet){
+      STATE.importError = `Non trovo tab chiamati "Task" o "Opp" in questo file. Tab presenti: ${workbook.SheetNames.join(', ')}`;
+      STATE.importLoading = false;
+      render();
+      return;
+    }
+
+    let allItems = [];
+    if(taskSheet){
+      const rows = XLSX.utils.sheet_to_json(taskSheet, { header: 1, blankrows: false });
+      allItems = allItems.concat(parseTaskSheetRows(rows));
+    }
+    if(oppSheet){
+      const rows = XLSX.utils.sheet_to_json(oppSheet, { header: 1, blankrows: false });
+      allItems = allItems.concat(parseOppSheetRows(rows));
+    }
+
+    if(allItems.length === 0){
+      STATE.importError = 'Non sono riuscito a leggere righe valide da questo file.';
+      STATE.importLoading = false;
+      render();
+      return;
+    }
+
+    allItems.forEach(it => {
+      const match = STATE.opportunities.find(o => o.dealer && it.dealer && o.dealer.toLowerCase() === it.dealer.toLowerCase());
+      it._matchedId = match ? match.id : null;
+    });
+
+    const taskCount = allItems.filter(it => it._sourceType === 'task').length;
+    const oppCount = allItems.filter(it => it._sourceType === 'opp').length;
+
+    await applyImportBatch(allItems);
+
+    STATE.importLoading = false;
+    render();
+    showToast(`✅ Importato: ${taskCount} task, ${oppCount} opportunità aggiornate`);
+  }catch(e){
+    STATE.importLoading = false;
+    STATE.importError = 'Errore durante la lettura del file: ' + e.message;
+    render();
+  }
+}
+
+async function runExtraction(){
+  const text = STATE.importText.trim();
+  if(!text){ STATE.importError = 'Incolla del testo prima di estrarre.'; render(); return; }
+  STATE.importLoading = true;
+  STATE.importError = null;
+  render();
+
+  try{
+    const forcedType = STATE.importType === 'auto' ? null : STATE.importType;
+    const items = await runExtractionForText(text, forcedType);
+
+    if(!Array.isArray(items) || items.length === 0){
+      STATE.importError = 'Non sono riuscito a estrarre righe valide da questo testo.';
+      STATE.importLoading = false;
+      render();
+      return;
+    }
+
+    items.forEach(it => {
+      const match = STATE.opportunities.find(o => o.dealer && it.dealer && o.dealer.toLowerCase() === it.dealer.toLowerCase());
+      it._matchedId = match ? match.id : null;
+      it._excluded = false;
+    });
+
+    STATE.importPreview = { items };
+    STATE.importLoading = false;
+    render();
+  }catch(e){
+    STATE.importLoading = false;
+    STATE.importError = 'Errore durante l\'estrazione: ' + e.message;
+    render();
+  }
+}
+
+async function applyImportBatch(items){
+  const now = Date.now();
+
+  // The Task tab is always a full daily snapshot of everything currently open
+  // in Salesforce: a Task-type import must replace the whole task list, not
+  // pile on top of it, or closed/edited tasks would linger forever.
+  const hasTaskImport = items.some(it => it._sourceType === 'task');
+  if(hasTaskImport){
+    STATE.opportunities.forEach(o => { o.tasks = []; });
+  }
+
+  // The Opp tab is also a full snapshot of currently open Salesforce
+  // opportunities: an Opp-type import must replace the SF opportunities list,
+  // not leave stale/closed ones lingering, and must not collapse multiple
+  // distinct open opportunities on the same dealer into just one.
+  const hasOppImport = items.some(it => it._sourceType === 'opp');
+  if(hasOppImport){
+    STATE.opportunities.forEach(o => { o.sf_opportunities = []; });
+  }
+
+  items.forEach(it => {
+    let target;
+    if(it._matchedId){
+      target = STATE.opportunities.find(o => o.id === it._matchedId);
+    }
+    if(!target){
+      target = { id: uid(), dealer: it.dealer, tasks: [], sf_opportunities: [] };
+      STATE.opportunities.push(target);
+    }
+    if(!target.tasks) target.tasks = [];
+    if(!target.sf_opportunities) target.sf_opportunities = [];
+
+    const fields = ['prodotto','forecast_categoria','forecast_tier','forecast_tipo','forecast_acv','forecast_note'];
+    fields.forEach(f => {
+      if(it[f] !== undefined && it[f] !== null && it[f] !== '') target[f] = it[f];
+    });
+
+    if(it.sf_stage || it.sf_acv || it.sf_opportunity_name){
+      const name = it.sf_opportunity_name || it.prodotto || it.dealer;
+      const norm = name.trim().toLowerCase();
+      const existing = target.sf_opportunities.find(x => x.name && x.name.trim().toLowerCase() === norm);
+      if(existing){
+        if(it.sf_stage) existing.stage = it.sf_stage;
+        if(it.sf_close_date) existing.close_date = it.sf_close_date;
+        if(it.sf_acv !== undefined && it.sf_acv !== null) existing.acv = it.sf_acv;
+      } else {
+        target.sf_opportunities.push({
+          id: uid(), name,
+          stage: it.sf_stage || null,
+          close_date: it.sf_close_date || null,
+          acv: (it.sf_acv !== undefined ? it.sf_acv : null)
+        });
+      }
+    }
+
+    if(it.task_next_step){
+      const norm = it.task_next_step.trim().toLowerCase();
+      const existing = target.tasks.find(t => t.text && t.text.trim().toLowerCase() === norm);
+      if(existing){
+        if(it.task_due_date) existing.due_date = it.task_due_date;
+        if(it.task_priority) existing.priority = it.task_priority;
+        existing.updatedAt = now;
+      } else {
+        target.tasks.push({ id: uid(), text: it.task_next_step, due_date: it.task_due_date || null, priority: it.task_priority || null, createdAt: now });
+      }
+    }
+
+    target.updatedAt = now;
+  });
+
+  const typesTouched = new Set(items.map(it => it._sourceType).filter(Boolean));
+  typesTouched.forEach(t => {
+    if(t === 'task') STATE.meta.lastImport.task = now;
+    else if(t === 'opp') STATE.meta.lastImport.opp = now;
+    else if(t === 'forecast') STATE.meta.lastImport.forecast = now;
+  });
+
+  // Prune dealer records left completely empty (no tasks, no SF opp data,
+  // no forecast entry, no call log) — these are stale leftovers, usually
+  // from a name mismatch that created a duplicate on a previous import.
+  STATE.opportunities = STATE.opportunities.filter(o =>
+    (o.tasks && o.tasks.length > 0) ||
+    (o.sf_opportunities && o.sf_opportunities.length > 0) ||
+    o.forecast_categoria || o.forecast_acv || o.forecast_tier != null ||
+    (o.contact_log && o.contact_log.length > 0)
+  );
+
+  await saveOpportunities();
+  await saveMeta();
+
+  STATE.activeTab = 'pipeline';
+  render();
+}
+
+/* ====================== INIT ====================== */
+(async function init(){
+  await loadState();
+  render();
+})();
 </script>
 </body>
 </html>
