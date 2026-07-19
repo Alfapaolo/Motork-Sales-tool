@@ -1,5 +1,4 @@
-<!DOCTYPE html
-    if(ACT.missing&&ACT.missing.size&&([...ACT.missing].some(function(p){return c.mappedProds.includes(p);}))) return false;>
+<!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="UTF-8">
@@ -49,13 +48,13 @@ body{font-family:system-ui,sans-serif;background:#f5f5f0;height:100vh;display:fl
 .cname{font-size:13px;font-weight:600;flex:1}
 .cbadge{font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px}
 .cpv{font-size:11px;color:#aaa}
-.crow{padding:5px 10px 5px 20px;border-top:1px solid #f0f0e8}
+.crow{padding:5px 10px 5px 20px;border-top:1px solid #f0f0e8;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
 .cn2{font-size:12px;font-weight:500}
 .ce{font-size:11px;color:#666}
 .cp{font-size:11px;color:#1a5cb8;font-weight:500}
 .rbadge{font-size:9px;padding:1px 5px;border-radius:3px;font-weight:600;margin-left:4px}
 .rb-t{background:#fff3e0;color:#e65100}
-.rb-o{background:#f3f3f3;color:#666}
+.rb-o{background:#f3f3f3;color:#666}.rb-dm{background:#6a1b9a22;color:#6a1b9a}
 #msgp{background:#fff;border-top:1px solid #e0e0d8;padding:10px 12px;flex-shrink:0}
 .mrow{display:flex;gap:8px;margin-bottom:7px;align-items:flex-start}
 .mlbl{font-size:11px;color:#888;font-weight:500;min-width:58px;padding-top:5px}
@@ -87,6 +86,7 @@ textarea{height:90px;resize:vertical;line-height:1.5}
     <input type="file" id="btn-load-txt" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="position:absolute;left:0;top:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:100px">
   </div>
   <button class="btn" id="btn-followup" style="background:#ff6f00;color:#fff;border-color:#ff6f00;white-space:nowrap">&#128172; Follow Up</button>
+  <button class="btn" id="btn-lista" style="background:#00796b;color:#fff;border-color:#00796b;white-space:nowrap">&#128221; Lista libera</button>
   <button class="btn" id="btn-vicini" style="background:#6a1b9a;color:#fff;border-color:#6a1b9a;white-space:nowrap">&#128205; Vicini/Simili</button>
 
 </div>
@@ -120,30 +120,38 @@ textarea{height:90px;resize:vertical;line-height:1.5}
       <div id="mode-desc" style="font-size:10px;color:#888;margin-top:4px;text-align:center">Clienti curati · mail mirate</div>
     </div>
     <div class="sec">
-      <div class="sec-t">Filtri</div>
-      <div style="margin-bottom:6px">
-        <div style="font-size:10px;color:#888;margin-bottom:2px">Tipo</div>
-        <div class="fa-row"><button class="fa-btn" id="fa-type-all">tutti</button><button class="fa-btn" id="fa-type-none">nessuno</button></div>
-        <div id="f-type"></div>
+      <div class="sec-t" style="display:flex;align-items:center;justify-content:space-between">Filtri <span style="font-size:9px;font-weight:400"><span onclick="toggleAllFilters(true)" style="cursor:pointer;color:#1a5cb8">apri</span> / <span onclick="toggleAllFilters(false)" style="cursor:pointer;color:#1a5cb8">chiudi</span></span></div>
+      <div style="margin-bottom:4px">
+        <div onclick="toggleFilter('tipo')" style="font-size:10px;color:#555;font-weight:600;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px">Tipo <span id="filt-tipo-arrow" style="font-size:8px">▶</span></div>
+        <div id="filt-tipo-body" style="display:none;margin-top:3px">
+          <div class="fa-row"><button class="fa-btn" id="fa-type-all">tutti</button><button class="fa-btn" id="fa-type-none">nessuno</button></div>
+          <div id="f-type"></div>
+        </div>
       </div>
-      <div style="margin-bottom:6px">
-        <div style="font-size:10px;color:#888;margin-bottom:2px">Contatto</div>
-        <div id="f-contact"></div>
+      <div style="margin-bottom:4px">
+        <div onclick="toggleFilter('contatto')" style="font-size:10px;color:#555;font-weight:600;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px">Contatto <span id="filt-contatto-arrow" style="font-size:8px">▶</span></div>
+        <div id="filt-contatto-body" style="display:none;margin-top:3px">
+          <div id="f-contact"></div>
+        </div>
       </div>
-      <div style="margin-bottom:6px">
-        <div style="font-size:10px;color:#888;margin-bottom:2px">Regione</div>
-        <div class="fa-row"><button class="fa-btn" id="fa-region-all">tutti</button><button class="fa-btn" id="fa-region-none">nessuno</button></div>
-        <div id="f-region"></div>
+
+      <div style="margin-bottom:4px">
+        <div onclick="toggleFilter('regione')" style="font-size:10px;color:#555;font-weight:600;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px">Regione <span id="filt-regione-arrow" style="font-size:8px">▶</span></div>
+        <div id="filt-regione-body" style="display:none;margin-top:3px">
+          <div class="fa-row"><button class="fa-btn" id="fa-region-all">tutti</button><button class="fa-btn" id="fa-region-none">nessuno</button></div>
+          <div id="f-region"></div>
+        </div>
       </div>
-      <div style="margin-bottom:6px">
-        <div style="font-size:10px;color:#888;margin-bottom:2px">Provincia</div>
-        <div class="fa-row"><button class="fa-btn" id="fa-province-all">tutti</button><button class="fa-btn" id="fa-province-none">nessuno</button></div>
-        <div id="f-province"></div>
+      <div style="margin-bottom:4px">
+        <div onclick="toggleFilter('provincia')" style="font-size:10px;color:#555;font-weight:600;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px">Provincia <span id="filt-provincia-arrow" style="font-size:8px">▶</span></div>
+        <div id="filt-provincia-body" style="display:none;margin-top:3px">
+          <div class="fa-row"><button class="fa-btn" id="fa-province-all">tutti</button><button class="fa-btn" id="fa-province-none">nessuno</button></div>
+          <div id="f-province"></div>
+        </div>
       </div>
-      
-      <div style="margin-bottom:6px">
-        <div onclick="toggleProdSection('attivi')" style="font-size:10px;color:#0a9e6e;font-weight:600;margin-bottom:2px;cursor:pointer;user-select:none">✓ Prodotti attivi <span id="prod-attivi-arrow">▶</span></div>
-        <div id="prod-attivi-body" style="display:none">
+      <div style="margin-bottom:4px">
+        <div onclick="toggleFilter('prodotti')" style="font-size:10px;color:#555;font-weight:600;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px">✓ Prodotti attivi <span id="filt-prodotti-arrow" style="font-size:8px">▶</span></div>
+        <div id="filt-prodotti-body" style="display:none;margin-top:3px">
           <div class="fa-row"><button class="fa-btn" id="fa-products-all">tutti</button><button class="fa-btn" id="fa-products-none">nessuno</button></div>
           <div id="f-products"></div>
         </div>
@@ -365,31 +373,27 @@ textarea{height:90px;resize:vertical;line-height:1.5}
   </div>
 </div>
 
+<!-- LISTA LIBERA MODAL -->
+<div id="ll-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10003">
+  <div id="ll-inner" style="background:#fff;border-radius:10px;width:560px;max-height:90vh;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.3);display:flex;flex-direction:column">
+    <div style="background:#00796b;color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <div><div style="font-size:11px;opacity:.7">MotorK SparK Outreach</div><div style="font-weight:700;font-size:15px">&#128221; Lista libera</div></div>
+      <button id="ll-close" style="background:rgba(255,255,255,.15);border:none;border-radius:6px;color:#fff;padding:5px 11px;cursor:pointer;font-size:14px">&#10005;</button>
+    </div>
+    <div style="padding:16px;flex-shrink:0">
+      <div style="font-size:12px;color:#555;margin-bottom:6px">Incolla nomi azienda, nomi contatto o email — uno per riga:</div>
+      <textarea id="ll-input" style="width:100%;height:120px;font-size:12px;border:1px solid #ddd;border-radius:6px;padding:8px;resize:none;font-family:monospace" placeholder="Es:&#10;Autoghinzani&#10;mario.rossi@dealer.it&#10;478 next"></textarea>
+      <button onclick="cercaLista()" style="margin-top:8px;width:100%;background:#00796b;color:#fff;border:none;border-radius:6px;padding:9px;font-size:13px;font-weight:600;cursor:pointer">&#128269; Cerca corrispondenze</button>
+    </div>
+    <div id="ll-results" style="padding:0 16px 16px;overflow-y:auto;flex:1"></div>
+    <div style="padding:12px 16px;border-top:1px solid #eee;flex-shrink:0">
+      <button id="ll-conferma" onclick="confermLista()" style="width:100%;background:#1a5cb8;color:#fff;border:none;border-radius:6px;padding:9px;font-size:13px;font-weight:600;cursor:pointer;display:none">&#10003; Usa selezione</button>
+    </div>
+  </div>
+</div>
+
 <script>
 
-var REGION_PROVINCES={
-  'Lombardia':['BG','BS','CO','CR','LC','LO','MB','MI','MN','PV','SO','VA'],
-  'Piemonte':['AL','AT','BI','CN','NO','TO','VB','VC'],
-  'Liguria':['GE','IM','SP','SV'],
-  'Valle d\'Aosta':['AO'],
-  'Veneto':['BL','PD','RO','TV','VE','VI','VR'],
-  'Trentino':['BZ','TN'],
-  'Friuli Venezia Giulia':['GO','PN','TS','UD'],
-  'Emilia Romagna':['BO','FE','FC','MO','PR','PC','RA','RE','RN'],
-  'Toscana':['AR','FI','GR','LI','LU','MS','PI','PO','PT','SI'],
-  'Sardegna':['CA','CI','MD','NU','OG','OR','SS','SU','VS'],
-  'Umbria':['PG','TR'],
-  'Marche':['AN','AP','FM','MC','PU'],
-  'Lazio':['FR','LT','RI','RM','VT'],
-  'Abruzzo':['AQ','CH','PE','TE'],
-  'Molise':['CB','IS'],
-  'Campania':['AV','BN','CE','NA','SA'],
-  'Puglia':['BA','BR','BT','FG','LE','TA'],
-  'Basilicata':['MT','PZ'],
-  'Calabria':['CS','CZ','KR','RC','VV'],
-  'Sicilia':['AG','CL','CT','EN','ME','PA','RG','SR','TP'],
-  'Piemonte/Aosta':['AO']
-};
 var PROVINCE_ADJ={
   'AG':['CL','PA','TP'],'AL':['AT','BI','CN','GE','NO','PC','PV','TO','VC'],
   'AN':['AP','FM','MC','PG','PU'],'AO':['TO','VC'],
@@ -483,93 +487,101 @@ var COMUNE_PROV={
   'carate brianza':'MB','vimercate':'MB','merate':'LC','erba':'CO',
   'cantù':'CO','mariano comense':'CO','limbiate':'MB'
 };
+var TXT_STATE={companies:[],generated:null};
+var MISSING_LIST=[];
+var CONTACT_PREFS={};
+var LL_MATCHES=[];
+var WA_QUEUE=[];var WA_IDX=0;
+var skippedCompanies=[];var skippedBtn=null;
+var COMPANIES_DB=[];var COMPANIES_SF=[];
+var CURRENT_MODE='db';
+
+var PROD_GROUPS={
+  'StockSparK':['SSK','SSK BI','APP','BGR','VIDEO'],
+  'WebSparK':['WS','SERV','RENT','TRUCK','B2B','AUC','LVS','SELL','SEO','CF','CP','AI'],
+  'LeadSparK':['LS','LSR','CSK','WAPP','CDP','AGEN','FSK','PSK','TIP'],
+  'Marketing':['MKTG'],
+  'Training':['TRAIN'],
+  'Gestionale':['GA']
+};
+
+var PROD_LINKS={
+  'WS':   {label:'Presentazione WebSparK',url:'https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present'},
+  'SERV': {label:'Demo Postvendita',url:'https://demo-service-it.getwebspark.com/'},
+  'RENT': {label:'Demo Noleggio',url:'https://webspark-revolution-mobility.getwebspark.com/'},
+  'TRUCK':{label:'Presentazione Truck',url:'https://docs.google.com/presentation/d/196mZFXnlcAtrIFjWzBShXlJ8y08pZDMG5WUFR25tMAk/present'},
+  'B2B':  {label:'Demo B2B/Aste',url:'https://demo-b2b-add.wsr74.dealerk.com/'},
+  'SSK':  {label:'Presentazione StockSparK',url:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing'},
+  'SSK BI':{label:'Presentazione StockSparK',url:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing'},
+  'BGR':  {label:'Demo Rimozione Sfondo',url:'https://webspark-revolution-it.getwebspark.com/background-removal/'},
+  'VIDEO':{label:'Demo AI Video',url:'https://webspark-revolution-it.getwebspark.com/auto/?has360=1'},
+  'LS':   {label:'Presentazione LeadSparK',url:'https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present'},
+  'LSR':  {label:'Presentazione LeadSparK Revolution',url:'https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present'},
+  'CSK':  {label:'Presentazione CallSparK',url:'https://docs.google.com/presentation/d/185utUR8TkIl8lUsW3DkpNNW8RDtiVBHUIB_ghK8A2hk/present'},
+  'FSK':  {label:'Presentazione FidSparK',url:'https://docs.google.com/presentation/d/1tKwQ8I8RfuCLswVCublwRyTGEnwUCwqAmaMzWxID7Is/present'},
+  'PSK':  {label:'Presentazione PredictSparK',url:'https://docs.google.com/presentation/d/1LqHmmVMst3zOtl-KggSmUg0NWGezzIBG9qtFQ78RfqY/present'},
+  'SEO':  {label:'Presentazione SeoSparK',url:'https://docs.google.com/presentation/d/1dj2zvXwHZLN9OkFHTjeJRXoZtXFjHFF5KCg7u6NLR2g/present'},
+  'MKTG': {label:'Presentazione AdSparK',url:'https://docs.google.com/presentation/d/1fQ6g4F2XHEdEYb2RsL7eAcI_n26x2xWXL0RO1ctsD2w/present'},
+  'AGEN': {label:'Webinar AgentSparK',url:'https://motork-io.zoom.us/rec/component-page?accessLevel=meeting&hasValidToken=false&clusterId=us02&action=play&filePlayId=&componentName=recording-register&meetingId=H65yJ0A4QncHNvjtVoY7wtYfQzm6cbZuFhsXOWGdvHWHJ7PMcit0qK4v-KSdQFSr.0N0fqQNmIOSQd9fj'},
+  'CDP':  {label:'Webinar CDP',url:'https://motork-io.zoom.us/rec/component-page?accessLevel=meeting&hasValidToken=false&clusterId=us02&action=play&filePlayId=&componentName=recording-register&meetingId=9lFnDDTJkKz3zm7isGQmH4OFdkbmPg_iOuiB-aARgGwksY0-8Z9Rb4ObcUUamCBD.-4-O_An63Ih26-E5'},
+  'WAPP': {label:'Webinar WhatsApp Business',url:'https://motork-io.zoom.us/rec/component-page?accessLevel=meeting&hasValidToken=false&clusterId=us02&action=play&filePlayId=&componentName=recording-register&meetingId=IPGLilj65qFlys7NEgx8P0RvXGootNKy1bhncbCQr4LICYoQ49AaSAzHa7ywlg.0VZpH93yfrTb6dIo'}
+};
+
+function getContactPref(cname,email){if(!CONTACT_PREFS[cname])return null;return CONTACT_PREFS[cname][email]||null;}
+function setContactPref(cname,email,val){if(!CONTACT_PREFS[cname])CONTACT_PREFS[cname]={};CONTACT_PREFS[cname][email]=val;}
+function getDefaultPref(ct){if(/digital.?manager/i.test(ct.role||''))return 'A';if(/titolar/i.test(ct.role||''))return 'CC';return 'CC';}
+
 var PROD_MAP={
-  // WebSparK Sales (sito vendita - classic e revolution)
   'ws - core':'WS','ws - easy':'WS','ws - advanced':'WS','ws - premium':'WS',
-  'webspark sales':'WS','ws - customization fee (monthly)':'WS','webspark - multilanguage':'WS',
-  'webspark revolution - advanced':'WS','webspark revolution - core':'WS','webspark revolution - premium':'WS',
+  'webspark sales':'WS','webspark revolution - advanced':'WS','webspark revolution - core':'WS','webspark revolution - premium':'WS',
   'ws revolution - core':'WS','ws revolution - advanced':'WS','ws revolution - premium':'WS',
-  'ws - car configurator brand(s)':'WS','webspark - car configurator':'WS','ws - 3rd level dominio car configurator':'WS',
-  'webspark - online sales':'SELL','webspark training':'TRAIN',
-  // WebSparK Rent
-  'ws - rent website':'RENT','ws revolution - rent website':'RENT',
-  'webspark revolution - mobility':'RENT','webspark revolution - rent website':'RENT',
-  // WebSparK Service
+  'ws - customization fee (monthly)':'WS','webspark - multilanguage':'WS',
+  'ws - car configurator brand(s)':'WS','webspark - car configurator':'WS',
+  'ws - rent website':'RENT','ws revolution - rent website':'RENT','webspark revolution - mobility':'RENT',
   'ws - service website':'SERV','webspark revolution - service':'SERV',
-  // WebSparK Truck
   'ws revolution - truck':'TRUCK','webspark revolution - truck':'TRUCK',
-  // WebSparK B2B / Auction
   'webspark b2b':'B2B','ws b2b':'B2B',
-  // Creative Pack
   'webspark - ai content generator tool':'CP','ws - ai content generator tool':'CP',
   'webspark - elementor pro':'CP','ws - elementor pro':'CP',
-  // Cloudflare
-  'cloudflare':'CF','cloudFlare':'CF',
-  // LeadSparK (LS = Essential/Premium/Professional/Pillar)
+  'webspark - online sales':'SELL','sellspark (online sales)':'SELL',
+  'cloudflare':'CF',
   'ls - premium':'LS','ls - professional':'LS','ls - professional smtp':'LS',
   'ls - pillar':'LS','ls - lead manager':'LS','ls - bdc bundle':'LS',
   'ls - customization fee (monthly)':'LS','ls - db read replica':'LS',
   'leadspark essential':'LS','leadspark essential - professional':'LS','leadspark automation':'LS',
-  // LeadSparK Revolution (LSR)
   'leadspark revolution':'LSR','ls 2 - premium':'LSR','leadspark revolution - data warehouse':'LSR',
-  // TIP Report (legacy)
   'ls1 reporting':'TIP','reportspark':'TIP',
-  // WhatsApp Business
   'lsk - whatsapp business api':'WAPP','lsk - whatsapp business premium':'WAPP',
-  // CallSparK
   'callspark':'CSK','callspark - 100 calls':'CSK','callspark - 200 calls':'CSK','callspark - custom':'CSK',
   'ls - telephone system integration and maintenance':'CSK',
-  // Training
   'leadspark training - small':'TRAIN','leadspark training - medium':'TRAIN','leadspark training - large':'TRAIN',
-  // StockSparK
   'stockspark':'SSK','stockspark (ws - multipublication)':'SSK','stockspark - customization fee (monthly)':'SSK',
   'stockspark advanced':'SSK BI',
   'stockspark app':'APP','carspark app':'APP',
-  // Background Removal
   'ssk - background removal':'BGR','ssk - background removal - small':'BGR','ssk - background removal - custom':'BGR',
   'ssk - background removal 1 - 100 images':'BGR','ssk - background removal 100 - 250 images':'BGR',
   'ssk - background removal 250 - 500 images':'BGR','ssk - branded showrooms background removal':'BGR',
   'stockspark - custom showrooms background removal':'BGR',
-  // AI Video
   'ssk - ai videos':'VIDEO','ssk - ai videos - 20 videos':'VIDEO',
-  // StockSpark Training
   'stockspark training':'TRAIN',
-  // FidSparK
   'fidspark':'FSK','fidspark premium':'FSK','fidspark advanced':'FSK',
-  // SeoSparK
   'seospark premium':'SEO','seospark x advanced':'SEO','seospark x premium':'SEO',
-  // PredictSparK
   'predictspark':'PSK','predictspark advanced':'PSK','predictspark premium':'PSK',
-  // AgentSparK
-  'agentspark':'AGEN',
-  // CDP
-  'customer data platform':'CDP',
-  // LiveSparK
-  'livespark':'LVS',
-  // SellSparK
-  'sellspark (online sales)':'SELL',
-  // Marketing (= Lead Generation nel filtro)
+  'agentspark':'AGEN','customer data platform':'CDP','livespark':'LVS',
   'marketing management fee':'MKTG','marketing management fee (extra)':'MKTG',
   'marketing tech fee':'MKTG','marketing tech fee (extra)':'MKTG','campaign budget':'MKTG',
   'facebook automotive feed':'MKTG','facebook automotive feed - large':'MKTG','facebook automotive feed - small':'MKTG',
   'google feed vehicle ads - large':'MKTG','google feed vehicle ads - small':'MKTG',
-  // Gestionale (GA)
+  'trainspark (training as a service)':'TRAIN','trainspark platform onboarding - large':'TRAIN',
+  'trainspark platform onboarding - small':'TRAIN','trainspark silver':'TRAIN','webspark training':'TRAIN',
+  'powerbi licences':'TRAIN',
   'gestionale auto':'GA','gestionale dealer':'GA','gestionale web':'GA',
   'gestionale other services':'GA','gestionale ads':'GA',
-  // Integrazioni
   'cdk - stock management and negotiation data':'INT',
   'keyloop - (windrakar - autoline) vehicle stock data integration':'INT',
-  'keyloop - (windrakar - autoline) workshop order reservation - service booking data integration':'INT',
   'toshiko - offers and contracts connector':'INT',
   'mercedes benz - lead management data integration':'INT',
-  'cross - offers, contracts and workshop orders data integration':'INT',
-  'customer first - offers and contracts data import':'INT',
-  'visual software infinity - database connector':'INT',
-  // Altro
-  'full platform':'FULL','ai creative studio':'AI','powerbi licences':'BI',
-  'trainspark (training as a service)':'TRAIN','trainspark platform onboarding - large':'TRAIN',
-  'trainspark platform onboarding - small':'TRAIN','trainspark silver':'TRAIN',
-  'webspark training':'TRAIN'
+  'full platform':'WS','ai creative studio':'AI'
 };
 var PROD_LABELS={
   'WS':'WebSparK Sales','SERV':'WebSparK Service','RENT':'WebSparK Rent',
@@ -578,35 +590,18 @@ var PROD_LABELS={
   'BGR':'Background Removal','VIDEO':'AI Video',
   'LS':'LeadSparK','LSR':'LeadSparK Revolution',
   'CSK':'CallSparK','WAPP':'WhatsApp Business',
-  'MKTG':'Lead Generation','SEO':'SeoSparK','PSK':'PredictSparK',
+  'MKTG':'Mktg/Feed','SEO':'SeoSparK','PSK':'PredictSparK',
   'FSK':'FidSparK','AGEN':'AgentSparK','CDP':'CDP',
   'LVS':'LiveSparK','SELL':'SellSparK','CF':'Cloudflare',
-  'GA':'Gestionale (basso spend.)',
-  'CP':'Creative Pack','TRAIN':'Formazione','TIP':'TIP Report',
-  'INT':'Integrazione','FULL':'Full Platform','AI':'AI Creative Studio','BI':'PowerBI'
+  'GA':'Gestionale Auto',
+  'CP':'Creative Pack','TRAIN':'Training','TIP':'ReportSparK',
+  'AI':'AI Creative Studio','INT':'Integrazione'
 };
 function mapProds(str){
   if(!str||!str.trim()) return [];
-  // DB Clienti direct abbreviation map
-  var DB_ABBR={
-    'ws':'WS','rev':'WS','rent':'RENT','serv':'SERV','truck':'TRUCK','b2b':'B2B','auc':'AUC',
-    'ssk':'SSK','ssk bi':'SSK BI','app':'APP','bgr':'BGR','video':'VIDEO',
-    'ls':'LS','lsr':'LSR','csk':'CSK','wapp':'WAPP',
-    'mktg':'MKTG','seo':'SEO','psk':'PSK','fsk':'FSK','agen':'AGEN','cdp':'CDP',
-    'lvs':'LVS','sell':'SELL','cf':'CF','ga':'GA','cp':'CP',
-    'train':'TRAIN','tip':'TIP','int':'INT','full':'FULL','ai':'AI','bi':'BI',
-    'si-ws':'WS','si-rev':'WS','si-rent':'RENT','si-serv':'SERV','si-truck':'TRUCK',
-    'si-b2b':'B2B','si-ssk':'SSK','si-ssk bi':'SSK BI','si-app':'APP','si-bgr':'BGR',
-    'si-video':'VIDEO','si-ls':'LS','si-lsr':'LSR','si-csk':'CSK','si-wapp':'WAPP',
-    'si-mktg':'MKTG','si-seo':'SEO','si-psk':'PSK','si-fsk':'FSK','si-agen':'AGEN',
-    'si-cdp':'CDP','si-lvs':'LVS','si-sell':'SELL','si-cf':'CF','si-ga':'GA'
-  };
   var res=new Set();
   str.split(';').forEach(function(p){
     var k=p.toLowerCase().trim();
-    // 1. Direct DB abbreviation match
-    if(DB_ABBR[k]){res.add(DB_ABBR[k]);return;}
-    // 2. PROD_MAP full name match
     if(PROD_MAP[k]){res.add(PROD_MAP[k]);return;}
     var keys=Object.keys(PROD_MAP);
     for(var i=0;i<keys.length;i++){if(k.indexOf(keys[i])!==-1){res.add(PROD_MAP[keys[i]]);return;}}
@@ -614,6 +609,20 @@ function mapProds(str){
   return [...res];
 }
 
+var LINKS_CATALOG='Link disponibili (inseriscili come <a href=URL>testo</a> quando pertinenti):\n'+
+  '- Presentazione StockSparK: https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing\n'+
+  '- Demo WebSparK: https://webspark-revolution-it.getwebspark.com/\n'+
+  '- Presentazione WebSparK: https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present\n'+
+  '- Presentazione LeadSparK: https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present\n'+
+  '- Presentazione CallSparK: https://docs.google.com/presentation/d/185utUR8TkIl8lUsW3DkpNNW8RDtiVBHUIB_ghK8A2hk/present\n'+
+  '- Presentazione PredictSparK: https://docs.google.com/presentation/d/1LqHmmVMst3zOtl-KggSmUg0NWGezzIBG9qtFQ78RfqY/present\n'+
+  '- Presentazione FidSparK: https://docs.google.com/presentation/d/1tKwQ8I8RfuCLswVCublwRyTGEnwUCwqAmaMzWxID7Is/present\n'+
+  '- Presentazione SeoSparK: https://docs.google.com/presentation/d/1dj2zvXwHZLN9OkFHTjeJRXoZtXFjHFF5KCg7u6NLR2g/present\n'+
+  '- Presentazione AdSparK: https://docs.google.com/presentation/d/1fQ6g4F2XHEdEYb2RsL7eAcI_n26x2xWXL0RO1ctsD2w/present\n'+
+  '- Demo Noleggio: https://webspark-revolution-mobility.getwebspark.com/\n'+
+  '- Demo Truck: https://demo-truck-it.getwebspark.com/\n'+
+  '- Demo Moto: https://demo-moto.websparksite-it.dealerk.com/\n'+
+  '- Demo B2B: https://demo-b2b-add.wsr74.dealerk.com/';
 var FIRMA="\n\n--\nPaolo Pesenti\nSenior Dealer Coach\nMobile Phone: +39 339 4581385\nEmail: paolo.pesenti@motork.io\n\nMotorK Italia SRL\nvia Ludovico d'Aragona 9, 20132 Milano";
 var LINKS_CATALOG='Link disponibili (usali come <a href=URL>testo</a> quando pertinenti):\n- Presentazione StockSparK: https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing\n- Demo WebSparK: https://webspark-revolution-it.getwebspark.com/\n- Presentazione WebSparK: https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present\n- Presentazione LeadSparK: https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present\n- Presentazione CallSparK: https://docs.google.com/presentation/d/185utUR8TkIl8lUsW3DkpNNW8RDtiVBHUIB_ghK8A2hk/present\n- Presentazione PredictSparK: https://docs.google.com/presentation/d/1LqHmmVMst3zOtl-KggSmUg0NWGezzIBG9qtFQ78RfqY/present\n- Presentazione FidSparK: https://docs.google.com/presentation/d/1tKwQ8I8RfuCLswVCublwRyTGEnwUCwqAmaMzWxID7Is/present\n- Presentazione SeoSparK: https://docs.google.com/presentation/d/1dj2zvXwHZLN9OkFHTjeJRXoZtXFjHFF5KCg7u6NLR2g/present\n- Presentazione AdSparK: https://docs.google.com/presentation/d/1fQ6g4F2XHEdEYb2RsL7eAcI_n26x2xWXL0RO1ctsD2w/present\n- Demo Noleggio: https://webspark-revolution-mobility.getwebspark.com/\n- Demo Truck: https://demo-truck-it.getwebspark.com/\n- Demo Moto: https://demo-moto.websparksite-it.dealerk.com/\n- Demo B2B: https://demo-b2b-add.wsr74.dealerk.com/';
 
@@ -636,40 +645,7 @@ var DSM_DIRECTORY=[
 ];
 
 var DATA={account:null,contact:null,database:null};
-var CURRENT_MODE='db';
-var MISSING_LIST=[];
-
-function toggleProdSection(which){
-  var body=document.getElementById('prod-'+which+'-body');
-  var arrow=document.getElementById('prod-'+which+'-arrow');
-  if(!body) return;
-  var open=body.style.display==='none';
-  body.style.display=open?'block':'none';
-  arrow.textContent=open?'▼':'▶';
-  // When opening, render the pills
-  if(open){
-    if(which==='attivi') buildFilters();
-    if(which==='mancanti'){MISSING_LIST=[...new Set(COMPANIES.flatMap(function(c){return c.mappedProds;}))].sort();renderMissingPills();}
-  }
-}
-
-function renderMissingPills(){
-  var el=document.getElementById('f-missing');if(!el)return;el.innerHTML='';
-  MISSING_LIST.forEach(function(v){
-    var sel=ACT.missing.has(v);
-    var p=document.createElement('span');
-    p.className='pill';
-    p.textContent=PROD_LABELS[v]||v;
-    p.style.cssText='background:'+(sel?'#e53935':'#ffeaea')+';border-color:#e53935;color:'+(sel?'#fff':'#e53935')+';opacity:1;cursor:pointer';
-    p.dataset.val=v;
-    p.onclick=function(){
-      if(ACT.missing.has(v)){ACT.missing.delete(v);p.style.background='#ffeaea';p.style.color='#e53935';}
-      else{ACT.missing.add(v);p.style.background='#e53935';p.style.color='#fff';}
-      applyFilters();
-    };
-    el.appendChild(p);
-  });
-} // 'db' = DB Clienti, 'sf' = Account SF
+var CURRENT_MODE='db'; // 'db' = DB Clienti, 'sf' = Account SF
 var COMPANIES_DB=[]; // from database
 var COMPANIES_SF=[]; // from account+contact
 
@@ -720,35 +696,9 @@ function parseCSV(text,cb){
 function afterLoad(type){
   var n=DATA[type]?DATA[type].length:0;
   var el=document.getElementById('st-'+type);
-  if(el){
-    var date=localStorage.getItem?localStorage.getItem('spark_'+type+'_date')||'':'';
-    el.textContent=n>0?n+' righe'+(date?' ('+date+')':''):'Errore';
-    el.className='fst '+(n>0?'ok':'ko');
-    el.title=date?'Aggiornato il '+date:'';
-  }
+  if(el){el.textContent=n>0?n+' righe':'Errore';el.className='fst '+(n>0?'ok':'ko');}
+  // Merge when we have at least account or database
   if(DATA.account||DATA.database) merge();
-}
-
-function saveToStorage(type,text){
-  try{localStorage.setItem('spark_'+type,text);localStorage.setItem('spark_'+type+'_date',new Date().toLocaleDateString('it-IT'));}catch(e){}
-}
-
-function loadFromStorage(){
-  var loaded=0;
-  ['account','contact','database'].forEach(function(t){
-    try{
-      var saved=localStorage.getItem('spark_'+t);
-      var date=localStorage.getItem('spark_'+t+'_date')||'';
-      if(saved){
-        parseCSV(saved,function(rows){DATA[t]=rows;afterLoad(t);});
-        loaded++;
-        var el=document.getElementById('st-'+t);
-        if(el) el.title='Salvato il '+date;
-      }
-    }catch(e){}
-  });
-  if(loaded>0) toast('Dati caricati dalla cache locale ('+loaded+'/3) ✓',3000);
-  else document.getElementById('rcount').textContent='Carica i file CSV dalla sidebar';
 }
 
 function setupInputs(){
@@ -758,7 +708,7 @@ function setupInputs(){
     el.addEventListener('change',function(){
       if(!el.files||!el.files[0]) return;
       var fr=new FileReader();
-      fr.onload=function(e){var txt=e.target.result;saveToStorage(pair[1],txt);parseCSV(txt,function(rows){DATA[pair[1]]=rows;afterLoad(pair[1]);});};
+      fr.onload=function(e){var txt=e.target.result;try{localStorage.setItem('spark_'+pair[1],txt);localStorage.setItem('spark_'+pair[1]+'_date',new Date().toLocaleDateString('it-IT'));}catch(ex){}parseCSV(txt,function(rows){DATA[pair[1]]=rows;afterLoad(pair[1]);});};
       fr.readAsText(el.files[0],'UTF-8');
       el.value='';
     });
@@ -778,7 +728,7 @@ function merge(){
   var co={};
   DATA.account.forEach(function(a){
     if(!a.Name) return;
-    var dsmRaw=(a.DSM||'').trim();
+    var dsmRaw=(a['Success_Manager__r.Name']||a.DSM||'').trim();
     var dsmContacts=[];
     var dsmEmpty=!dsmRaw||dsmRaw==='-'||/^no\s*dsm$/i.test(dsmRaw)||/^nessuno$/i.test(dsmRaw);
     // Mostra sempre la riga DSM (anche vuota), così l'utente può inserire l'email a mano
@@ -794,11 +744,18 @@ function merge(){
     }
     // Sempre un record DSM (email può essere vuota se No DSM — utente decide)
     dsmContacts.push({name:dsmRaw||'DSM',first:'',email:dsmEmail,phone:'',role:'DSM',src:'dsm'});
-    co[norm(a.Name)]={name:a.Name,type:a.Customer_Type__c||'',rating:a.Rating||'',region:nr(a.Region_Area__c||''),province:(a.BillingState||'').toUpperCase(),products:a.Active_Products_List__c||'',mappedProds:mapProds(a.Active_Products_List__c||''),brands:(a.Official_brand__c||'').trim(),website:(a.Website||'').trim(),webProvider:(a.Website_Provider__c||'').trim(),contacts:[],dsm:dsmContacts};
+    co[norm(a.Name)]={name:a.Name,type:a.Customer_Type__c||'',rating:a.Rating||'',region:nr(a.Region_Area__c||''),province:(a.BillingState||'').toUpperCase(),products:a.Active_Products_List__c||'',mappedProds:mapProds(a.Active_Products_List__c||''),brands:(a.Official_brand__c||'').trim(),website:(a.Website||'').trim(),webProvider:(a.Website_Provider__c||'').trim(),brands:(a.Official_brand__c||'').trim(),website:(a.Website||'').trim(),webProvider:(a.Website_Provider__c||'').trim(),contacts:[],dsm:dsmContacts};
   });
   DATA.contact.forEach(function(c){
     var an=c['Account.Name']||c.Account||'';if(!an) return;
     var k=norm(an);
+    var cDsmRaw=(c['Account.Success_Manager__r.Name']||'').trim();
+    if(co[k]&&cDsmRaw&&cDsmRaw!=='-'&&co[k].dsm&&co[k].dsm[0]&&!co[k].dsm[0].email){
+      var cdParts=cDsmRaw.toLowerCase().replace(/[àáâãäå]/g,'a').replace(/[èéêë]/g,'e').replace(/[ìíîï]/g,'i').replace(/[òóôõö]/g,'o').replace(/[ùúûü]/g,'u').replace(/[^a-z0-9 ]/g,'').trim().split(/ +/);
+      var cdEmail=cdParts.length>=2?cdParts[0]+'.'+cdParts[cdParts.length-1]+'@motork.io':cdParts[0]+'@motork.io';
+      var cdDir=DSM_DIRECTORY.find(function(d){return d.email===cdEmail;});
+      co[k].dsm=[{name:cdDir?cdDir.name:cDsmRaw,email:cdEmail,role:'DSM',src:'dsm'}];
+    }
     if(!co[k]){var ks=Object.keys(co);for(var i=0;i<ks.length;i++){if(fuzzy(an,ks[i])){k=ks[i];break;}}}
     if(!co[k]) return;
     var email=(c.Email||'').trim(),fn=(c.FirstName||'').trim(),ln=(c.LastName||'').trim();
@@ -840,10 +797,21 @@ function merge(){
       if(!email&&!phone) return;
       var ex=coDB[k].contacts.find(function(x){return x.email&&x.email===email;});
       if(!ex) coDB[k].contacts.push({name:(fn+' '+ln).trim(),first:fn,email:email,phone:phone,role:role,src:'db'});
-      // Assign DSM from SF data if available
+      // Read DSM from DB column L
+      var dbDsmRaw=(r['DSM']||'').trim();
+      if(dbDsmRaw&&dbDsmRaw!=='-'&&!/^no\s*dsm$/i.test(dbDsmRaw)){
+        var dbParts=dbDsmRaw.toLowerCase()
+          .replace(/[àáâãäå]/g,'a').replace(/[èéêë]/g,'e')
+          .replace(/[ìíîï]/g,'i').replace(/[òóôõö]/g,'o').replace(/[ùúûü]/g,'u')
+          .replace(/[^a-z0-9 ]/g,'').trim().split(/ +/);
+        var dbDsmEmail=dbParts.length>=2?dbParts[0]+'.'+dbParts[dbParts.length-1]+'@motork.io':dbParts[0]+'@motork.io';
+        var dbDirEntry=DSM_DIRECTORY.find(function(d){return d.email===dbDsmEmail;});
+        coDB[k].dsm=[{name:dbDirEntry?dbDirEntry.name:dbDsmRaw,email:dbDsmEmail,role:'DSM',src:'dsm'}];
+      }
+      // Assign DSM from SF data if available (only if not already set from DB)
       var sfMatch=COMPANIES_SF.find(function(c){return norm(c.name)===k||fuzzy(c.name,an);});
       if(sfMatch){
-        coDB[k].dsm=sfMatch.dsm;
+        if(!coDB[k].dsm[0].email) coDB[k].dsm=sfMatch.dsm;
         coDB[k].brands=sfMatch.brands;
         coDB[k].website=sfMatch.website;
         coDB[k].mappedProds=sfMatch.mappedProds;
@@ -857,38 +825,40 @@ function merge(){
 
   // Set active list based on current mode
   COMPANIES=CURRENT_MODE==='db'?COMPANIES_DB:COMPANIES_SF;
-  buildFilters();applyFilters();renderMissingPills();
+  buildFilters();applyFilters();
 }
 
-function buildFilters(){
-  var types=new Set(),regions=new Set(),provinces=new Set(),prods=new Set();
-  COMPANIES.forEach(function(c){
-    if(c.type)types.add(c.type);
-    if(c.region)regions.add(c.region);
-    if(c.province)provinces.add(c.province);
-    c.mappedProds.forEach(function(p){prods.add(p);});
-  });
-  ACT.type=new Set(types);ACT.region=new Set(regions);ACT.province=new Set(provinces);ACT.products=new Set(prods);
-  renderPills('f-type',[...types].sort(),ACT.type,tc,null);
-  renderPills('f-region',[...regions].sort(),ACT.region,function(){return '#1a5cb8';},null);
-  renderProvincePills([...provinces].sort());
-  renderPills('f-products',[...prods].sort(),ACT.products,function(){return '#0a9e6e';},PROD_LABELS);
-  MISSING_LIST=[...prods].sort();renderMissingPills();
-  renderContact();
-}
+var PROVINCES_CACHE=[];
+var REGION_PROVINCES_MAP={
+  'Lombardia':['BG','BS','CO','CR','LC','LO','MB','MI','MN','PV','SO','VA'],
+  'Piemonte':['AL','AT','BI','CN','NO','TO','VB','VC'],
+  'Liguria':['GE','IM','SP','SV'],
+  "Valle d'Aosta":['AO'],
+  'Veneto':['BL','PD','RO','TV','VE','VI','VR'],
+  'Trentino':['BZ','TN'],
+  'Friuli Venezia Giulia':['GO','PN','TS','UD'],
+  'Emilia Romagna':['BO','FE','FC','MO','PR','PC','RA','RE','RN'],
+  'Toscana':['AR','FI','GR','LI','LU','MS','PI','PO','PT','SI'],
+  'Sardegna':['CA','NU','OR','SS'],
+  'Umbria':['PG','TR'],'Marche':['AN','AP','FM','MC','PU'],
+  'Lazio':['FR','LT','RI','RM','VT'],'Abruzzo':['AQ','CH','PE','TE'],
+  'Molise':['CB','IS'],'Campania':['AV','BN','CE','NA','SA'],
+  'Puglia':['BA','BR','BT','FG','LE','TA'],'Basilicata':['MT','PZ'],
+  'Calabria':['CS','CZ','KR','RC','VV'],'Sicilia':['AG','CL','CT','EN','ME','PA','RG','SR','TP']
+};
 
 function renderProvincePills(allProvs){
-  var el=document.getElementById('f-province');
-  if(!el) return;
+  var el=document.getElementById('f-province');if(!el) return;
   var activeRegions=[...ACT.region];
   var html='';
-  var grouped=activeRegions.length>0&&activeRegions.length<Object.keys(REGION_PROVINCES).length;
+  var grouped=activeRegions.length>0&&activeRegions.length<Object.keys(REGION_PROVINCES_MAP).length;
   if(grouped){
     activeRegions.sort().forEach(function(reg){
-      var regProvs=(REGION_PROVINCES[reg]||[]).filter(function(p){return allProvs.indexOf(p)!==-1;});
+      var regProvs=(REGION_PROVINCES_MAP[reg]||[]).filter(function(p){return allProvs.indexOf(p)!==-1;});
       if(!regProvs.length) return;
       html+='<div style="display:flex;flex-wrap:wrap;align-items:center;gap:2px;margin-bottom:2px">';
-      html+='<span style="font-size:8px;color:#aaa;font-weight:700;text-transform:uppercase;width:60px;flex-shrink:0">'+reg.substring(0,8)+'</span>';
+      var shortReg={'Lombardia':'LOM','Piemonte':'PIE','Liguria':'LIG',"Valle d'Aosta":'VDA','Veneto':'VEN','Trentino':'TRE','Friuli Venezia Giulia':'FVG','Emilia Romagna':'EMI','Toscana':'TOS','Sardegna':'SAR'};
+      html+='<span style="font-size:8px;color:#aaa;font-weight:700;width:32px;flex-shrink:0">'+(shortReg[reg]||reg.substring(0,3).toUpperCase())+'</span>';
       regProvs.sort().forEach(function(p){
         var act=ACT.province.has(p);
         html+='<span class="ppill" data-v="'+p+'" style="display:inline-block;padding:1px 5px;border-radius:8px;font-size:9px;font-weight:600;cursor:pointer;background:'+(act?'#555':'#e8e8e8')+';color:'+(act?'#fff':'#666')+'">'+p+'</span>';
@@ -909,10 +879,126 @@ function renderProvincePills(allProvs){
       var v=pill.dataset.v;
       if(ACT.province.has(v)) ACT.province.delete(v);
       else ACT.province.add(v);
-      renderProvincePills(allProvs);
-      applyFilters();
+      renderProvincePills(allProvs);applyFilters();
     });
   });
+}
+
+function renderGroupedProdPills(elId,prods,active,color){
+  var el=document.getElementById(elId);if(!el)return;el.innerHTML='';
+  var GRP_LBL={'StockSparK':'SSK','WebSparK':'WS','LeadSparK':'LS','Marketing':'MKTG','Training':'TRAIN','Gestionale':'GA'};
+  Object.keys(PROD_GROUPS).forEach(function(grp){
+    var gp=PROD_GROUPS[grp].filter(function(v){return prods.has(v);});
+    if(!gp.length) return;
+    var row=document.createElement('div');
+    row.style.cssText='display:flex;flex-wrap:wrap;align-items:center;gap:2px;margin-bottom:2px';
+    var lbl=document.createElement('span');
+    lbl.style.cssText='font-size:8px;color:#aaa;font-weight:700;text-transform:uppercase;width:36px;flex-shrink:0';
+    lbl.textContent=GRP_LBL[grp]||grp;
+    row.appendChild(lbl);
+    gp.forEach(function(v){
+      var act=active.has(v);
+      var p=document.createElement('span');
+      p.style.cssText='display:inline-block;padding:1px 5px;border-radius:8px;font-size:9px;font-weight:600;cursor:pointer;background:'+(act?color:'#e8f5ef')+';color:'+(act?'#fff':color);
+      p.textContent=PROD_LABELS[v]||v;
+      p.dataset.val=v;
+      p.onclick=function(){
+        if(active.has(v)){active.delete(v);p.style.background='#e8f5ef';p.style.color=color;}
+        else{active.add(v);p.style.background=color;p.style.color='#fff';}
+        applyFilters();
+      };
+      row.appendChild(p);
+    });
+    el.appendChild(row);
+  });
+}
+
+function renderMissingPills(){
+  var el=document.getElementById('f-missing');if(!el)return;el.innerHTML='';
+  var GRP_LBL3={'StockSparK':'SSK','WebSparK':'WS','LeadSparK':'LS','Marketing':'MKTG','Training':'TRAIN','Gestionale':'GA'};
+  Object.keys(PROD_GROUPS).forEach(function(grp){
+    var grpProds=PROD_GROUPS[grp].filter(function(v){return MISSING_LIST.indexOf(v)!==-1;});
+    if(!grpProds.length) return;
+    var row=document.createElement('div');
+    row.style.cssText='display:flex;flex-wrap:wrap;align-items:center;gap:2px;margin-bottom:2px';
+    var lbl=document.createElement('span');
+    lbl.style.cssText='font-size:8px;color:#aaa;font-weight:700;text-transform:uppercase;width:36px;flex-shrink:0';
+    lbl.textContent=GRP_LBL3[grp]||grp;
+    row.appendChild(lbl);
+    grpProds.forEach(function(v){
+      var sel=ACT.missing.has(v);
+      var p=document.createElement('span');
+      p.style.cssText='display:inline-block;padding:1px 5px;border-radius:8px;font-size:9px;font-weight:600;cursor:pointer;background:'+(sel?'#e53935':'#ffeaea')+';color:'+(sel?'#fff':'#e53935');
+      p.textContent=PROD_LABELS[v]||v;
+      p.dataset.val=v;
+      p.onclick=function(){
+        if(ACT.missing.has(v)){ACT.missing.delete(v);p.style.background='#ffeaea';p.style.color='#e53935';}
+        else{ACT.missing.add(v);p.style.background='#e53935';p.style.color='#fff';}
+        applyFilters();
+      };
+      row.appendChild(p);
+    });
+    el.appendChild(row);
+  });
+}
+
+function toggleAllFilters(open){
+  ['tipo','contatto','regione','provincia','prodotti'].forEach(function(w){
+    var body=document.getElementById('filt-'+w+'-body');
+    var arrow=document.getElementById('filt-'+w+'-arrow');
+    if(body){body.style.display=open?'block':'none';}
+    if(arrow) arrow.textContent=open?'▼':'▶';
+  });
+  // Also handle prodotti mancanti
+  var pm=document.getElementById('prod-mancanti-body');
+  var pma=document.getElementById('prod-mancanti-arrow');
+  if(pm){pm.style.display=open?'block':'none';}
+  if(pma) pma.textContent=open?'▼':'▶';
+  if(open){
+    MISSING_LIST=Object.values(PROD_GROUPS).flat().filter(function(v){return PROD_LABELS[v];});
+    renderMissingPills();
+    buildFilters();
+  }
+}
+
+function toggleFilter(which){
+  var body=document.getElementById('filt-'+which+'-body');
+  var arrow=document.getElementById('filt-'+which+'-arrow');
+  if(!body) return;
+  var open=body.style.display==='none';
+  body.style.display=open?'block':'none';
+  if(arrow) arrow.textContent=open?'▼':'▶';
+}
+
+function toggleProdSection(which){
+  var body=document.getElementById('prod-'+which+'-body');
+  var arrow=document.getElementById('prod-'+which+'-arrow');
+  if(!body) return;
+  var open=body.style.display==='none';
+  body.style.display=open?'block':'none';
+  arrow.textContent=open?'▼':'▶';
+  if(open&&which==='mancanti'){
+    MISSING_LIST=Object.values(PROD_GROUPS).flat().filter(function(v){return PROD_LABELS[v];});
+    renderMissingPills();
+  }
+  if(open&&which==='attivi') buildFilters();
+}
+
+function buildFilters(){
+  var types=new Set(),regions=new Set(),provinces=new Set(),prods=new Set();
+  COMPANIES.forEach(function(c){
+    if(c.type)types.add(c.type);
+    if(c.region)regions.add(c.region);
+    if(c.province)provinces.add(c.province);
+    c.mappedProds.forEach(function(p){prods.add(p);});
+  });
+  ACT.type=new Set(types);ACT.region=new Set(regions);ACT.province=new Set(provinces);ACT.products=new Set(prods);
+  renderPills('f-type',[...types].sort(),ACT.type,tc,null);
+  renderPills('f-region',[...regions].sort(),ACT.region,function(){return '#1a5cb8';},null);
+  PROVINCES_CACHE=[...provinces].sort();renderProvincePills(PROVINCES_CACHE);
+  renderGroupedProdPills('f-products',prods,ACT.products,'#0a9e6e');
+  MISSING_LIST=Object.values(PROD_GROUPS).flat().filter(function(v){return prods.has(v)&&PROD_LABELS[v];});
+  renderContact();
 }
 
 function renderPills(id,vals,active,cfn,labels){
@@ -922,17 +1008,7 @@ function renderPills(id,vals,active,cfn,labels){
     p.textContent=labels&&labels[v]?labels[v]:v;
     var col=cfn(v);p.style.cssText='background:'+col+'22;border-color:'+col+';color:'+col;
     p.dataset.val=v;
-    p.onclick=function(){
-      if(active.has(v)){active.delete(v);p.classList.add('off');}
-      else{active.add(v);p.classList.remove('off');}
-      // Re-render provinces grouped when region changes
-      if(id==='f-region'){
-        var allProvs=[...ACT.province];
-        COMPANIES.forEach(function(c){if(c.province)allProvs.push(c.province);});
-        renderProvincePills([...new Set(allProvs)].sort());
-      }
-      applyFilters();
-    };
+    p.onclick=function(){if(active.has(v)){active.delete(v);p.classList.add('off');}else{active.add(v);p.classList.remove('off');}applyFilters();};
     el.appendChild(p);
   });
 }
@@ -949,13 +1025,11 @@ function renderContact(){
 
 function faAll(key,elId){
   document.getElementById(elId).querySelectorAll('.pill').forEach(function(p){ACT[key].add(p.dataset.val);p.classList.remove('off');});
-  if(key==='region'){var allProvs=[];COMPANIES.forEach(function(c){if(c.province)allProvs.push(c.province);});renderProvincePills([...new Set(allProvs)].sort());}
+  if(key==='region'){renderProvincePills(PROVINCES_CACHE);}
   applyFilters();
 }
 function faNone(key,elId){
-  document.getElementById(elId).querySelectorAll('.pill').forEach(function(p){ACT[key].delete(p.dataset.val);p.classList.add('off');});
-  if(key==='region'){var allProvs=[];COMPANIES.forEach(function(c){if(c.province)allProvs.push(c.province);});renderProvincePills([...new Set(allProvs)].sort());}
-  applyFilters();
+  document.getElementById(elId).querySelectorAll('.pill').forEach(function(p){ACT[key].delete(p.dataset.val);p.classList.add('off');});applyFilters();
 }
 
 function applyFilters(){
@@ -1050,14 +1124,58 @@ function renderList(){
     cb.onchange=function(){if(cb.checked)SELECTED.add(c.name);else SELECTED.delete(c.name);updSel();};
     h.onclick=function(e){if(e.target!==cb){cb.checked=!cb.checked;cb.onchange();}};
     card.appendChild(h);
+    // DSM in fondo con sfondo blu
+    if(c.dsm&&c.dsm[0]&&c.dsm[0].email){
+      var dsmRow=document.createElement('div');dsmRow.className='crow';
+      if(!_showContacts) dsmRow.style.display='none';
+      dsmRow.style.cssText='background:#e8f0fe;border-top:2px solid #c5d5f5';
+      var dsmPref=getContactPref(c.name,'__dsm__')||'CC';
+      var dsmNameEl=document.createElement('div');dsmNameEl.className='cn2';dsmNameEl.style.flex='1';
+      dsmNameEl.innerHTML='<span style="font-size:9px;color:#1a5cb8;font-weight:700;letter-spacing:.5px;margin-right:4px">DSM</span><span style="color:#1a5cb8;font-weight:600">'+c.dsm[0].name+'</span><div class="ce" style="color:#5c7cfa">'+c.dsm[0].email+'</div>';
+      var dsmSel=document.createElement('select');
+      dsmSel.style.cssText='font-size:11px;padding:2px 6px;border:1px solid #c5d5f5;border-radius:4px;width:80px;flex-shrink:0';
+      ['A','CC','Escludi'].forEach(function(v){var o=document.createElement('option');o.value=v;o.textContent=v;if(v===dsmPref)o.selected=true;dsmSel.appendChild(o);});
+      dsmSel.onchange=function(e){setContactPref(c.name,'__dsm__',e.target.value==='Escludi'?'NO':e.target.value);};
+      dsmRow.appendChild(dsmNameEl);dsmRow.appendChild(dsmSel);
+      card.appendChild(dsmRow);
+    }
+    // "Escludi tutti" button in card header
+    (function(){
+      var excBtn=document.createElement('button');
+      excBtn.textContent='✕ Escludi tutti';
+      excBtn.style.cssText='margin-left:auto;font-size:9px;padding:1px 6px;border:1px solid #e53935;border-radius:4px;background:#fff;color:#e53935;cursor:pointer;flex-shrink:0';
+      excBtn.addEventListener('click',function(e){
+        e.stopPropagation();
+        if(!CONTACT_PREFS[c.name]) CONTACT_PREFS[c.name]={};
+        c.contacts.forEach(function(ct){if(ct.email) CONTACT_PREFS[c.name][ct.email]='NO';});
+        CONTACT_PREFS[c.name]['__dsm__']='NO';
+        renderList();
+      });
+      h.appendChild(excBtn);
+    })();
     c.contacts.forEach(function(ct){
       var row=document.createElement('div');row.className='crow';
       if(!_showContacts) row.style.display='none';
       var isTit=ct.role&&ct.role.toLowerCase().includes('titol');
-      row.innerHTML='<div class="cn2">'+ct.name+(ct.role?'<span class="rbadge '+(isTit?'rb-t':'rb-o')+'">'+ct.role+'</span>':'')+'</div>'+(ct.email?'<div class="ce">'+ct.email+'</div>':'')+(ct.phone&&ct.phone!=='-'?'<div class="cp">'+ct.phone+'</div>':'');
+      var isDM=/digital.?manager/i.test(ct.role||'');
+      var defPref=isDM?'A':(isTit?'CC':'CC');
+      var pref=ct.email?getContactPref(c.name,ct.email)||defPref:null;
+      var roleHtml=ct.role?'<span class="rbadge '+(isTit?'rb-t':(isDM?'rb-dm':'rb-o'))+'">'+ct.role+'</span>':'';
+      var nameDiv=document.createElement('div');nameDiv.className='cn2';nameDiv.style.flex='1';
+      nameDiv.innerHTML=ct.name+roleHtml+'<div>'+(ct.email?'<span class="ce">'+ct.email+'</span>':'')+
+        (ct.phone&&ct.phone!=='-'?'<span class="cp" style="margin-left:6px">'+ct.phone+'</span>':'')+
+        '</div>';
+      row.appendChild(nameDiv);
+      if(ct.email&&pref!==null){
+        var sel=document.createElement('select');
+        sel.style.cssText='font-size:11px;padding:2px 6px;border:1px solid #ddd;border-radius:4px;width:80px;flex-shrink:0';
+        ['A','CC','Escludi'].forEach(function(v){var o=document.createElement('option');o.value=v;o.textContent=v;if(v===pref||(v==='Escludi'&&pref==='NO'))o.selected=true;sel.appendChild(o);});
+        sel.onchange=function(e){setContactPref(c.name,ct.email,e.target.value==='Escludi'?'NO':e.target.value);};
+        row.appendChild(sel);
+      }
       card.appendChild(row);
     });
-    el.appendChild(card);
+        el.appendChild(card);
   });
 }
 
@@ -1382,6 +1500,71 @@ var PROD_BENEFITS={
 // ============================================================
 // FOLLOW UP – RICERCA AZIENDA PER NOME
 // ============================================================
+function openLista(){
+  if(!COMPANIES.length){toast('Carica prima i file');return;}
+  document.getElementById('ll-input').value='';
+  document.getElementById('ll-results').innerHTML='';
+  document.getElementById('ll-conferma').style.display='none';
+  document.getElementById('ll-modal').style.display='block';
+}
+
+function cercaLista(){
+  var raw=document.getElementById('ll-input').value.trim();
+  if(!raw){toast('Incolla una lista');return;}
+  var lines=raw.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+  LL_MATCHES=[];var html='';
+  lines.forEach(function(line,i){
+    var lnorm=line.toLowerCase();var results=[];
+    var exact=COMPANIES.filter(function(c){return norm(c.name)===norm(line);});
+    if(exact.length){results=exact.map(function(c){return {company:c,score:100};});}
+    else{
+      var byEmail=COMPANIES.filter(function(c){return c.contacts.some(function(ct){return ct.email&&ct.email.toLowerCase()===lnorm;});});
+      if(byEmail.length){results=byEmail.map(function(c){return {company:c,score:95};});}
+      else{
+        var scored=COMPANIES.map(function(c){
+          var cn=norm(c.name);var score=0;
+          if(cn.indexOf(norm(line))!==-1||norm(line).indexOf(cn)!==-1) score=80;
+          else{var words=norm(line).split(' ');var matched=words.filter(function(w){return w.length>3&&cn.indexOf(w)!==-1;}).length;score=Math.round(matched/Math.max(words.length,1)*70);}
+          return {company:c,score:score};
+        }).filter(function(x){return x.score>40;}).sort(function(a,b){return b.score-a.score;}).slice(0,4);
+        results=scored;
+      }
+    }
+    if(results.length===1&&results[0].score>=80){
+      LL_MATCHES.push({input:line,company:results[0].company,confirmed:true,idx:i});
+      html+='<div style="padding:6px 0;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:8px"><span style="color:#0a9e6e;font-size:14px">✓</span><span style="font-size:12px;flex:1"><strong>'+results[0].company.name+'</strong> <span style="color:#aaa;font-size:10px">← '+line+'</span></span><span style="font-size:10px;color:#aaa">'+results[0].company.province+'</span></div>';
+    } else if(results.length){
+      LL_MATCHES.push({input:line,company:null,confirmed:false,idx:i});
+      html+='<div style="padding:8px 0;border-bottom:1px solid #f0f0f0"><div style="font-size:11px;color:#e65100;margin-bottom:4px">⚠ "'+line+'" — scegli:</div><select id="ll-sel-'+i+'" data-idx="'+(LL_MATCHES.length-1)+'" onchange="confermSingolaLL(this)" style="width:100%;font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:4px"><option value="">-- nessuno / salta --</option>';
+      results.forEach(function(r){html+='<option value="'+norm(r.company.name)+'">'+r.company.name+' ('+r.company.province+') '+Math.round(r.score)+'%</option>';});
+      html+='</select></div>';
+    } else {
+      LL_MATCHES.push({input:line,company:null,confirmed:false,idx:i});
+      html+='<div style="padding:6px 0;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:8px"><span style="color:#e53935;font-size:14px">✗</span><span style="font-size:12px;color:#aaa">'+line+' — non trovato</span></div>';
+    }
+  });
+  document.getElementById('ll-results').innerHTML=html;
+  document.getElementById('ll-conferma').style.display='block';
+}
+
+function confermSingolaLL(sel){
+  var idx=parseInt(sel.dataset.idx);var nameNorm=sel.value;
+  if(!nameNorm){LL_MATCHES[idx].company=null;LL_MATCHES[idx].confirmed=false;return;}
+  var found=COMPANIES.find(function(c){return norm(c.name)===nameNorm;});
+  if(found){LL_MATCHES[idx].company=found;LL_MATCHES[idx].confirmed=true;}
+}
+
+function confermLista(){
+  var toSelect=LL_MATCHES.filter(function(m){return m.confirmed&&m.company;});
+  if(!toSelect.length){toast('Nessuna azienda confermata');return;}
+  document.getElementById('ll-modal').style.display='none';
+  SELECTED=new Set();
+  toSelect.forEach(function(m){SELECTED.add(norm(m.company.name));});
+  FILTERED=COMPANIES.filter(function(c){return SELECTED.has(norm(c.name));});
+  renderList();
+  toast(toSelect.length+' aziende selezionate');
+}
+
 function openVicini(){
   if(!COMPANIES.length){toast('Carica prima i file');return;}
   document.getElementById('vs-comune').value='';
@@ -1404,7 +1587,7 @@ function isMotorKSite(c){
     if(w.indexOf('getwebspark')!==-1||w.indexOf('dealerk')!==-1||w.indexOf('motork')!==-1) return true;
   }
   // Check active products: if has WS/REV/LIV they have a MotorK site
-  if(c.mappedProds&&(c.mappedProds.indexOf('WS')!==-1||c.mappedProds.indexOf('REV')!==-1||c.mappedProds.indexOf('LVS')!==-1)) return true;
+  if(c.mappedProds&&(c.mappedProds.indexOf('WS')!==-1||c.mappedProds.indexOf('REV')!==-1||c.mappedProds.indexOf('LIV')!==-1)) return true;
   return false;
 }
 
@@ -1812,6 +1995,21 @@ function renderTxtModal(found,notFound){
       html+='<option value="'+d.email+'" '+(isMatch?'selected':'')+'>'+d.name+'</option>';
     });
     html+='</select>';
+    // Force preselect DSM after render
+    if(dsm0.email){
+      setTimeout(function(){
+        var sel=document.getElementById('dsmsel_'+idx);
+        if(sel&&dsm0.email){
+          sel.value=dsm0.email;
+          if(sel.value!==dsm0.email){
+            var opt=document.createElement('option');
+            opt.value=dsm0.email;opt.textContent=dsm0.name||dsm0.email;
+            sel.appendChild(opt);sel.value=dsm0.email;
+          }
+          pickDsmFromDir(sel);
+        }
+      },150);
+    }
     html+='<input id="'+dsmId+'" type="text" value="'+dsm0.email+'" data-idx="'+idx+'" data-di="0" onchange="updateDsmEmail(this)" placeholder="nessun DSM — lascia vuoto per non inviare" style="flex:1;font-size:11px;padding:2px 6px;border:1px solid #c5d5f5;border-radius:4px;color:#1a5cb8;min-width:0">';
     html+='<span style="font-size:10px;'+(dsm0.email?'background:#1a5cb8;color:#fff':'background:#eee;color:#999')+';border-radius:3px;padding:1px 6px;white-space:nowrap;flex-shrink:0">'+(dsm0.email?'CC':'—')+'</span>';
     html+='</div>';
@@ -2009,7 +2207,7 @@ function usaSelezione(){
   }
 
   // Link demo per i prodotti selezionati
-  var allProds=['WS','SERV','RENT','TRUCK','B2B','AUC','SSK','SSK BI','APP','BGR','VIDEO','LS','LSR','CSK','WAPP','MKTG','SEO','PSK','FSK','AGEN','CDP','LVS','SELL','CF','GA'];
+  var allProds=[];
   TXT_STATE.companies.forEach(function(state){
     state.proposedProds.forEach(function(p){if(allProds.indexOf(p)===-1) allProds.push(p);});
   });
@@ -2148,6 +2346,11 @@ window.addEventListener('DOMContentLoaded',function(){
   document.getElementById('ai-btn').addEventListener('click',genAI);
   // TXT modal
   document.getElementById('btn-followup').addEventListener('click',openFollowUp);
+  document.getElementById('btn-lista').addEventListener('click',openLista);
+  document.getElementById('ll-close').addEventListener('click',function(){document.getElementById('ll-modal').style.display='none';});
+  document.getElementById('ll-modal').addEventListener('click',function(e){if(e.target===document.getElementById('ll-modal'))document.getElementById('ll-modal').style.display='none';});
+  document.getElementById('fa-missing-all').addEventListener('click',function(){ACT.missing=new Set(MISSING_LIST);renderMissingPills();applyFilters();});
+  document.getElementById('fa-missing-none').addEventListener('click',function(){ACT.missing=new Set();renderMissingPills();applyFilters();});
   document.getElementById('btn-vicini').addEventListener('click',openVicini);
   document.getElementById('vs-modal-close').addEventListener('click',function(){document.getElementById('vs-modal').style.display='none';});
   document.getElementById('vs-modal-inner').addEventListener('click',function(e){e.stopPropagation();});
@@ -2182,12 +2385,6 @@ window.addEventListener('DOMContentLoaded',function(){
     e.target.value='';
   });
   document.getElementById('txt-modal-close').addEventListener('click',function(){document.getElementById('txt-modal').style.display='none';});
-  document.getElementById('fa-missing-all').addEventListener('click',function(){
-    ACT.missing=new Set(MISSING_LIST);renderMissingPills();applyFilters();
-  });
-  document.getElementById('fa-missing-none').addEventListener('click',function(){
-    ACT.missing=new Set();renderMissingPills();applyFilters();
-  });
   var _el_txt_modal_gen=document.getElementById('txt-modal-gen');if(_el_txt_modal_gen) _el_txt_modal_gen.addEventListener('click',genTxtAI);
   var _el_txt_modal_test=document.getElementById('txt-modal-test');if(_el_txt_modal_test) _el_txt_modal_test.addEventListener('click',testMailFromModal);
   var _el_txt_modal_usa=document.getElementById('txt-modal-usa');if(_el_txt_modal_usa) _el_txt_modal_usa.addEventListener('click',usaSelezione);
@@ -2203,8 +2400,8 @@ window.addEventListener('DOMContentLoaded',function(){
   var _el_fa_region_none=document.getElementById('fa-region-none');if(_el_fa_region_none) _el_fa_region_none.addEventListener('click',function(){faNone('region','f-region');});
   var _el_fa_province_all=document.getElementById('fa-province-all');if(_el_fa_province_all) _el_fa_province_all.addEventListener('click',function(){faAll('province','f-province');});
   var _el_fa_province_none=document.getElementById('fa-province-none');if(_el_fa_province_none) _el_fa_province_none.addEventListener('click',function(){faNone('province','f-province');});
-  var _el_fa_products_all=document.getElementById('fa-products-all');if(_el_fa_products_all) _el_fa_products_all.addEventListener('click',function(){faAll('products','f-products');});
-  var _el_fa_products_none=document.getElementById('fa-products-none');if(_el_fa_products_none) _el_fa_products_none.addEventListener('click',function(){faNone('products','f-products');});
+  var _el_fa_products_all=document.getElementById('fa-products-all');if(_el_fa_products_all) _el_fa_products_all.addEventListener('click',function(){var p=new Set(MISSING_LIST);ACT.products=p;renderGroupedProdPills('f-products',new Set(MISSING_LIST),ACT.products,'#0a9e6e');applyFilters();});
+  var _el_fa_products_none=document.getElementById('fa-products-none');if(_el_fa_products_none) _el_fa_products_none.addEventListener('click',function(){ACT.products=new Set();renderGroupedProdPills('f-products',new Set(MISSING_LIST),ACT.products,'#0a9e6e');applyFilters();});
 
   // Sezioni collassabili
   document.querySelectorAll('.lp-section-hdr').forEach(function(hdr){
@@ -2224,11 +2421,47 @@ window.addEventListener('DOMContentLoaded',function(){
     });
   });
 
-
-  loadFromStorage();
+  // Auto-load from Google Drive via CORS proxy
+  var DRIVE_URLS={
+    account:'https://docs.google.com/spreadsheets/d/18vIfwCnBM9PWgDL8_vk5SxvSRsbXC7w8Ouu4G90greo/export?format=csv&gid=1412554961',
+    contact:'https://docs.google.com/spreadsheets/d/18vIfwCnBM9PWgDL8_vk5SxvSRsbXC7w8Ouu4G90greo/export?format=csv&gid=374587942',
+    database:'https://docs.google.com/spreadsheets/d/1Y-PRdKjclVCRyO2gBCNIQZ5zcgM-tvX96FLMcqbCCZw/export?format=csv&gid=2089600509'
+  };
+  var PROXY='https://corsproxy.io/?url=';
+  function loadFromDrive(){
+    document.getElementById('rcount').textContent='Aggiornamento da Google Drive...';
+    Promise.all(['account','contact','database'].map(function(t){
+      return fetch(PROXY+encodeURIComponent(DRIVE_URLS[t]))
+        .then(function(r){if(!r.ok)throw new Error();return r.text();})
+        .then(function(text){return {type:t,text:text,ok:true};})
+        .catch(function(){return {type:t,text:null,ok:false};});
+    })).then(function(results){
+      var ok=results.filter(function(r){return r.ok;}).length;
+      results.forEach(function(r){if(r.text) parseCSV(r.text,function(rows){DATA[r.type]=rows;afterLoad(r.type);});});
+      if(ok===3) toast('Dati aggiornati ✓',3000);
+      else if(ok>0) toast('Aggiornamento parziale ('+ok+'/3)',3000);
+      else document.getElementById('rcount').textContent='Drive non raggiungibile — carica i file manualmente';
+    });
+  }
+  // Load from localStorage on startup
+  (function(){
+    var loaded=0;
+    ['account','contact','database'].forEach(function(t){
+      try{
+        var saved=localStorage.getItem('spark_'+t);
+        var date=localStorage.getItem('spark_'+t+'_date')||'';
+        if(saved){
+          parseCSV(saved,function(rows){DATA[t]=rows;afterLoad(t);});
+          loaded++;
+          var el=document.getElementById('st-'+t);
+          if(el&&date) el.title='Aggiornato il '+date;
+        }
+      }catch(ex){}
+    });
+    if(!loaded) document.getElementById('rcount').textContent='Carica i file CSV dalla sidebar';
+    else toast('Dati caricati dalla cache ✓',2000);
+  })();
 });
 </script>
 </body>
 </html>
-      
-      
