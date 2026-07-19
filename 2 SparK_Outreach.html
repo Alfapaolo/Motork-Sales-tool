@@ -127,6 +127,10 @@ textarea{height:90px;resize:vertical;line-height:1.5}
         <div id="f-type"></div>
       </div>
       <div style="margin-bottom:6px">
+        <div style="font-size:10px;color:#888;margin-bottom:2px">Contatto</div>
+        <div id="f-contact"></div>
+      </div>
+      <div style="margin-bottom:6px">
         <div style="font-size:10px;color:#888;margin-bottom:2px">Regione</div>
         <div class="fa-row"><button class="fa-btn" id="fa-region-all">tutti</button><button class="fa-btn" id="fa-region-none">nessuno</button></div>
         <div id="f-region"></div>
@@ -136,19 +140,20 @@ textarea{height:90px;resize:vertical;line-height:1.5}
         <div class="fa-row"><button class="fa-btn" id="fa-province-all">tutti</button><button class="fa-btn" id="fa-province-none">nessuno</button></div>
         <div id="f-province"></div>
       </div>
+      
       <div style="margin-bottom:6px">
-        <div style="font-size:10px;color:#0a9e6e;font-weight:600;margin-bottom:2px">✓ Prodotti attivi</div>
-        <div class="fa-row"><button class="fa-btn" id="fa-products-all">tutti</button><button class="fa-btn" id="fa-products-none">nessuno</button></div>
-        <div id="f-products"></div>
+        <div onclick="toggleProdSection('attivi')" style="font-size:10px;color:#0a9e6e;font-weight:600;margin-bottom:2px;cursor:pointer;user-select:none">✓ Prodotti attivi <span id="prod-attivi-arrow">▶</span></div>
+        <div id="prod-attivi-body" style="display:none">
+          <div class="fa-row"><button class="fa-btn" id="fa-products-all">tutti</button><button class="fa-btn" id="fa-products-none">nessuno</button></div>
+          <div id="f-products"></div>
+        </div>
       </div>
       <div style="margin-bottom:6px">
-        <div style="font-size:10px;color:#e53935;font-weight:600;margin-bottom:2px">✗ Prodotti mancanti</div>
-        <div class="fa-row"><button class="fa-btn" id="fa-missing-all">tutti</button><button class="fa-btn" id="fa-missing-none">nessuno</button></div>
-        <div id="f-missing"></div>
-      </div>
-      <div style="margin-bottom:6px">
-        <div style="font-size:10px;color:#888;margin-bottom:2px">Contatto</div>
-        <div id="f-contact"></div>
+        <div onclick="toggleProdSection('mancanti')" style="font-size:10px;color:#e53935;font-weight:600;margin-bottom:2px;cursor:pointer;user-select:none">✗ Prodotti mancanti <span id="prod-mancanti-arrow">▶</span></div>
+        <div id="prod-mancanti-body" style="display:none">
+          <div class="fa-row"><button class="fa-btn" id="fa-missing-all">tutti</button><button class="fa-btn" id="fa-missing-none">nessuno</button></div>
+          <div id="f-missing"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -631,7 +636,40 @@ var DSM_DIRECTORY=[
 ];
 
 var DATA={account:null,contact:null,database:null};
-var CURRENT_MODE='db'; // 'db' = DB Clienti, 'sf' = Account SF
+var CURRENT_MODE='db';
+var MISSING_LIST=[];
+
+function toggleProdSection(which){
+  var body=document.getElementById('prod-'+which+'-body');
+  var arrow=document.getElementById('prod-'+which+'-arrow');
+  if(!body) return;
+  var open=body.style.display==='none';
+  body.style.display=open?'block':'none';
+  arrow.textContent=open?'▼':'▶';
+  // When opening, render the pills
+  if(open){
+    if(which==='attivi') buildFilters();
+    if(which==='mancanti'){MISSING_LIST=[...new Set(COMPANIES.flatMap(function(c){return c.mappedProds;}))].sort();renderMissingPills();}
+  }
+}
+
+function renderMissingPills(){
+  var el=document.getElementById('f-missing');if(!el)return;el.innerHTML='';
+  MISSING_LIST.forEach(function(v){
+    var sel=ACT.missing.has(v);
+    var p=document.createElement('span');
+    p.className='pill';
+    p.textContent=PROD_LABELS[v]||v;
+    p.style.cssText='background:'+(sel?'#e53935':'#ffeaea')+';border-color:#e53935;color:'+(sel?'#fff':'#e53935')+';opacity:1;cursor:pointer';
+    p.dataset.val=v;
+    p.onclick=function(){
+      if(ACT.missing.has(v)){ACT.missing.delete(v);p.style.background='#ffeaea';p.style.color='#e53935';}
+      else{ACT.missing.add(v);p.style.background='#e53935';p.style.color='#fff';}
+      applyFilters();
+    };
+    el.appendChild(p);
+  });
+} // 'db' = DB Clienti, 'sf' = Account SF
 var COMPANIES_DB=[]; // from database
 var COMPANIES_SF=[]; // from account+contact
 
@@ -654,7 +692,7 @@ function setMode(mode){
   buildFilters();applyFilters();
 }
 var COMPANIES=[],FILTERED=[],SELECTED=new Set();
-var ACT={type:new Set(),region:new Set(),province:new Set(),products:new Set(),contact:new Set(['any'])};
+var ACT={type:new Set(),region:new Set(),province:new Set(),products:new Set(),missing:new Set(),contact:new Set(['any'])};
 var WA_QUEUE=[],WA_IDX=0;
 var _linkMap=[];
 var TC={'Customer':'#1eb854','Customer GA':'#1eb854','Customer Prospect':'#f5c400','Ex Customer':'#9e9e9e','New':'#1a5cb8','New Prospect':'#f5c400','Prospect':'#f5c400','default':'#888'};
@@ -819,7 +857,7 @@ function merge(){
 
   // Set active list based on current mode
   COMPANIES=CURRENT_MODE==='db'?COMPANIES_DB:COMPANIES_SF;
-  buildFilters();applyFilters();
+  buildFilters();applyFilters();renderMissingPills();
 }
 
 function buildFilters(){
@@ -835,42 +873,38 @@ function buildFilters(){
   renderPills('f-region',[...regions].sort(),ACT.region,function(){return '#1a5cb8';},null);
   renderProvincePills([...provinces].sort());
   renderPills('f-products',[...prods].sort(),ACT.products,function(){return '#0a9e6e';},PROD_LABELS);
-  renderPills('f-missing',[...prods].sort(),ACT.missing,function(){return '#e53935';},PROD_LABELS);
+  MISSING_LIST=[...prods].sort();renderMissingPills();
   renderContact();
 }
 
 function renderProvincePills(allProvs){
   var el=document.getElementById('f-province');
   if(!el) return;
-  // Get active regions
   var activeRegions=[...ACT.region];
-  var grouped=false;
   var html='';
-  if(activeRegions.length>0 && activeRegions.length<Object.keys(REGION_PROVINCES).length){
-    // Show grouped by region
+  var grouped=activeRegions.length>0&&activeRegions.length<Object.keys(REGION_PROVINCES).length;
+  if(grouped){
     activeRegions.sort().forEach(function(reg){
       var regProvs=(REGION_PROVINCES[reg]||[]).filter(function(p){return allProvs.indexOf(p)!==-1;});
       if(!regProvs.length) return;
-      grouped=true;
-      html+='<div style="margin-bottom:4px">';
-      html+='<span style="font-size:9px;color:#aaa;font-weight:600;text-transform:uppercase;margin-right:4px">'+reg+'</span>';
+      html+='<div style="display:flex;flex-wrap:wrap;align-items:center;gap:2px;margin-bottom:2px">';
+      html+='<span style="font-size:8px;color:#aaa;font-weight:700;text-transform:uppercase;width:60px;flex-shrink:0">'+reg.substring(0,8)+'</span>';
       regProvs.sort().forEach(function(p){
         var act=ACT.province.has(p);
-        html+='<span class="pill'+(act?' act':'')+'" data-f="province" data-v="'+p+'" style="background:'+(act?'#666':'#eee')+';color:'+(act?'#fff':'#666')+'">'+p+'</span>';
+        html+='<span class="ppill" data-v="'+p+'" style="display:inline-block;padding:1px 5px;border-radius:8px;font-size:9px;font-weight:600;cursor:pointer;background:'+(act?'#555':'#e8e8e8')+';color:'+(act?'#fff':'#666')+'">'+p+'</span>';
       });
       html+='</div>';
     });
-  }
-  if(!grouped){
-    // Show flat list
+  } else {
+    html+='<div style="display:flex;flex-wrap:wrap;gap:2px">';
     allProvs.sort().forEach(function(p){
       var act=ACT.province.has(p);
-      html+='<span class="pill'+(act?' act':'')+'" data-f="province" data-v="'+p+'" style="background:'+(act?'#666':'#eee')+';color:'+(act?'#fff':'#666')+'">'+p+'</span>';
+      html+='<span class="ppill" data-v="'+p+'" style="display:inline-block;padding:1px 5px;border-radius:8px;font-size:9px;font-weight:600;cursor:pointer;background:'+(act?'#555':'#e8e8e8')+';color:'+(act?'#fff':'#666')+'">'+p+'</span>';
     });
+    html+='</div>';
   }
   el.innerHTML=html;
-  // Re-attach listeners
-  el.querySelectorAll('.pill').forEach(function(pill){
+  el.querySelectorAll('.ppill').forEach(function(pill){
     pill.addEventListener('click',function(){
       var v=pill.dataset.v;
       if(ACT.province.has(v)) ACT.province.delete(v);
@@ -914,10 +948,14 @@ function renderContact(){
 }
 
 function faAll(key,elId){
-  document.getElementById(elId).querySelectorAll('.pill').forEach(function(p){ACT[key].add(p.dataset.val);p.classList.remove('off');});applyFilters();
+  document.getElementById(elId).querySelectorAll('.pill').forEach(function(p){ACT[key].add(p.dataset.val);p.classList.remove('off');});
+  if(key==='region'){var allProvs=[];COMPANIES.forEach(function(c){if(c.province)allProvs.push(c.province);});renderProvincePills([...new Set(allProvs)].sort());}
+  applyFilters();
 }
 function faNone(key,elId){
-  document.getElementById(elId).querySelectorAll('.pill').forEach(function(p){ACT[key].delete(p.dataset.val);p.classList.add('off');});applyFilters();
+  document.getElementById(elId).querySelectorAll('.pill').forEach(function(p){ACT[key].delete(p.dataset.val);p.classList.add('off');});
+  if(key==='region'){var allProvs=[];COMPANIES.forEach(function(c){if(c.province)allProvs.push(c.province);});renderProvincePills([...new Set(allProvs)].sort());}
+  applyFilters();
 }
 
 function applyFilters(){
@@ -2145,10 +2183,10 @@ window.addEventListener('DOMContentLoaded',function(){
   });
   document.getElementById('txt-modal-close').addEventListener('click',function(){document.getElementById('txt-modal').style.display='none';});
   document.getElementById('fa-missing-all').addEventListener('click',function(){
-    ACT.missing=new Set(allProds);renderPills('f-missing',allProds.slice().sort(),ACT.missing,function(){return '#e53935';},PROD_LABELS);applyFilters();
+    ACT.missing=new Set(MISSING_LIST);renderMissingPills();applyFilters();
   });
   document.getElementById('fa-missing-none').addEventListener('click',function(){
-    ACT.missing=new Set();renderPills('f-missing',allProds.slice().sort(),ACT.missing,function(){return '#e53935';},PROD_LABELS);applyFilters();
+    ACT.missing=new Set();renderMissingPills();applyFilters();
   });
   var _el_txt_modal_gen=document.getElementById('txt-modal-gen');if(_el_txt_modal_gen) _el_txt_modal_gen.addEventListener('click',genTxtAI);
   var _el_txt_modal_test=document.getElementById('txt-modal-test');if(_el_txt_modal_test) _el_txt_modal_test.addEventListener('click',testMailFromModal);
@@ -2192,3 +2230,5 @@ window.addEventListener('DOMContentLoaded',function(){
 </script>
 </body>
 </html>
+      
+      
