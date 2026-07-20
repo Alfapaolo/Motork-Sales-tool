@@ -222,6 +222,17 @@
   .task-actions{
     display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;
   }
+
+  .task-history{ padding:0 4px 8px 34px; margin-top:-4px; }
+  .task-history-toggle{
+    font-size:11px; color:var(--text-dim); cursor:pointer; display:inline-block;
+    padding:2px 0;
+  }
+  .task-history-toggle:hover{ color:var(--text); }
+  .task-history-body{ margin-top:4px; }
+  .task-history-body.collapsed{ display:none; }
+  .task-history-item{ font-size:11px; color:var(--text-dim); padding:2px 0; }
+  .task-history-date{ font-family:var(--mono); color:var(--text); margin-right:4px; }
   .task-meta-row{
     display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-top:5px;
   }
@@ -311,6 +322,7 @@ let STATE = {
   pipelineSortBy: 'temperatura',
   collapsedGroups: {},
   undoStack: [],
+  expandedHistory: {},
   callModal: null,
   callModalRecording: false,
   sheetConfig: { sheetId: '18vIfwCnBM9PWgDL8_vk5SxvSRsbXC7w8Ouu4G90greo', gidTask: '595528304', gidOpp: '1721033441' },
@@ -665,20 +677,23 @@ function renderTaskRow(o, t, d){
             ${o.forecast_categoria ? `<span class="pill soon">${escapeHtml(o.forecast_categoria)}</span>` : ''}
           </div>
           <div class="task-actions">
-            <button class="action-btn call-btn" data-callbtn="${o.id}" title="Registra una chiamata">📞 Ho chiamato</button>
-            <button class="action-btn email-btn" data-emailbtn="${o.id}" title="Crea bozza di follow up in Gmail">${EMAIL_ICON_SVG} Mail</button>
+            <button class="action-btn call-btn" data-callbtn="${o.id}" data-taskid="${t.id}" title="Registra la chiamata e chiudi il task">📞 Ho chiamato</button>
+            <button class="action-btn email-btn" data-emailbtn="${o.id}" data-taskid="${t.id}" title="Registra la mail e chiudi il task">${EMAIL_ICON_SVG} Mail</button>
           </div>
         </div>
-        ${log.length > 0 ? `
-          <div style="margin-top:4px;">
-            ${log.map(entry => `
-              <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">
-                <span style="font-family:var(--mono); color:var(--text);">${new Date(entry.ts).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit'})}</span>
-                — ${escapeHtml(entry.text)}
-              </div>`).join('')}
-          </div>` : ''}
       </div>
-    </div>`;
+    </div>
+    ${log.length > 0 ? `
+      <div class="task-history">
+        <div class="task-history-toggle" data-historytoggle="${o.id}">🕘 ${log.length} nota${log.length>1?'e':''} precedente${log.length>1?'i':''} ▾</div>
+        <div class="task-history-body ${STATE.expandedHistory && STATE.expandedHistory[o.id] ? '' : 'collapsed'}">
+          ${log.map(entry => `
+            <div class="task-history-item">
+              <span class="task-history-date">${new Date(entry.ts).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit'})}</span>
+              ${entry.channel === 'email' ? '✉️' : '📞'} ${escapeHtml(entry.text)}
+            </div>`).join('')}
+        </div>
+      </div>` : ''}`;
 }
 
 const STAGE_ORDER = ['BDR Phase', 'Discovery Meeting', 'Demo Meeting', 'Proposal Meeting', 'Trade', 'Commit', 'Chiuso'];
@@ -844,9 +859,9 @@ Quando ti viene chiesto di preparare una mail di follow up per un dealer:
 5. Se Paolo ti risponde dicendo che nessuno dei thread proposti è quello giusto, o ti dà indicazioni aggiuntive (anche dettate a voce, quindi possono contenere piccole imperfezioni di trascrizione), usa quel contesto per cercare meglio o per scrivere la bozza direttamente basandoti su quanto ti ha detto lui, anche se non hai trovato un thread preciso.
 Alla fine: se hai creato la bozza, rispondi con una riga di conferma sintetica. Se hai bisogno di chiarimenti, scrivi solo la domanda, niente altro.`;
 
-async function createFollowUpDraft(o, btnEl){
+async function createFollowUpDraft(o, taskId){
   STATE.emailModal = {
-    oppId: o.id, dealer: o.dealer,
+    oppId: o.id, taskId: taskId || null, dealer: o.dealer,
     messages: [{ role: 'user', content: `Prepara una mail di follow up per il dealer ${o.dealer}.` }],
     loading: true, question: null, draftCreated: false
   };
@@ -883,6 +898,7 @@ async function stepEmailFlow(){
     if(draftCreated){
       STATE.emailModal.draftCreated = true;
       STATE.emailModal.question = null;
+      await completeTaskWithLog(STATE.emailModal.oppId, STATE.emailModal.taskId, null, 'email');
       render();
       setTimeout(() => { STATE.emailModal = null; render(); }, 2200);
     } else {
@@ -1177,7 +1193,7 @@ async function importFullData(file){
     STATE.completedLog = parsed.completedLog || [];
     await saveState();
     showToast('✅ Dati importati');
-    STATE.activeTab = 'pipeline';
+    STATE.activeTab = 'task';
     render();
   }catch(e){
     alert('Errore importando il file: ' + e.message);
@@ -1332,6 +1348,15 @@ function attachHandlers(){
     });
   });
 
+  document.querySelectorAll('[data-historytoggle]').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.dataset.historytoggle;
+      if(!STATE.expandedHistory) STATE.expandedHistory = {};
+      STATE.expandedHistory[id] = !STATE.expandedHistory[id];
+      render();
+    });
+  });
+
   const importTextarea = document.getElementById('importTextarea');
   if(importTextarea){
     importTextarea.addEventListener('input', (e) => { STATE.importText = e.target.value; });
@@ -1432,12 +1457,31 @@ function attachHandlers(){
     directorEmailBtn.addEventListener('click', mailDirectorUpdate);
   }
 
-  document.querySelectorAll('[data-callbtn]').forEach(el => {
+  async function completeTaskWithLog(oppId, taskId, note, channel){
+  const o = STATE.opportunities.find(x => x.id === oppId);
+  if(!o) return;
+  if(note){
+    if(!o.contact_log) o.contact_log = [];
+    o.contact_log.push({ ts: Date.now(), text: note.trim(), channel: channel || 'call' });
+  }
+  if(taskId && o.tasks){
+    const idx = o.tasks.findIndex(t => t.id === taskId);
+    if(idx !== -1){
+      const [removed] = o.tasks.splice(idx, 1);
+      STATE.undoStack.push({ id: oppId, task: removed, dealer: o.dealer });
+      STATE.completedLog.push({ ts: Date.now(), dealer: o.dealer, text: removed.text });
+    }
+  }
+  await saveOpportunities();
+  await saveCompletedLog();
+}
+
+document.querySelectorAll('[data-callbtn]').forEach(el => {
     el.addEventListener('click', () => {
       const id = el.dataset.callbtn;
       const o = STATE.opportunities.find(x => x.id === id);
       if(!o) return;
-      STATE.callModal = { oppId: id, dealer: o.dealer, text: '' };
+      STATE.callModal = { oppId: id, taskId: el.dataset.taskid || null, dealer: o.dealer, text: '' };
       STATE.callModalRecording = false;
       render();
     });
@@ -1473,12 +1517,7 @@ function attachHandlers(){
       const ta = document.getElementById('callModalTextarea');
       const text = (ta ? ta.value : (STATE.callModal.text || '')).trim();
       if(text){
-        const o = STATE.opportunities.find(x => x.id === STATE.callModal.oppId);
-        if(o){
-          if(!o.contact_log) o.contact_log = [];
-          o.contact_log.push({ ts: Date.now(), text });
-          await saveOpportunities();
-        }
+        await completeTaskWithLog(STATE.callModal.oppId, STATE.callModal.taskId, text, 'call');
       }
       STATE.callModal = null;
       render();
@@ -1488,16 +1527,15 @@ function attachHandlers(){
   document.querySelectorAll('[data-emailbtn]').forEach(el => {
     el.addEventListener('click', async () => {
       const id = el.dataset.emailbtn;
+      const taskId = el.dataset.taskid || null;
       const o = STATE.opportunities.find(x => x.id === id);
       if(!o) return;
       if(IS_CLAUDE_ENV){
-        createFollowUpDraft(o, el);
+        createFollowUpDraft(o, taskId);
       } else {
         const text = prompt(`Cosa hai scritto nella mail a ${o.dealer}?`);
         if(!text) return;
-        if(!o.contact_log) o.contact_log = [];
-        o.contact_log.push({ ts: Date.now(), text: text.trim(), channel: 'email' });
-        await saveOpportunities();
+        await completeTaskWithLog(id, taskId, text, 'email');
         render();
       }
     });
@@ -2004,7 +2042,14 @@ async function applyImportBatch(items){
         if(it.task_priority) existing.priority = it.task_priority;
         existing.updatedAt = now;
       } else {
-        target.tasks.push({ id: uid(), text: it.task_next_step, due_date: it.task_due_date || null, priority: it.task_priority || null, createdAt: now });
+        const wasCompletedToday = STATE.completedLog.some(c =>
+          isToday(c.ts) &&
+          c.dealer.toLowerCase() === target.dealer.toLowerCase() &&
+          c.text.trim().toLowerCase() === norm
+        );
+        if(!wasCompletedToday){
+          target.tasks.push({ id: uid(), text: it.task_next_step, due_date: it.task_due_date || null, priority: it.task_priority || null, createdAt: now });
+        }
       }
     }
 
@@ -2031,7 +2076,7 @@ async function applyImportBatch(items){
   await saveOpportunities();
   await saveMeta();
 
-  STATE.activeTab = 'pipeline';
+  STATE.activeTab = 'task';
   render();
 }
 
