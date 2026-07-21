@@ -217,6 +217,13 @@
   .mic-btn.recording{ background:var(--red); animation:pulse 1.2s infinite; }
   @keyframes pulse{ 0%,100%{ opacity:1; } 50%{ opacity:0.6; } }
   .email-icon-btn{ color:var(--red); display:inline-flex; align-items:center; justify-content:center; padding:5px 8px; }
+
+  .contact-link{
+    display:inline-flex; align-items:center; gap:5px; font-size:12.5px; font-weight:600;
+    color:var(--blue); text-decoration:none; background:var(--panel2); border:1px solid var(--border);
+    border-radius:16px; padding:5px 11px;
+  }
+  .contact-link:hover{ background:var(--border); }
   .email-icon-btn:hover{ background:var(--panel2); }
 
   .task-actions{
@@ -299,6 +306,7 @@ const EMAIL_ICON_SVG = `<svg width="15" height="15" viewBox="0 0 24 24" fill="no
 const STORAGE_KEY = 'pipeline_opportunities_v1';
 const META_KEY = 'pipeline_meta_v1';
 const COMPLETED_LOG_KEY = 'pipeline_completed_log_v1';
+const CONTACTS_KEY = 'pipeline_contacts_v1';
 
 // Detects whether this file is running inside a claude.ai artifact (where
 // window.storage and direct api.anthropic.com calls work) or standalone
@@ -325,7 +333,9 @@ let STATE = {
   expandedHistory: {},
   callModal: null,
   callModalRecording: false,
-  sheetConfig: { sheetId: '18vIfwCnBM9PWgDL8_vk5SxvSRsbXC7w8Ouu4G90greo', gidTask: '595528304', gidOpp: '1721033441' },
+  sheetConfig: { sheetId: '18vIfwCnBM9PWgDL8_vk5SxvSRsbXC7w8Ouu4G90greo', gidTask: '595528304', gidOpp: '1721033441', gidContacts: '374587942' },
+  contacts: [],
+  contactSearch: '',
   sheetConfigModal: null,
   emailModal: null
 };
@@ -339,6 +349,8 @@ async function loadState(){
       if(r2 && r2.value) STATE.meta = JSON.parse(r2.value);
       const r3 = await window.storage.get(COMPLETED_LOG_KEY);
       if(r3 && r3.value) STATE.completedLog = JSON.parse(r3.value);
+      const r4 = await window.storage.get(CONTACTS_KEY);
+      if(r4 && r4.value) STATE.contacts = JSON.parse(r4.value);
     } else {
       const raw = localStorage.getItem('pipeline-sync-state');
       if(raw){
@@ -347,6 +359,8 @@ async function loadState(){
         STATE.meta = saved.meta || STATE.meta;
         STATE.completedLog = saved.completedLog || [];
       }
+      const rawContacts = localStorage.getItem('pipeline-sync-contacts');
+      if(rawContacts) STATE.contacts = JSON.parse(rawContacts);
     }
   }catch(e){ console.error('Errore caricamento dati:', e); }
 
@@ -401,6 +415,15 @@ async function saveState(){
   }catch(e){ console.error('Errore salvataggio dati:', e); }
 }
 async function saveOpportunities(){ await saveState(); }
+async function saveContacts(){
+  try{
+    if(IS_CLAUDE_ENV){
+      await window.storage.set(CONTACTS_KEY, JSON.stringify(STATE.contacts));
+    } else {
+      localStorage.setItem('pipeline-sync-contacts', JSON.stringify(STATE.contacts));
+    }
+  }catch(e){ console.error('Errore salvataggio contatti:', e); }
+}
 async function saveSheetConfig(){
   try{ localStorage.setItem('pipeline-sync-sheet-config', JSON.stringify(STATE.sheetConfig)); }
   catch(e){ console.error('Errore salvataggio config foglio:', e); }
@@ -420,6 +443,7 @@ function render(){
     ${STATE.importPreview ? renderImportPreview() : ''}
     <div class="view ${STATE.activeTab==='task'?'active':''}">${renderTaskView()}</div>
     <div class="view ${STATE.activeTab==='pipeline'?'active':''}">${renderPipelineView()}</div>
+    <div class="view ${STATE.activeTab==='contacts'?'active':''}">${renderContactsView()}</div>
     ${renderCallModal()}
     ${renderEmailModal()}
     ${renderSheetConfigModal()}
@@ -527,6 +551,7 @@ function renderTabs(){
     <div class="tab" data-sheetconfigbtn="1" style="flex:0 0 auto; padding:9px 12px;" title="Carica manualmente invece">📎</div>
     <div class="tab ${STATE.activeTab==='task'?'active':''}" data-tab="task">Solleciti / Task <span class="badge ${oc>0?'urgent':''}">${tc}</span></div>
     <div class="tab ${STATE.activeTab==='pipeline'?'active':''}" data-tab="pipeline">OPP/Pipeline <span class="badge">${STATE.opportunities.length}</span></div>
+    <div class="tab ${STATE.activeTab==='contacts'?'active':''}" data-tab="contacts">Contatti <span class="badge">${STATE.contacts.length}</span></div>
   </div>`;
 }
 
@@ -714,6 +739,50 @@ function totalOppCount(){
 function dealerAcv(o){
   if(o.forecast_acv !== undefined && o.forecast_acv !== null) return o.forecast_acv;
   return (o.sf_opportunities || []).reduce((s,x) => s + (x.acv || 0), 0);
+}
+
+function renderContactsView(){
+  if(STATE.contacts.length === 0){
+    return `<div class="panel"><div class="empty"><div class="big">👤</div>Nessun contatto ancora.<br>Premi "🔄 Sincronizza" per caricarli dal Google Sheet.</div></div>`;
+  }
+
+  const q = (STATE.contactSearch || '').trim().toLowerCase();
+  let results = [];
+  if(q.length >= 2){
+    results = STATE.contacts.filter(c => {
+      const hay = `${c.firstName} ${c.lastName} ${c.company} ${c.email||''}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }
+  const truncated = results.length > 60;
+  const shown = truncated ? results.slice(0, 60) : results;
+
+  return `
+    <div class="panel">
+      <input type="text" id="contactSearchInput" placeholder="Cerca per nome, cognome, azienda o mail..." value="${escapeHtml(STATE.contactSearch||'')}" style="width:100%; padding:11px 14px; font-size:14px; border-radius:8px; border:1px solid var(--border); background:var(--panel2); color:var(--text);">
+    </div>
+    ${q.length < 2 ? `<div class="panel"><div class="empty" style="padding:24px;">Scrivi almeno 2 caratteri per cercare tra ${STATE.contacts.length} contatti.</div></div>` : ''}
+    ${q.length >= 2 && results.length === 0 ? `<div class="panel"><div class="empty" style="padding:24px;">Nessun contatto trovato per "${escapeHtml(STATE.contactSearch)}".</div></div>` : ''}
+    ${shown.map(c => renderContactCard(c)).join('')}
+    ${truncated ? `<div class="panel"><div style="text-align:center; color:var(--text-dim); font-size:12px;">Mostrati 60 risultati su ${results.length} — affina la ricerca per vederli tutti.</div></div>` : ''}
+  `;
+}
+
+function renderContactCard(c){
+  const fullName = [c.firstName, c.lastName].filter(Boolean).join(' ') || '(senza nome)';
+  return `
+    <div class="panel" style="padding:14px 16px;">
+      <div style="font-weight:700; font-size:14px;">${escapeHtml(fullName)}</div>
+      ${c.company ? `<div style="color:var(--text-dim); font-size:12.5px; margin-top:2px;">${escapeHtml(c.company)}</div>` : ''}
+      <div style="margin-top:8px; display:flex; flex-wrap:wrap; gap:8px;">
+        ${c.email ? `<a href="mailto:${encodeURIComponent(c.email)}" class="contact-link">✉️ ${escapeHtml(c.email)}</a>` : ''}
+        ${c.phone ? `<a href="tel:${encodeURIComponent(c.phone)}" class="contact-link">📞 ${escapeHtml(c.phone)}</a>` : ''}
+        ${c.mobilePhone ? `<a href="tel:${encodeURIComponent(c.mobilePhone)}" class="contact-link">📱 ${escapeHtml(c.mobilePhone)}</a>` : ''}
+        ${c.otherPhone ? `<a href="tel:${encodeURIComponent(c.otherPhone)}" class="contact-link">☎️ ${escapeHtml(c.otherPhone)}</a>` : ''}
+        ${(!c.phone && !c.mobilePhone && c.companyPhone) ? `<a href="tel:${encodeURIComponent(c.companyPhone)}" class="contact-link">🏢 ${escapeHtml(c.companyPhone)}</a>` : ''}
+      </div>
+      ${c.dsmName ? `<div style="margin-top:8px; font-size:12px; color:var(--text-dim);">DSM: ${escapeHtml(c.dsmName)}${c.dsmEmail ? ` — <a href="mailto:${encodeURIComponent(c.dsmEmail)}" class="contact-link" style="font-size:12px;">✉️ ${escapeHtml(c.dsmEmail)}</a>` : ''}</div>` : ''}
+    </div>`;
 }
 
 function renderPipelineView(){
@@ -1023,6 +1092,19 @@ async function syncFromSheet(silent){
     });
 
     await applyImportBatch(allItems);
+
+    if(cfg.gidContacts){
+      try{
+        const wbC = await fetchSheetTabAsWorkbook(cfg.sheetId, cfg.gidContacts);
+        const sheetNameC = wbC.SheetNames[0];
+        const rowsC = XLSX.utils.sheet_to_json(wbC.Sheets[sheetNameC], { header: 1, blankrows: false });
+        STATE.contacts = parseContactSheetRows(rowsC);
+        await saveContacts();
+      }catch(eC){
+        console.error('Errore caricamento contatti:', eC);
+      }
+    }
+
     STATE.importLoading = false;
     render();
   }catch(e){
@@ -1318,6 +1400,17 @@ function attachHandlers(){
   document.querySelectorAll('[data-tab]').forEach(el => {
     el.addEventListener('click', () => { STATE.activeTab = el.dataset.tab; render(); });
   });
+
+  const contactSearchInput = document.getElementById('contactSearchInput');
+  if(contactSearchInput){
+    contactSearchInput.addEventListener('input', (e) => {
+      STATE.contactSearch = e.target.value;
+      const cursorPos = e.target.selectionStart;
+      render();
+      const newInput = document.getElementById('contactSearchInput');
+      if(newInput){ newInput.focus(); try{ newInput.setSelectionRange(cursorPos, cursorPos); }catch(err){} }
+    });
+  }
 
   document.querySelectorAll('[data-filtergroup]').forEach(el => {
     el.addEventListener('click', () => {
@@ -1856,6 +1949,67 @@ function parseOppSheetRows(rows){
       sf_close_date: parseItDate(cChiusura>=0 ? r[cChiusura] : null),
       sf_acv: cAcv>=0 ? parseAcvValue(r[cAcv]) : null,
       _sourceType: 'opp'
+    });
+  }
+  return items;
+}
+
+function findExactCol(header, exactNameLower){
+  for(let i=0;i<header.length;i++){
+    const cell = (header[i]||'').toString().trim().toLowerCase();
+    if(cell === exactNameLower) return i;
+  }
+  return -1;
+}
+
+function formatPhoneValue(v){
+  if(v === null || v === undefined || v === '') return null;
+  let s = v.toString().trim();
+  if(!s) return null;
+  // Google Sheets sometimes exports phone numbers formatted as numbers,
+  // which shows up as scientific notation (e.g. "3.94E+09") — recover the
+  // plain digit string as best we can.
+  if(/e\+?\d+$/i.test(s)){
+    const n = Number(s);
+    if(!isNaN(n)) s = n.toFixed(0);
+  }
+  return s;
+}
+
+function parseContactSheetRows(rows){
+  const headerIdx = findHeaderRowIdx(rows);
+  if(headerIdx === -1) return [];
+  const header = rows[headerIdx];
+
+  const cFirstName = findExactCol(header, 'firstname');
+  const cLastName = findExactCol(header, 'lastname');
+  const cEmail = findExactCol(header, 'email');
+  const cPhone = findExactCol(header, 'phone');
+  const cMobile = findExactCol(header, 'mobilephone');
+  const cOtherPhone = findExactCol(header, 'otherphone');
+  const cCompany = findExactCol(header, 'account.name');
+  const cCompanyPhone = findExactCol(header, 'account.phone');
+  const cDsmName = findExactCol(header, 'account.success_manager__r.name');
+  const cDsmEmail = findExactCol(header, 'account.successmanageremail__c');
+
+  const items = [];
+  for(let i=headerIdx+1;i<rows.length;i++){
+    const r = rows[i];
+    if(!r) continue;
+    const firstName = cFirstName>=0 ? (r[cFirstName]||'').toString().trim() : '';
+    const lastName = cLastName>=0 ? (r[cLastName]||'').toString().trim() : '';
+    const company = cCompany>=0 ? (r[cCompany]||'').toString().trim() : '';
+    const email = cEmail>=0 ? (r[cEmail]||'').toString().trim() : '';
+    if(!firstName && !lastName && !company) continue;
+    items.push({
+      firstName, lastName, company,
+      email: email || null,
+      phone: formatPhoneValue(cPhone>=0 ? r[cPhone] : null),
+      mobilePhone: formatPhoneValue(cMobile>=0 ? r[cMobile] : null),
+      otherPhone: formatPhoneValue(cOtherPhone>=0 ? r[cOtherPhone] : null),
+      companyPhone: formatPhoneValue(cCompanyPhone>=0 ? r[cCompanyPhone] : null),
+      dsmName: cDsmName>=0 ? (r[cDsmName]||'').toString().trim() || null : null,
+      dsmEmail: cDsmEmail>=0 ? (r[cDsmEmail]||'').toString().trim() || null : null
     });
   }
   return items;
