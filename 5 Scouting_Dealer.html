@@ -173,7 +173,13 @@ Brescia</textarea>
     <div class="switch on" id="toggleUsed" onclick="this.classList.toggle('on')"></div>
   </div>
 
-  <button id="runBtn" onclick="runScan()">Avvia scansione</button>
+  <div style="display:flex; gap:8px; margin-top:22px;">
+    <button id="previewBtn" onclick="runScan(true)" style="flex:1; background:var(--panel2); border:1px solid var(--line); color:var(--text); border-radius:8px; padding:12px; font-size:12.5px; font-weight:700; cursor:pointer;">Anteprima (5/zona)</button>
+    <button id="runBtn" onclick="runScan(false)" style="flex:1.4; margin-top:0;">Avvia scansione</button>
+  </div>
+  <div id="previewBanner" style="display:none; background:rgba(29,111,214,0.08); border:1px solid rgba(29,111,214,0.3); border-radius:6px; padding:10px; margin-top:10px; font-size:11.5px; color:var(--text);">
+    Questa è un'<b>anteprima</b> (max 5 risultati/zona, costo minimo). Controlla che nomi e confini siano corretti, poi premi <b>Avvia scansione</b> per il set completo.
+  </div>
   <div id="status"></div>
 
   <div id="costEstimate">
@@ -449,7 +455,7 @@ function setStatus(msg, cls){
 }
 
 // ---------- main run ----------
-async function runScan(){
+async function runScan(isPreview){
   const token = document.getElementById('apifyToken').value.trim();
   if(!token){ setStatus('Inserisci il token Apify.', 'err'); return; }
   if(accountRows.length===0){ setStatus('Carica prima il file Account.', 'err'); return; }
@@ -457,18 +463,23 @@ async function runScan(){
   if(areas.length===0){ setStatus('Inserisci almeno una zona.', 'err'); return; }
   const usedToo = document.getElementById('toggleUsed').classList.contains('on');
 
-  const estCost = updateEstimate();
-  const remaining = MONTHLY_FREE - budgetState.spent;
-  if(estCost > remaining && remaining > 0){
-    const proceed = confirm(`Questo scan (~$${estCost.toFixed(2)}) supera il credito gratuito rimasto (~$${remaining.toFixed(2)}). Il resto verrà addebitato sul tuo account Apify. Continuare?`);
-    if(!proceed) return;
-  } else if(remaining <= 0){
-    const proceed = confirm(`Hai già esaurito i $5 gratuiti di questo mese. Questo scan verrà addebitato interamente (~$${estCost.toFixed(2)}). Continuare?`);
-    if(!proceed) return;
+  document.getElementById('previewBanner').style.display = isPreview ? 'block' : 'none';
+
+  const estCost = isPreview ? 0 : updateEstimate();
+  if(!isPreview){
+    const remaining = MONTHLY_FREE - budgetState.spent;
+    if(estCost > remaining && remaining > 0){
+      const proceed = confirm(`Questo scan (~$${estCost.toFixed(2)}) supera il credito gratuito rimasto (~$${remaining.toFixed(2)}). Il resto verrà addebitato sul tuo account Apify. Continuare?`);
+      if(!proceed) return;
+    } else if(remaining <= 0){
+      const proceed = confirm(`Hai già esaurito i $5 gratuiti di questo mese. Questo scan verrà addebitato interamente (~$${estCost.toFixed(2)}). Continuare?`);
+      if(!proceed) return;
+    }
   }
 
   const runBtn = document.getElementById('runBtn');
-  runBtn.disabled = true;
+  const previewBtn = document.getElementById('previewBtn');
+  runBtn.disabled = true; previewBtn.disabled = true;
   results = [];
   const rawByPlaceId = {};
   let totalItemsFetched = 0;
@@ -480,12 +491,11 @@ async function runScan(){
   try{
     for(let i=0;i<zones.length;i++){
       const zone = zones[i];
-      setStatus(`Geocodifica ${zone.label}...`);
+      setStatus(`${isPreview?'Anteprima':'Scansione'} ${i+1}/${zones.length}: ${zone.label}...`);
       const center = await geocodeArea(zone.geoQuery);
-      setStatus(`Scansione ${i+1}/${zones.length}: ${zone.label}...`);
       const queries = [`concessionari auto ${zone.searchTerm}`];
       if(usedToo) queries.push(`rivenditori auto usate ${zone.searchTerm}`);
-      const maxPerSearch = zone.level === 'comune' ? 120 : 300;
+      const maxPerSearch = isPreview ? 5 : (zone.level === 'comune' ? 120 : 300);
       const items = await callGoogleMaps(queries, token, maxPerSearch);
       totalItemsFetched += items.length;
       for(const it of items){
@@ -549,12 +559,14 @@ async function runScan(){
     renderAll();
     const realCost = (totalItemsFetched / 1000) * COST_PER_1000;
     await addSpend(realCost);
-    setStatus(`Fatto: ${results.length} punti vendita trovati su ${zones.length} zone scansionate (${discardedFar} scartati fuori confine, ${totalItemsFetched} risultati grezzi, ~$${realCost.toFixed(2)} di credito usato).`, 'ok');
+    const prefix = isPreview ? 'Anteprima' : 'Fatto';
+    setStatus(`${prefix}: ${results.length} punti vendita trovati su ${zones.length} zone scansionate (${discardedFar} scartati fuori confine, ${totalItemsFetched} risultati grezzi, ~$${realCost.toFixed(2)} di credito usato).`, 'ok');
   }catch(err){
     setStatus('Errore: '+err.message, 'err');
     console.error(err);
   }finally{
     runBtn.disabled = false;
+    previewBtn.disabled = false;
   }
 }
 
