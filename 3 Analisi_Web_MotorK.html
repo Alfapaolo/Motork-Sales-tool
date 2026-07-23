@@ -251,6 +251,7 @@
 </div>
 
 <script>
+const DEFAULT_PAGESPEED_API_KEY = 'AIzaSyBjuBWjq5dOrJ7Qw59hIfn2WFad1LbEA6M';
 const MOTORK_CONTEXT = `Prodotti MotorK SparK Platform utili per queste analisi (usane sempre uno specifico, mai generico, senza citare prezzi):
 - WebSparK: sito 100% automotive, leggero e veloce, aggiornamenti SaaS continui senza bisogno di programmatori, configuratore auto nuove con promo OEM automatiche, gestione nativa dell'usato sul sito proprio, cookie policy e accessibilità gestite nativamente.
 - SeoSparK: audit e ottimizzazione SEO tecnica e dei contenuti, per recuperare traffico organico.
@@ -625,8 +626,6 @@ function pageSpeedSummary(ps, sitoUrl, veicoloUrl){
   return 'Punteggi PageSpeed reali già misurati (usa ESATTAMENTE questi numeri, non stimarli né cercarli altrove):\n' + lines.join('\n');
 }
 
-const DEFAULT_PAGESPEED_API_KEY = 'AIzaSyBjuBWjq5dOrJ7Qw59hIfn2WFad1LbEA6M';
-
 function buildReportIntro(nomeCliente){
   return 'Ecco l\'analisi completa della presenza digitale di ' + nomeCliente + ': la presente analisi è stata generata da AI guardando alle principali best practice automotive, si consiglia comunque di approfondire le tematiche in un appuntamento dedicato.';
 }
@@ -673,12 +672,12 @@ async function callClaude(promptText, useSearch, maxTokens){
   }
 }
 
-function mdToHtml(md){
+function mdToHtml(md, mode){
   const lines = md.split('\n');
   let html = '';
   let inList = false;
   const inlineFmt = (t) => t
-    .replace(/\[([^\]]+?)\]\((https?:\/\/[^\)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener"><strong>$1</strong></a>')
+    .replace(/\[([^\]]+?)\]\((https?:\/\/[^\)\s]+)\)/g, (m0, label, url) => renderLink(label, url, mode))
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/(^|[^*])\*(?!\*)([^*]+)\*(?!\*)/g, '$1<em>$2</em>');
   for(let raw of lines){
@@ -777,7 +776,7 @@ MOTORK_CONTEXT + '\n\n' +
         '</div>'
       : '';
     const reportIntroHtml = '<p style="margin-bottom:16px;">' + buildReportIntro(nome) + '</p>';
-    document.getElementById('reportOut').innerHTML = pageSpeedWarning + diagnosticNote + reportIntroHtml + mdToHtml(reportMd);
+    document.getElementById('reportOut').innerHTML = pageSpeedWarning + diagnosticNote + reportIntroHtml + mdToHtml(reportMd, 'screen');
 
     lastNome = nome;
     const contattoRaw = val('contatto');
@@ -842,11 +841,26 @@ scenarioBlock +
 'Massimo ' + maxWords + ' parole. Non scrivere l\'oggetto, solo il corpo della mail. Non usare markdown per titoli o elenchi, solo testo semplice con eventuali righe vuote tra i paragrafi. REGOLE DI STILE OBBLIGATORIE: (1) non usare mai il trattino "-" come punteggiatura per unire frasi o inciso, usa sempre la virgola al suo posto; (2) non scrivere mai un URL per esteso nel testo, nudo. Ogni link va scritto SOLO in formato markdown standard [testo](URL), per esempio: [guarda la demo del configuratore](https://esempio.it/demo). Il testo tra parentesi quadre deve essere breve (3-6 parole) e descrivere cosa si trova al link, mai l\'URL stesso. Usa ESATTAMENTE questa sintassi, senza varianti, senza aggiungere altri simboli attorno.';
 }
 
-function linkifyHtml(text){
+function renderLink(label, url, mode){
+  if(mode === 'screen'){
+    return '<a href="javascript:void(0)" class="ext-link" data-u="' + encodeURIComponent(url) + '"><strong>' + label + '</strong></a>';
+  }
+  return '<a href="' + url + '" target="_blank" rel="noopener"><strong>' + label + '</strong></a>';
+}
+document.addEventListener('click', function(e){
+  const t = e.target.closest('.ext-link');
+  if(t){
+    e.preventDefault();
+    const u = decodeURIComponent(t.getAttribute('data-u'));
+    window.open(u, '_blank', 'noopener');
+  }
+});
+
+function linkifyHtml(text, mode){
   let escaped = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  escaped = escaped.replace(/\[([^\]]+?)\]\((https?:\/\/[^\)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener"><strong>$1</strong></a>');
+  escaped = escaped.replace(/\[([^\]]+?)\]\((https?:\/\/[^\)\s]+)\)/g, (m0, label, url) => renderLink(label, url, mode));
   escaped = escaped.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
-  escaped = escaped.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener"><strong>Maggiori dettagli</strong></a>');
+  escaped = escaped.replace(/(https?:\/\/[^\s<]+)/g, (m0, url) => renderLink('Maggiori dettagli', url, mode));
   return escaped;
 }
 
@@ -855,7 +869,7 @@ async function generateAndShowEmail(scenario, tone){
   const prompt2 = buildEmailPrompt(scenario, tone);
   const emailTxt = await callClaude(prompt2, false, 900);
   lastEmail = emailTxt;
-  const paragraphsHtml = emailTxt.split(/\n{2,}/).map(p => '<p>' + linkifyHtml(p).replace(/\n/g,'<br>') + '</p>').join('');
+  const paragraphsHtml = emailTxt.split(/\n{2,}/).map(p => '<p>' + linkifyHtml(p, 'screen').replace(/\n/g,'<br>') + '</p>').join('');
   document.getElementById('emailOut').innerHTML = paragraphsHtml;
 }
 
@@ -924,8 +938,8 @@ function runTestAnalysis(){
 
   document.getElementById('emailScenario') && (document.getElementById('emailScenario').value = 'senzaContatto');
   const reportIntroHtml = '<p style="margin-bottom:16px;">' + buildReportIntro(lastNome) + '</p>';
-  document.getElementById('reportOut').innerHTML = '<div class="status" style="margin-bottom:12px;background:#eef6ff;color:#0a5cad;">🧪 Questo è un report di TEST con dati finti, generato senza chiamare l\'API, solo per verificare rapidamente grafica ed export.</div>' + reportIntroHtml + mdToHtml(lastReportMd);
-  const paragraphsHtml = lastEmail.split(/\n{2,}/).map(p => '<p>' + linkifyHtml(p).replace(/\n/g,'<br>') + '</p>').join('');
+  document.getElementById('reportOut').innerHTML = '<div class="status" style="margin-bottom:12px;background:#eef6ff;color:#0a5cad;">🧪 Questo è un report di TEST con dati finti, generato senza chiamare l\'API, solo per verificare rapidamente grafica ed export.</div>' + reportIntroHtml + mdToHtml(lastReportMd, 'screen');
+  const paragraphsHtml = lastEmail.split(/\n{2,}/).map(p => '<p>' + linkifyHtml(p, 'screen').replace(/\n/g,'<br>') + '</p>').join('');
   document.getElementById('emailOut').innerHTML = paragraphsHtml;
 
   document.getElementById('searchCard').classList.add('hidden');
