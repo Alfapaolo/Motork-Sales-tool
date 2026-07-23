@@ -201,6 +201,25 @@
       </div>
     </div>
     <div class="hint" style="margin:-4px 0 10px;">Se non conosci uno o più URL, lasciali vuoti: provo a trovarli online cercando il nome del concessionario.</div>
+
+    <div class="field" id="pageSpeedManualField" style="border:1px solid var(--mk-line);border-radius:10px;padding:12px;">
+      <label>PageSpeed manuale (opzionale, consigliato se il PageSpeed automatico non funziona nel tuo ambiente)</label>
+      <div class="hint" style="margin:0 0 8px;">Apri PageSpeed Insights per l'URL del sito inserito sopra, fai lo screenshot del risultato (desktop e mobile) e caricali qui: li leggo io e li includo anche come immagine nel PDF dell'analisi.</div>
+      <button type="button" class="secondary small" onclick="openPageSpeedManual()" style="margin-bottom:10px;">Apri PageSpeed Insights per l'URL inserito</button>
+      <div class="grid2">
+        <div class="field">
+          <label>Screenshot Desktop</label>
+          <input id="pageSpeedDesktopImg" type="file" accept="image/*" onchange="handlePageSpeedImageUpload(event,'desktop')">
+          <div id="pageSpeedDesktopPreview"></div>
+        </div>
+        <div class="field">
+          <label>Screenshot Mobile</label>
+          <input id="pageSpeedMobileImg" type="file" accept="image/*" onchange="handlePageSpeedImageUpload(event,'mobile')">
+          <div id="pageSpeedMobilePreview"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="field">
       <label>Prodotti MotorK</label>
       <div class="hint" style="margin:0 0 6px;">Verde = già attivo. Spunta i prodotti che possono interessare il dealer: se selezionati, la mail includerà link e vantaggio specifico.</div>
@@ -373,6 +392,7 @@ let accountData = null;
 let accountIsDefault = false;
 let selectedAccount = null;
 let lastReportMd = '', lastEmail = '', lastName = '', lastCookieOk = null, lastAccessibilityOk = null, lastNome = '', lastSalutoInfo = '', lastFlaggedInfo = '';
+let lastPageSpeedManualImages = { desktop: null, mobile: null };
 let lastContattoEmail = '', lastContattoNames = [];
 
 function val(id){ return document.getElementById(id).value.trim(); }
@@ -601,7 +621,55 @@ async function getPageSpeedScore(url, strategy){
   }
 }
 
+function openPageSpeedManual(){
+  const sito = (document.getElementById('sito').value || '').trim();
+  if(!sito){
+    alert('Inserisci prima l\'URL del sito nel campo "URL sito web" qui sopra.');
+    return;
+  }
+  window.open('https://pagespeed.web.dev/analysis?url=' + encodeURIComponent(sito), '_blank');
+}
+
+let pageSpeedManualImages = { desktop: null, mobile: null };
+
+function handlePageSpeedImageUpload(ev, kind){
+  const file = ev.target.files && ev.target.files[0];
+  const previewEl = document.getElementById(kind === 'desktop' ? 'pageSpeedDesktopPreview' : 'pageSpeedMobilePreview');
+  if(!file){ pageSpeedManualImages[kind] = null; if(previewEl) previewEl.innerHTML = ''; return; }
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const dataUrl = e.target.result;
+    const mediaType = file.type || 'image/png';
+    const base64 = dataUrl.split(',')[1];
+    pageSpeedManualImages[kind] = { dataUrl, base64, mediaType };
+    if(previewEl) previewEl.innerHTML = '<img src="' + dataUrl + '" style="max-width:100%;max-height:120px;border-radius:6px;margin-top:6px;border:1px solid var(--mk-line);">';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function extractPageSpeedFromImages(images){
+  const content = [
+    { type: 'text', text: 'Queste sono una o due schermate del risultato di PageSpeed Insights (Google), una per desktop e una per mobile se presenti. Per ciascuna immagine leggi ESATTAMENTE il punteggio Performance mostrato (il numero grande, 0-100) e, se visibili, le metriche principali (LCP, CLS, TBT/INP, FCP). Rispondi con un elenco puntato breve, un blocco per immagine, indicando chiaramente se è desktop o mobile in base a quello che vedi scritto o al contesto. Non stimare o inventare nulla: se un valore non è leggibile, scrivi "non leggibile".' }
+  ];
+  if(images.desktop) content.push({ type: 'image', source: { type: 'base64', media_type: images.desktop.mediaType, data: images.desktop.base64 } });
+  if(images.mobile) content.push({ type: 'image', source: { type: 'base64', media_type: images.mobile.mediaType, data: images.mobile.base64 } });
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 500,
+      messages: [{ role: "user", content: content }]
+    })
+  });
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+  return (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+}
+
 async function runPageSpeedTests(sitoUrl, veicoloUrl){
+
+
   const result = { sitoDesktop:null, sitoMobile:null, veicoloDesktop:null, veicoloMobile:null };
   if(sitoUrl){
     result.sitoDesktop = await getPageSpeedScore(sitoUrl, 'desktop');
@@ -720,6 +788,22 @@ async function runAnalysis(){
       pageSpeedWarning = '<div class="status err" style="margin-bottom:12px;">⚠️ Le misurazioni PageSpeed reali non sono riuscite (' + (lastPageSpeedError || 'motivo sconosciuto') + '). Il modello stimerà la velocità tramite ricerca web invece che con dati reali. ' + (!document.getElementById('pageSpeedApiKey').value.trim() ? 'Aggiungi una chiave API PageSpeed gratuita nella card in alto per risolvere.' : '') + '</div>';
     }
   }catch(e){ /* se falliscono le chiamate PageSpeed, si procede senza: il modello stimerà via ricerca web */ }
+
+  lastPageSpeedManualImages = { desktop: null, mobile: null };
+  if(pageSpeedManualImages.desktop || pageSpeedManualImages.mobile){
+    setStatus('<span class="spinner"></span>Leggo gli screenshot PageSpeed caricati...');
+    try{
+      const manualText = await extractPageSpeedFromImages(pageSpeedManualImages);
+      psSummary = 'Punteggi PageSpeed reali letti da screenshot caricati manualmente dal commerciale (usa ESATTAMENTE questi, hanno priorità su qualsiasi altra stima):\n' + manualText;
+      lastPageSpeedManualImages = {
+        desktop: pageSpeedManualImages.desktop ? pageSpeedManualImages.desktop.dataUrl : null,
+        mobile: pageSpeedManualImages.mobile ? pageSpeedManualImages.mobile.dataUrl : null
+      };
+      pageSpeedWarning = '';
+    }catch(e){
+      pageSpeedWarning += '<div class="status err" style="margin-bottom:12px;">⚠️ Non sono riuscito a leggere gli screenshot PageSpeed caricati (' + e.message + ').</div>';
+    }
+  }
 
   setStatus('<span class="spinner"></span>Ricerca e analisi in corso, può richiedere un minuto...');
 
@@ -955,6 +1039,11 @@ function resetTool(){
   document.getElementById('indizio').value = '';
   document.getElementById('matchArea').innerHTML = '';
   selectedAccount = null;
+  pageSpeedManualImages = { desktop: null, mobile: null };
+  const dImg = document.getElementById('pageSpeedDesktopImg'); if(dImg) dImg.value = '';
+  const mImg = document.getElementById('pageSpeedMobileImg'); if(mImg) mImg.value = '';
+  const dPrev = document.getElementById('pageSpeedDesktopPreview'); if(dPrev) dPrev.innerHTML = '';
+  const mPrev = document.getElementById('pageSpeedMobilePreview'); if(mPrev) mPrev.innerHTML = '';
 }
 
 function triggerDownload(blob, filename){
@@ -990,6 +1079,13 @@ function buildAnalysisHtmlDoc(){
 '<div class="tag">' + lastName + ' &middot; ' + today + ' &middot; a cura di MotorK</div>' +
 '<p>' + buildReportIntro(lastNome || lastName) + '</p>' +
 bodyHtml +
+((lastPageSpeedManualImages.desktop || lastPageSpeedManualImages.mobile) ?
+  '<h2>Screenshot PageSpeed Insights</h2>' +
+  '<div style="display:flex;gap:16px;flex-wrap:wrap;">' +
+  (lastPageSpeedManualImages.desktop ? '<div><p style="font-size:11px;color:#777;margin-bottom:4px;">Desktop</p><img src="' + lastPageSpeedManualImages.desktop + '" style="max-width:320px;border:1px solid #eee;border-radius:6px;"></div>' : '') +
+  (lastPageSpeedManualImages.mobile ? '<div><p style="font-size:11px;color:#777;margin-bottom:4px;">Mobile</p><img src="' + lastPageSpeedManualImages.mobile + '" style="max-width:320px;border:1px solid #eee;border-radius:6px;"></div>' : '') +
+  '</div>'
+  : '') +
 '<div class="footer">Documento preparato da MotorK - SparK Platform</div>' +
 '</body></html>';
 }
