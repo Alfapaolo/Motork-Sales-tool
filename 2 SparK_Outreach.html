@@ -1052,7 +1052,10 @@ function applyFilters(){
     if(ACT.type.size&&!ACT.type.has(c.type)) return false;
     if(ACT.region.size&&!ACT.region.has(c.region)) return false;
     if(ACT.province.size&&!ACT.province.has(c.province)) return false;
-    if(ACT.products.size&&c.mappedProds.length>0&&!c.mappedProds.some(function(p){return ACT.products.has(p);})) return false;
+    // Prodotti attivi: deve avere TUTTI i prodotti selezionati
+    if(ACT.products.size&&![...ACT.products].every(function(p){return c.mappedProds.includes(p);})) return false;
+    // Prodotti mancanti: NON deve avere NESSUNO dei prodotti selezionati
+    if(ACT.missing&&ACT.missing.size&&[...ACT.missing].some(function(p){return c.mappedProds.includes(p);})) return false;
     if(ACT.contact.has('email')&&!c.contacts.some(function(x){return x.email;})) return false;
     if(ACT.contact.has('phone')&&!c.contacts.some(function(x){return x.phone&&x.phone!=='-';})) return false;
     return true;
