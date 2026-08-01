@@ -1008,7 +1008,7 @@ function renderPills(id,vals,active,cfn,labels){
     p.textContent=labels&&labels[v]?labels[v]:v;
     var col=cfn(v);p.style.cssText='background:'+col+'22;border-color:'+col+';color:'+col;
     p.dataset.val=v;
-    p.onclick=function(){if(active.has(v)){active.delete(v);p.classList.add('off');}else{active.add(v);p.classList.remove('off');}applyFilters();};
+    p.onclick=function(){if(active.has(v)){active.delete(v);p.classList.add('off');}else{active.add(v);p.classList.remove('off');}if(id==='f-region')renderProvincePills(PROVINCES_CACHE);applyFilters();};
     el.appendChild(p);
   });
 }
@@ -1024,12 +1024,27 @@ function renderContact(){
 }
 
 function faAll(key,elId){
-  document.getElementById(elId).querySelectorAll('.pill').forEach(function(p){ACT[key].add(p.dataset.val);p.classList.remove('off');});
-  if(key==='region'){renderProvincePills(PROVINCES_CACHE);}
+  if(key==='province'){
+    PROVINCES_CACHE.forEach(function(p){ACT.province.add(p);});
+    renderProvincePills(PROVINCES_CACHE);
+  } else {
+    var el=document.getElementById(elId);if(el) el.querySelectorAll('.pill').forEach(function(p){ACT[key].add(p.dataset.val);p.classList.remove('off');});
+    if(key==='region') renderProvincePills(PROVINCES_CACHE);
+  }
   applyFilters();
 }
 function faNone(key,elId){
-  document.getElementById(elId).querySelectorAll('.pill').forEach(function(p){ACT[key].delete(p.dataset.val);p.classList.add('off');});applyFilters();
+  if(key==='province'){
+    ACT.province=new Set();
+    document.getElementById('f-province').querySelectorAll('.ppill').forEach(function(p){
+      p.style.background='#e8e8e8';p.style.color='#666';
+    });
+  } else {
+    var el=document.getElementById(elId);
+    if(el) el.querySelectorAll('.pill').forEach(function(p){ACT[key].delete(p.dataset.val);p.classList.add('off');});
+    if(key==='region') renderProvincePills(PROVINCES_CACHE);
+  }
+  applyFilters();
 }
 
 function applyFilters(){
