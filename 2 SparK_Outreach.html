@@ -122,43 +122,43 @@ textarea{height:90px;resize:vertical;line-height:1.5}
     <div class="sec">
       <div class="sec-t" style="display:flex;align-items:center;justify-content:space-between">Filtri <span style="font-size:9px;font-weight:400"><span onclick="toggleAllFilters(true)" style="cursor:pointer;color:#1a5cb8">apri</span> / <span onclick="toggleAllFilters(false)" style="cursor:pointer;color:#1a5cb8">chiudi</span></span></div>
       <div style="margin-bottom:4px">
-        <div onclick="toggleFilter('tipo')" style="font-size:10px;color:#555;font-weight:600;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px">Tipo <span id="filt-tipo-arrow" style="font-size:8px">▶</span></div>
-        <div id="filt-tipo-body" style="display:none;margin-top:3px">
+        <div onclick="toggleFilter('tipo')" style="font-size:10px;color:#555;font-weight:600;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px">Tipo <span id="filt-tipo-arrow" style="font-size:8px">▼</span></div>
+        <div id="filt-tipo-body" style="display:block;margin-top:3px">
           <div class="fa-row"><button class="fa-btn" id="fa-type-all">tutti</button><button class="fa-btn" id="fa-type-none">nessuno</button></div>
           <div id="f-type"></div>
         </div>
       </div>
       <div style="margin-bottom:4px">
-        <div onclick="toggleFilter('contatto')" style="font-size:10px;color:#555;font-weight:600;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px">Contatto <span id="filt-contatto-arrow" style="font-size:8px">▶</span></div>
-        <div id="filt-contatto-body" style="display:none;margin-top:3px">
+        <div onclick="toggleFilter('contatto')" style="font-size:10px;color:#555;font-weight:600;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px">Contatto <span id="filt-contatto-arrow" style="font-size:8px">▼</span></div>
+        <div id="filt-contatto-body" style="display:block;margin-top:3px">
           <div id="f-contact"></div>
         </div>
       </div>
 
       <div style="margin-bottom:4px">
-        <div onclick="toggleFilter('regione')" style="font-size:10px;color:#555;font-weight:600;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px">Regione <span id="filt-regione-arrow" style="font-size:8px">▶</span></div>
-        <div id="filt-regione-body" style="display:none;margin-top:3px">
+        <div onclick="toggleFilter('regione')" style="font-size:10px;color:#555;font-weight:600;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px">Regione <span id="filt-regione-arrow" style="font-size:8px">▼</span></div>
+        <div id="filt-regione-body" style="display:block;margin-top:3px">
           <div class="fa-row"><button class="fa-btn" id="fa-region-all">tutti</button><button class="fa-btn" id="fa-region-none">nessuno</button></div>
           <div id="f-region"></div>
         </div>
       </div>
       <div style="margin-bottom:4px">
-        <div onclick="toggleFilter('provincia')" style="font-size:10px;color:#555;font-weight:600;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px">Provincia <span id="filt-provincia-arrow" style="font-size:8px">▶</span></div>
-        <div id="filt-provincia-body" style="display:none;margin-top:3px">
+        <div onclick="toggleFilter('provincia')" style="font-size:10px;color:#555;font-weight:600;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px">Provincia <span id="filt-provincia-arrow" style="font-size:8px">▼</span></div>
+        <div id="filt-provincia-body" style="display:block;margin-top:3px">
           <div class="fa-row"><button class="fa-btn" id="fa-province-all">tutti</button><button class="fa-btn" id="fa-province-none">nessuno</button></div>
           <div id="f-province"></div>
         </div>
       </div>
       <div style="margin-bottom:4px">
-        <div onclick="toggleFilter('prodotti')" style="font-size:10px;color:#555;font-weight:600;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px">✓ Prodotti attivi <span id="filt-prodotti-arrow" style="font-size:8px">▶</span></div>
-        <div id="filt-prodotti-body" style="display:none;margin-top:3px">
+        <div onclick="toggleFilter('prodotti')" style="font-size:10px;color:#555;font-weight:600;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px">✓ Prodotti attivi <span id="filt-prodotti-arrow" style="font-size:8px">▼</span></div>
+        <div id="filt-prodotti-body" style="display:block;margin-top:3px">
           <div class="fa-row"><button class="fa-btn" id="fa-products-all">tutti</button><button class="fa-btn" id="fa-products-none">nessuno</button></div>
           <div id="f-products"></div>
         </div>
       </div>
       <div style="margin-bottom:6px">
-        <div onclick="toggleProdSection('mancanti')" style="font-size:10px;color:#e53935;font-weight:600;margin-bottom:2px;cursor:pointer;user-select:none">✗ Prodotti mancanti <span id="prod-mancanti-arrow">▶</span></div>
-        <div id="prod-mancanti-body" style="display:none">
+        <div onclick="toggleProdSection('mancanti')" style="font-size:10px;color:#e53935;font-weight:600;margin-bottom:2px;cursor:pointer;user-select:none">✗ Prodotti mancanti <span id="prod-mancanti-arrow">▼</span></div>
+        <div id="prod-mancanti-body" style="display:block">
           <div class="fa-row"><button class="fa-btn" id="fa-missing-all">tutti</button><button class="fa-btn" id="fa-missing-none">nessuno</button></div>
           <div id="f-missing"></div>
         </div>
@@ -790,7 +790,31 @@ function merge(){
     DATA.database.forEach(function(r){
       var an=r['RAGIONE SOCIALE']||'';if(!an||an==='RAGIONE SOCIALE') return;
       var k=norm(an);
-      if(!coDB[k]) coDB[k]={name:an,type:'Customer',rating:'',region:'',province:(r['PV']||'').toUpperCase(),products:'',mappedProds:[],brands:'',website:'',webProvider:'',contacts:[],dsm:[{name:'',email:'',role:'DSM',src:'dsm'}]};
+      if(!coDB[k]){
+        // Build mappedProds from DB product columns (SI-WS, SI-LS, etc.)
+        var dbProds=[];
+        // DB columns: WS, LS, SSK etc with value SI/NO
+        // Also handles SI-WS style values in semicolon-separated product string
+        var DB_ABBR={'WS':'WS','REV':'WS','RENT':'RENT','SERV':'SERV','TRUCK':'TRUCK','B2B':'B2B','AUC':'AUC',
+          'SSK':'SSK','SSK BI':'SSK BI','APP':'APP','BGR':'BGR','VIDEO':'VIDEO',
+          'LS':'LS','LSR':'LSR','CSK':'CSK','WAPP':'WAPP','MKTG':'MKTG','SEO':'SEO',
+          'PSK':'PSK','FSK':'FSK','AGEN':'AGEN','CDP':'CDP','LVS':'LVS','SELL':'SELL',
+          'CF':'CF','GA':'GA','CP':'CP','TRAIN':'TRAIN','TIP':'TIP'};
+        Object.keys(r).forEach(function(col){
+          var colUp=col.trim().toUpperCase();
+          var val=(r[col]||'').trim().toUpperCase();
+          // Pattern 1: column name is WS/LS/SSK, value is SI or SI-xxx
+          if(DB_ABBR[colUp]&&(val==='SI'||val.startsWith('SI'))) dbProds.push(DB_ABBR[colUp]);
+          // Pattern 2: column name contains SI-WS style
+          var colAbbr=colUp.replace(/^SI-?/,'').replace(/^NO-?/,'');
+          if(val==='SI'&&DB_ABBR[colAbbr]&&colUp.startsWith('SI')) dbProds.push(DB_ABBR[colAbbr]);
+        });
+        // Also try semicolon-separated product string columns
+        ['PRODOTTI','PRODUCTS','ACTIVE_PRODUCTS','PRODUCT_LIST'].forEach(function(col){
+          if(r[col]) mapProds(r[col]).forEach(function(p){if(dbProds.indexOf(p)===-1)dbProds.push(p);});
+        });
+        coDB[k]={name:an,type:'Customer',rating:'',region:'',province:(r['PV']||'').toUpperCase(),products:'',mappedProds:dbProds,brands:'',website:'',webProvider:'',contacts:[],dsm:[{name:'',email:'',role:'DSM',src:'dsm'}]};
+      }
       var fn=(r['NOME']||'').trim(),ln=(r['COGNOME']||'').trim();
       if(fn==='XXX'||ln==='XXX') return;
       var email=(r['MAIL']||'').trim(),phone=(r['CELLULARE']||'').trim(),role=(r['RUOLO']||'').trim();
@@ -955,7 +979,7 @@ function toggleAllFilters(open){
   if(pm){pm.style.display=open?'block':'none';}
   if(pma) pma.textContent=open?'▼':'▶';
   if(open){
-    MISSING_LIST=Object.values(PROD_GROUPS).flat().filter(function(v){return PROD_LABELS[v];});
+    MISSING_LIST=Object.values(PROD_GROUPS).reduce(function(a,b){return a.concat(b);},[]).filter(function(v){return PROD_LABELS[v];});
     renderMissingPills();
     buildFilters();
   }
@@ -978,7 +1002,7 @@ function toggleProdSection(which){
   body.style.display=open?'block':'none';
   arrow.textContent=open?'▼':'▶';
   if(open&&which==='mancanti'){
-    MISSING_LIST=Object.values(PROD_GROUPS).flat().filter(function(v){return PROD_LABELS[v];});
+    MISSING_LIST=Object.values(PROD_GROUPS).reduce(function(a,b){return a.concat(b);},[]).filter(function(v){return PROD_LABELS[v];});
     renderMissingPills();
   }
   if(open&&which==='attivi') buildFilters();
@@ -997,7 +1021,7 @@ function buildFilters(){
   renderPills('f-region',[...regions].sort(),ACT.region,function(){return '#1a5cb8';},null);
   PROVINCES_CACHE=[...provinces].sort();renderProvincePills(PROVINCES_CACHE);
   renderGroupedProdPills('f-products',prods,ACT.products,'#0a9e6e');
-  MISSING_LIST=Object.values(PROD_GROUPS).flat().filter(function(v){return prods.has(v)&&PROD_LABELS[v];});
+  MISSING_LIST=Object.values(PROD_GROUPS).reduce(function(a,b){return a.concat(b);},[]).filter(function(v){return prods.has(v)&&PROD_LABELS[v];});
   renderContact();
 }
 
@@ -1053,11 +1077,8 @@ function applyFilters(){
     if(ACT.region.size&&!ACT.region.has(c.region)) return false;
     if(ACT.province.size&&!ACT.province.has(c.province)) return false;
     // Prodotti attivi: deve avere TUTTI i prodotti selezionati
-    if(ACT.products.size&&![...ACT.products].every(function(p){return c.mappedProds.includes(p);})) return false;
-    // Prodotti mancanti: NON deve avere NESSUNO dei prodotti selezionati
-    if(ACT.missing&&ACT.missing.size&&[...ACT.missing].some(function(p){return c.mappedProds.includes(p);})) return false;
-    if(ACT.contact.has('email')&&!c.contacts.some(function(x){return x.email;})) return false;
-    if(ACT.contact.has('phone')&&!c.contacts.some(function(x){return x.phone&&x.phone!=='-';})) return false;
+    if(ACT.products.size&&!Array.from(ACT.products).some(function(p){return c.mappedProds.indexOf(p)!==-1;})) return false;
+    if(ACT.missing&&ACT.missing.size&&Array.from(ACT.missing).some(function(p){return c.mappedProds.indexOf(p)!==-1;})) return false;
     return true;
   });
   SELECTED=new Set(FILTERED.map(function(c){return c.name;}));
