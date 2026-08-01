@@ -67,10 +67,10 @@ thead{background:#4D4D4D;color:#fff}
 th{padding:8px 7px;text-align:right;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;border-right:1px solid #5a5a5a}
 th:last-child{border-right:none}
 /* Larghezze colonne: 46+46+110+72+70+72+76+80+78 = 650 → nome prende il resto */
-th:nth-child(1){width:46px;text-align:center}   /* ☐☐ checkbox */
+th:nth-child(1){width:46px;text-align:center}   /* ✅❓ checkbox in offerta / suggerito */
 th:nth-child(2){text-align:left}                 /* Nome prodotto - auto */
 th:nth-child(3){width:150px;text-align:center}   /* Variabili */
-th:nth-child(4){width:80px}                      /* Canone base */
+th:nth-child(4){width:110px}                     /* Canone base */
 th:nth-child(5){width:80px}                      /* UT calc */
 th:nth-child(6){width:82px}                      /* UT libero */
 th:nth-child(7){width:82px}                      /* Canone calc */
@@ -87,11 +87,20 @@ td:nth-child(7){text-align:right}
 td:nth-child(8){text-align:right}
 tr:hover td{background:#fafafa}
 input[type=number]{width:68px;padding:4px 5px;border:1px solid #C2C1C1;border-radius:3px;font-size:12px;text-align:right;font-family:inherit}
-input[type=number].inp-var{width:40px}
+input[type=number].inp-var{width:48px}
+.var-cell{display:inline-flex;align-items:center;gap:5px;justify-content:flex-start}
+.var-cell-dual{display:flex;flex-direction:column;gap:4px;align-items:flex-start;width:100%}
+.var-cell-dual .var-cell{width:100%}
+.var-cell-stack{display:flex;flex-direction:column;gap:1px;width:100%}
+.var-label-sm{font-size:9.5px;color:#999;line-height:1.2}
+.var-cell-stack input[type=number]{width:100%;box-sizing:border-box}
+.var-label{display:inline-block;min-width:56px;text-align:right;font-size:12px;color:#4D4D4D;font-weight:500;white-space:nowrap}
+.var-price{font-size:12px;color:#4D4D4D;white-space:nowrap}
+input[type=number].inp-custom-unitprice{width:56px}
 input[type=number].inp-ut-ov{width:72px;color:#c00020;border-color:#c00020;background:#fff8f9}
 input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;background:#f5f8ff}
-.cb-cost{accent-color:#F90032}
-.cb-suggest{accent-color:#2B7FF5}
+.cb-cost{accent-color:#1E9E5A}
+.cb-suggest{accent-color:#F90032}
 .cb-pair{display:flex;gap:6px;justify-content:center;align-items:center}
 
 /* Search */
@@ -137,6 +146,8 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
 .bozza-prodotti{margin-bottom:20px;page-break-inside:auto}
 .bozza-section-hdr{background:transparent;border-left:none;border-bottom:1.5px solid #EBEBEB;padding:14px 0 7px 0;font-size:13px;font-weight:700;color:#333;margin-top:28px;margin-bottom:10px;border-radius:0}
 .bozza-table{width:100%;border-collapse:collapse;margin-bottom:4px}
+.bozza-price-list{color:#C21818;text-decoration:line-through;font-size:10.5px;margin-right:4px}
+.bozza-price-pct{color:#C21818;font-size:10.5px;font-weight:600}
 .bozza-table th{font-size:11px;font-weight:600;color:#1A1A1A;background:#F5F5F5;padding:7px 10px;text-align:right;border-bottom:2px solid #F90032}
 .bozza-table th:first-child{text-align:left}
 .bozza-table td{font-size:12px;padding:7px 10px;border-bottom:1px solid #f0f0f0;color:#4D4D4D;text-align:right}
@@ -276,6 +287,7 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
 .log-card input[type=checkbox]{accent-color:#F90032;width:15px;height:15px;flex-shrink:0;cursor:pointer}
 .log-card-main{flex:1;min-width:0;display:grid;grid-template-columns:1.1fr .65fr .7fr .9fr 1.3fr;gap:14px;align-items:center}
 .log-card-dealer{font-size:13px;font-weight:700;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log-card-version{display:inline-block;background:#F90032;color:#fff;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;margin-left:5px;vertical-align:middle}
 .log-card-sub{font-size:10px;color:#999;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .log-card-date{font-size:11px;color:#666;white-space:nowrap;text-align:left}
 .log-card-arr{font-size:10px;color:#999;white-space:nowrap;margin-top:2px}
@@ -347,7 +359,7 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
       <div id="s-stock" class="section-body open">
         <table>
           <thead><tr>
-            <th title="🔴 In offerta / 🔵 Suggerito">☐☐</th>
+            <th title="✅ Verde = in offerta (quotato) · ❓ Rosso = suggerito">✅❓</th>
             <th style="text-align:left">Prodotto</th>
             <th>Variabili</th>
             <th>Canone<br>base</th>
@@ -369,7 +381,7 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
       <div id="s-web" class="section-body open">
         <table>
           <thead><tr>
-            <th title="🔴 In offerta / 🔵 Suggerito">☐☐</th>
+            <th title="✅ Verde = in offerta (quotato) · ❓ Rosso = suggerito">✅❓</th>
             <th style="text-align:left">Prodotto</th>
             <th>Variabili</th>
             <th>Canone<br>base</th>
@@ -391,7 +403,7 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
       <div id="s-crm" class="section-body open">
         <table>
           <thead><tr>
-            <th title="🔴 In offerta / 🔵 Suggerito">☐☐</th>
+            <th title="✅ Verde = in offerta (quotato) · ❓ Rosso = suggerito">✅❓</th>
             <th style="text-align:left">Prodotto</th>
             <th>Variabili</th>
             <th>Canone<br>base</th>
@@ -413,7 +425,7 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
       <div id="s-aftersales" class="section-body open">
         <table>
           <thead><tr>
-            <th title="🔴 In offerta / 🔵 Suggerito">☐☐</th>
+            <th title="✅ Verde = in offerta (quotato) · ❓ Rosso = suggerito">✅❓</th>
             <th style="text-align:left">Prodotto</th>
             <th>Variabili</th>
             <th>Canone<br>base</th>
@@ -438,7 +450,7 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
         </div>
         <table>
           <thead><tr>
-            <th title="🔴 In offerta / 🔵 Suggerito">☐☐</th>
+            <th title="✅ Verde = in offerta (quotato) · ❓ Rosso = suggerito">✅❓</th>
             <th style="text-align:left">Prodotto</th>
             <th>Variabili</th>
             <th>Canone<br>base</th>
@@ -484,7 +496,7 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
       <div id="s-marketing" class="section-body open">
         <table>
           <thead><tr>
-            <th title="🔴 In offerta / 🔵 Suggerito">☐☐</th>
+            <th title="✅ Verde = in offerta (quotato) · ❓ Rosso = suggerito">✅❓</th>
             <th style="text-align:left">Prodotto</th>
             <th>Variabili</th>
             <th>Canone<br>base</th>
@@ -547,14 +559,14 @@ const products = {
     { id:'bgrem_250',   name:'Rimozione sfondo - 250 immagini/mese',               ut:0, canone:160, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing' },
     { id:'bgrem_500',   name:'Rimozione sfondo - 500 immagini/mese',               ut:0, canone:280, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing' },
     { id:'bgrem_1000',  name:'Rimozione sfondo - 1000 immagini/mese',              ut:0, canone:1000, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing' },
-    { id:'bgrem_custom',name:'Rimozione sfondo - Custom (input immagini/mese)',    ut:0, canone:0, isCustom:true, customLabel:'img' },
+    { id:'bgrem_custom',name:'Rimozione sfondo - Custom (input immagini/mese)',    ut:0, canone:0, isCustom:true, customLabel:'immagini' },
     { id:'bgrem_sfondo',name:'Rimozione sfondo - Sfondo personalizzato',           ut:0, canone:20 },
     { id:'aiv_20',      name:'AI Video - 20 video simultanei',                     ut:0, canone:100, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing' },
     { id:'aiv_50',      name:'AI Video - 50 video simultanei',                     ut:0, canone:140, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing' },
     { id:'aiv_100',     name:'AI Video - 100 video simultanei',                    ut:0, canone:221, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing' },
     { id:'aiv_200',     name:'AI Video - 200 video simultanei',                    ut:0, canone:371, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing' },
     { id:'aiv_500',     name:'AI Video - 500 video simultanei',                    ut:0, canone:875, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/edit?usp=sharing' },
-    { id:'aiv_custom',  name:'AI Video - Custom (input video)',                    ut:0, canone:0, isCustom:true, customLabel:'video' }
+    { id:'aiv_custom',  name:'AI Video - Custom (input posti video attivi)',        ut:0, canone:0, isCustom:true, customLabel:'posti' }
   ],
   web: [
     { id:'wsk_core', name:'WebSparK Revolution - Core',     ut:1000, canone:300, variables:1, variablePrice:48, presentUrl:'https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present' },
@@ -579,7 +591,7 @@ const products = {
     { id:'csk_200',  name:'CallSparK - Gestione AI 200 lead/mese',       ut:2000, canone:580,  locations:1, locationPrice:100, presentUrl:'https://docs.google.com/presentation/d/185utUR8TkIl8lUsW3DkpNNW8RDtiVBHUIB_ghK8A2hk/present' },
     { id:'csk_300',  name:'CallSparK - Gestione AI 300 lead/mese',       ut:2500, canone:790,  locations:1, locationPrice:100, presentUrl:'https://docs.google.com/presentation/d/185utUR8TkIl8lUsW3DkpNNW8RDtiVBHUIB_ghK8A2hk/present' },
     { id:'csk_500',  name:'CallSparK - Gestione AI 500 lead/mese',       ut:3000, canone:1200, locations:1, locationPrice:100, presentUrl:'https://docs.google.com/presentation/d/185utUR8TkIl8lUsW3DkpNNW8RDtiVBHUIB_ghK8A2hk/present' },
-    { id:'csk_cust', name:'CallSparK - Custom (input lead/mese)',         ut:2000, canone:0,   isCustom:true, customLabel:'lead' },
+    { id:'csk_cust', name:'CallSparK - Custom (input Sedi + lead/mese)', ut:2000, canone:0,   isDualCustom:true, dualLabel1:'Sedi', dualLabel2:'lead' },
     { id:'cdp',      name:'Customer Data Platform - CDP AI',              ut:1200, canone:100, presentUrl:'https://docs.google.com/presentation/d/15DxZnZXd-AmXoCEoW38UfM-Vzy7moBLVhvx8gkTfzDc/present' }
   ],
   aftersales: [
@@ -648,25 +660,49 @@ function renderTable(section, tbodyId) {
 
     // --- Cella variabili (colonna 3) ---
     var varHtml = '';
-    if (p.isCustom) {
-      varHtml = (p.customLabel || '') + ' <input type="number" class="inp-var" min="0" step="1" oninput="calculateAll()" placeholder="0">';
+    if (p.isDualCustom) {
+      varHtml = '<div class="var-cell-dual">' +
+        '<div class="var-cell"><span class="var-label">' + p.dualLabel1 + '</span><input type="number" class="inp-var-1" min="0" step="1" oninput="calculateAll()" placeholder="0"></div>' +
+        '<div class="var-cell"><span class="var-label">' + p.dualLabel2 + '</span><input type="number" class="inp-var-2" min="0" step="1" oninput="calculateAll()" placeholder="0"></div>' +
+        '</div>';
+    } else if (p.isCustom) {
+      varHtml = '<div class="var-cell"><span class="var-label">' + (p.customLabel || '') + '</span>' +
+        '<input type="number" class="inp-var" min="0" step="1" oninput="calculateAll()" placeholder="0"></div>';
     } else if (p.variables) {
-      varHtml = '<input type="number" class="inp-var" min="1" value="' + p.variables + '" step="1" oninput="calculateAll()"> &times;&nbsp;€' + p.variablePrice;
+      var vLabelMap = { wsk_conf: 'Configuratori', wsk_seo: 'N° siti' };
+      var vLabel = vLabelMap[p.id] || 'Location';
+      varHtml = '<div class="var-cell"><span class="var-label">' + vLabel + '</span>' +
+        '<input type="number" class="inp-var" min="1" value="' + p.variables + '" step="1" oninput="calculateAll()">' +
+        '<span class="var-price">&times;&nbsp;€' + p.variablePrice + '</span></div>';
     } else if (p.locations) {
-      varHtml = 'Sedi&nbsp;<input type="number" class="inp-var" min="1" value="' + p.locations + '" step="1" oninput="calculateAll()"> &times;&nbsp;€' + p.locationPrice;
+      var locLabel = (p.id === 'psk') ? 'Brand' : 'Sedi';
+      varHtml = '<div class="var-cell"><span class="var-label">' + locLabel + '</span>' +
+        '<input type="number" class="inp-var" min="1" value="' + p.locations + '" step="1" oninput="calculateAll()">' +
+        '<span class="var-price">&times;&nbsp;€' + p.locationPrice + '</span></div>';
     } else if (p.licenses) {
-      varHtml = 'Lic&nbsp;<input type="number" class="inp-var" min="1" value="' + p.licenses + '" step="1" oninput="calculateAll()"> &times;&nbsp;€' + p.licensesPrice;
+      varHtml = '<div class="var-cell"><span class="var-label">Licenze</span>' +
+        '<input type="number" class="inp-var" min="1" value="' + p.licenses + '" step="1" oninput="calculateAll()">' +
+        '<span class="var-price">&times;&nbsp;€' + p.licensesPrice + '</span></div>';
     } else if (p.brands) {
-      varHtml = 'Brand&nbsp;<input type="number" class="inp-var" min="1" value="' + p.brands + '" step="1" oninput="calculateAll()"> &times;&nbsp;€' + p.brandsPrice;
+      varHtml = '<div class="var-cell"><span class="var-label">Brand</span>' +
+        '<input type="number" class="inp-var" min="1" value="' + p.brands + '" step="1" oninput="calculateAll()">' +
+        '<span class="var-price">&times;&nbsp;€' + p.brandsPrice + '</span></div>';
     } else if (p.feeds) {
-      varHtml = 'Feed&nbsp;<input type="number" class="inp-var" min="1" value="' + p.feeds + '" step="1" oninput="calculateAll()"> &times;&nbsp;€' + p.feedsPrice;
+      varHtml = '<div class="var-cell"><span class="var-label">Feed</span>' +
+        '<input type="number" class="inp-var" min="1" value="' + p.feeds + '" step="1" oninput="calculateAll()">' +
+        '<span class="var-price">&times;&nbsp;€' + p.feedsPrice + '</span></div>';
     } else {
       varHtml = '—';
     }
 
     // --- Canone base (colonna 4) ---
-    var canoneBaseHtml = p.isCustom
-      ? '<input type="number" class="inp-var" placeholder="€/m" oninput="calculateAll()" style="width:56px">'
+    var canoneBaseHtml = p.isDualCustom
+      ? '<div class="var-cell-dual">' +
+          '<div class="var-cell-stack"><span class="var-label-sm">€/' + p.dualLabel1.toLowerCase() + '</span><input type="number" class="inp-custom-unitprice-1" placeholder="0" oninput="calculateAll()" title="Prezzo per ' + p.dualLabel1.toLowerCase() + '"></div>' +
+          '<div class="var-cell-stack"><span class="var-label-sm">€/' + p.dualLabel2 + '</span><input type="number" class="inp-custom-unitprice-2" placeholder="0" oninput="calculateAll()" title="Prezzo per ' + p.dualLabel2 + '"></div>' +
+        '</div>'
+      : p.isCustom
+      ? '<input type="number" class="inp-custom-unitprice" placeholder="€/unità" oninput="calculateAll()" style="width:56px" title="Prezzo per singola unità (moltiplicato per la quantità inserita in Variabili)">'
       : (p.canone > 0 ? '€&nbsp;' + p.canone.toLocaleString('it-IT') : '—');
 
     // --- UT calcolata (colonna 5) ---
@@ -686,8 +722,8 @@ function renderTable(section, tbodyId) {
     tr.innerHTML =
       '<td>' +
         '<div class="cb-pair">' +
-          '<input type="checkbox" class="cb-cost" title="In offerta (rosso)" onchange="handleCbToggle(this)">' +
-          '<input type="checkbox" class="cb-suggest" title="Suggerisci (blu)" onchange="handleCbToggle(this)">' +
+          '<input type="checkbox" class="cb-cost" title="✅ In offerta (verde)" onchange="handleCbToggle(this)">' +
+          '<input type="checkbox" class="cb-suggest" title="❓ Suggerisci (rosso)" onchange="handleCbToggle(this)">' +
         '</div>' +
       '</td>' +
       '<td>' + p.name + (p.presentUrl ? '<a class="pres-link" href="' + p.presentUrl + '" target="_blank" title="Vedi presentazione">↗ presentazione</a>' : '') + '</td>' +
@@ -714,22 +750,30 @@ function handleCbToggle(cb) {
   calculateAll();
 }
 
-function getRowCanone(row) {
+function getRowCanoneCalc(row) {
   var pid = row.dataset.pid;
   var section = row.dataset.section;
   var p = products[section].find(function(x) { return x.id === pid; });
   if (!p) return 0;
 
-  // Override manuale canone (colonna 9)
-  var canOv = row.querySelector('.inp-can-ov');
-  if (canOv && canOv.value !== '') return parseFloat(canOv.value) || 0;
-
-  // Canone base
   var base = p.canone;
   var varInp = row.querySelector('.inp-var');
 
-  if (p.isCustom) {
-    base = varInp ? (parseFloat(varInp.value) || 0) : 0;
+  if (p.isDualCustom) {
+    var v1 = row.querySelector('.inp-var-1');
+    var v2 = row.querySelector('.inp-var-2');
+    var p1 = row.querySelector('.inp-custom-unitprice-1');
+    var p2 = row.querySelector('.inp-custom-unitprice-2');
+    var qty1   = v1 ? (parseFloat(v1.value) || 0) : 0;
+    var qty2   = v2 ? (parseFloat(v2.value) || 0) : 0;
+    var price1 = p1 ? (parseFloat(p1.value) || 0) : 0;
+    var price2 = p2 ? (parseFloat(p2.value) || 0) : 0;
+    base = qty1 * price1 + qty2 * price2;
+  } else if (p.isCustom) {
+    var qty = varInp ? (parseFloat(varInp.value) || 0) : 0;
+    var unitPriceInp = row.querySelector('.inp-custom-unitprice');
+    var unitPrice = unitPriceInp ? (parseFloat(unitPriceInp.value) || 0) : 0;
+    base = qty * unitPrice;
   } else if (p.variables) {
     var n = varInp ? (parseInt(varInp.value) || p.variables) : p.variables;
     base = p.canone + Math.max(0, n - 1) * p.variablePrice;
@@ -749,15 +793,24 @@ function getRowCanone(row) {
   return base;
 }
 
-function getRowUT(row) {
+function getRowCanone(row) {
+  var canOv = row.querySelector('.inp-can-ov');
+  if (canOv && canOv.value !== '') return parseFloat(canOv.value) || 0;
+  return getRowCanoneCalc(row);
+}
+
+function getRowUTCalc(row) {
   var pid = row.dataset.pid;
   var section = row.dataset.section;
   var p = products[section].find(function(x) { return x.id === pid; });
   if (!p) return 0;
-  // Override manuale UT (colonna 7)
+  return p.ut;
+}
+
+function getRowUT(row) {
   var utOv = row.querySelector('.inp-ut-ov');
   if (utOv && utOv.value !== '') return parseFloat(utOv.value) || 0;
-  return p.ut;
+  return getRowUTCalc(row);
 }
 
 function calculateAll() {
@@ -925,6 +978,11 @@ function collectOfferState() {
     var varInp = row.querySelector('.inp-var');
     var utOv   = row.querySelector('.inp-ut-ov');
     var canOv  = row.querySelector('.inp-can-ov');
+    var unitPriceInp = row.querySelector('.inp-custom-unitprice');
+    var v1 = row.querySelector('.inp-var-1');
+    var v2 = row.querySelector('.inp-var-2');
+    var p1 = row.querySelector('.inp-custom-unitprice-1');
+    var p2 = row.querySelector('.inp-custom-unitprice-2');
     rows.push({
       pid: row.dataset.pid,
       section: row.dataset.section,
@@ -932,7 +990,12 @@ function collectOfferState() {
       suggest: isSuggest,
       varVal: varInp ? varInp.value : '',
       utOv: utOv ? utOv.value : '',
-      canOv: canOv ? canOv.value : ''
+      canOv: canOv ? canOv.value : '',
+      unitPrice: unitPriceInp ? unitPriceInp.value : '',
+      var1: v1 ? v1.value : '',
+      var2: v2 ? v2.value : '',
+      unitPrice1: p1 ? p1.value : '',
+      unitPrice2: p2 ? p2.value : ''
     });
     if (isCost) {
       totalUT  += getRowUT(row);
@@ -1000,6 +1063,11 @@ function loadOfferFromLog(id) {
       else                  varInp.value = '';
     }
     var utOv  = row.querySelector('.inp-ut-ov');  if (utOv)  utOv.value  = '';
+    var unitPriceInp = row.querySelector('.inp-custom-unitprice'); if (unitPriceInp) unitPriceInp.value = '';
+    var v1 = row.querySelector('.inp-var-1'); if (v1) v1.value = '';
+    var v2 = row.querySelector('.inp-var-2'); if (v2) v2.value = '';
+    var p1 = row.querySelector('.inp-custom-unitprice-1'); if (p1) p1.value = '';
+    var p2 = row.querySelector('.inp-custom-unitprice-2'); if (p2) p2.value = '';
     var canOv = row.querySelector('.inp-can-ov'); if (canOv) canOv.value = '';
   });
 
@@ -1027,6 +1095,12 @@ function loadOfferFromLog(id) {
     if (cbSuggest) cbSuggest.checked = !!r.suggest;
     var varInp = row.querySelector('.inp-var');
     if (varInp && r.varVal !== '' && r.varVal != null) varInp.value = r.varVal;
+    var unitPriceInp = row.querySelector('.inp-custom-unitprice');
+    if (unitPriceInp && r.unitPrice !== '' && r.unitPrice != null) unitPriceInp.value = r.unitPrice;
+    var v1 = row.querySelector('.inp-var-1'); if (v1 && r.var1 !== '' && r.var1 != null) v1.value = r.var1;
+    var v2 = row.querySelector('.inp-var-2'); if (v2 && r.var2 !== '' && r.var2 != null) v2.value = r.var2;
+    var p1 = row.querySelector('.inp-custom-unitprice-1'); if (p1 && r.unitPrice1 !== '' && r.unitPrice1 != null) p1.value = r.unitPrice1;
+    var p2 = row.querySelector('.inp-custom-unitprice-2'); if (p2 && r.unitPrice2 !== '' && r.unitPrice2 != null) p2.value = r.unitPrice2;
     var utOv  = row.querySelector('.inp-ut-ov');  if (utOv  && r.utOv)  utOv.value  = r.utOv;
     var canOv = row.querySelector('.inp-can-ov'); if (canOv && r.canOv) canOv.value = r.canOv;
   });
@@ -1085,10 +1159,29 @@ function getOfferProductCodes(entry) {
   return codes.join(', ');
 }
 
+function computeDealerVersionMap(log) {
+  var groups = {};
+  log.forEach(function(e) {
+    var key = (e.dealerName || '').trim().toLowerCase();
+    if (!key) return;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(e);
+  });
+  var versionMap = {};
+  Object.keys(groups).forEach(function(key) {
+    var arr = groups[key];
+    if (arr.length < 2) return; // un solo'offerta per questo dealer: nessuna etichetta necessaria
+    arr.sort(function(a, b) { return (a.savedAt || '').localeCompare(b.savedAt || ''); }); // più vecchia = V1
+    arr.forEach(function(e, i) { versionMap[e.id] = i + 1; });
+  });
+  return versionMap;
+}
+
 function renderLog() {
   var container = document.getElementById('log-list');
   if (!container) return;
   var log = getLogOfferte();
+  var dealerVersionMap = computeDealerVersionMap(log);
 
   var countEl = document.getElementById('log-count');
   if (countEl) {
@@ -1117,10 +1210,12 @@ function renderLog() {
   filtered.forEach(function(e) {
     var nProdotti = (e.rows || []).filter(function(r) { return r.cost; }).length;
     var codesStr = getOfferProductCodes(e);
+    var version = dealerVersionMap[e.id];
+    var dealerLabel = escLog(e.dealerName || '(senza nome)') + (version ? ' <span class="log-card-version">V' + version + '</span>' : '');
     html += '<div class="log-card" onclick="if(event.target.type!==\'checkbox\') loadOfferFromLog(\'' + e.id + '\')">';
     html += '  <input type="checkbox" class="log-cb" data-id="' + e.id + '" onclick="event.stopPropagation()">';
     html += '  <div class="log-card-main">';
-    html += '    <div><div class="log-card-dealer">' + escLog(e.dealerName || '(senza nome)') + '</div><div class="log-card-sub">' + escLog(e.contactName || '') + (e.dmName ? ' · ' + escLog(e.dmName) : '') + '</div></div>';
+    html += '    <div><div class="log-card-dealer">' + dealerLabel + '</div><div class="log-card-sub">' + escLog(e.contactName || '') + (e.dmName ? ' · ' + escLog(e.dmName) : '') + '</div></div>';
     html += '    <div><div class="log-card-date">📅 ' + formatLogDate(e.savedAt) + '</div><div class="log-card-arr">' + computeOfferARR(e) + '</div></div>';
     html += '    <div class="log-card-tot">UT <b>€ ' + (e.totalUT||0).toLocaleString('it-IT',{minimumFractionDigits:2}) + '</b></div>';
     html += '    <div class="log-card-tot">Canone <b>€ ' + (e.totalCan||0).toLocaleString('it-IT',{minimumFractionDigits:2}) + '</b>/mese</div>';
@@ -1437,6 +1532,11 @@ function applyParsedOfferToForm(parsed) {
       else                  varInp.value = '';
     }
     var utOv  = row.querySelector('.inp-ut-ov');  if (utOv)  utOv.value  = '';
+    var unitPriceInp = row.querySelector('.inp-custom-unitprice'); if (unitPriceInp) unitPriceInp.value = '';
+    var v1 = row.querySelector('.inp-var-1'); if (v1) v1.value = '';
+    var v2 = row.querySelector('.inp-var-2'); if (v2) v2.value = '';
+    var p1 = row.querySelector('.inp-custom-unitprice-1'); if (p1) p1.value = '';
+    var p2 = row.querySelector('.inp-custom-unitprice-2'); if (p2) p2.value = '';
     var canOv = row.querySelector('.inp-can-ov'); if (canOv) canOv.value = '';
   });
 
@@ -1493,21 +1593,35 @@ async function handlePdfUpload(inputEl) {
 // Prodotti per cui la variabile va mostrata al cliente nel preventivo/PDF,
 // con l'etichetta da usare. unitFirst:true => "Etichetta N", altrimenti "N etichetta"
 var VAR_DISPLAY_MAP = {
-  ssk_app:     { label:'Sedi', singular:'Sede', unitFirst:true },
-  bgrem_custom:{ label:'immagini/mese', singular:'immagine/mese' },
-  wsk_conf:    { label:'configuratori casa madre', singular:'configuratore casa madre' },
-  lsk_ess:     { label:'utenze', singular:'utenza' },
-  lsk_rev:     { label:'utenze', singular:'utenza' },
-  lsk_wa:      { label:'utenze', singular:'utenza' },
-  lsk_conf:    { label:'configuratori', singular:'configuratore' },
-  csk_cust:    { label:'lead/mese gestite da AI', singular:'lead/mese gestito da AI' },
-  fsk:         { label:'sedi', singular:'sede' },
-  psk:         { label:'marchi', singular:'marchio' }
+  ssk_app:     { label:'Sedi', singular:'Sede', unitFirst:true }, // formato invariato, non richiesto in questa lista
+  bgrem_custom:{ label:'immagini/mese', singular:'immagine/mese', nFormat:true },
+  aiv_custom:  { label:'posti video attivi in contemporanea', singular:'posto video attivo', nFormat:true },
+  wsk_conf:    { label:'configuratori casa madre', singular:'configuratore casa madre', nFormat:true },
+  lsk_ess:     { label:'utenze', singular:'utenza', nFormat:true },
+  lsk_rev:     { label:'utenze', singular:'utenza', nFormat:true },
+  lsk_wa:      { label:'utenze', singular:'utenza', nFormat:true },
+  lsk_conf:    { label:'configuratori', singular:'configuratore', nFormat:true },
+  csk_cust:    { label1:'Sedi', label2:'lead/mese gestite da AI' },
+  fsk:         { label:'sedi', singular:'sede', nFormat:true },
+  psk:         { label:'brand', singular:'brand', nFormat:true }
 };
 
 function getProductVarSuffix(p, row) {
   var cfg = VAR_DISPLAY_MAP[p.id];
   if (!cfg) return '';
+
+  if (p.isDualCustom) {
+    var v1 = row ? row.querySelector('.inp-var-1') : null;
+    var v2 = row ? row.querySelector('.inp-var-2') : null;
+    var n1 = v1 ? parseInt(v1.value) : NaN;
+    var n2 = v2 ? parseInt(v2.value) : NaN;
+    var parts = [];
+    if (n1 && !isNaN(n1)) parts.push(cfg.label1 + ' n° ' + n1);
+    if (n2 && !isNaN(n2)) parts.push(cfg.label2 + ' n° ' + n2);
+    if (parts.length === 0) return '';
+    return ' (' + parts.join(' · ') + ')';
+  }
+
   var varInp = row ? row.querySelector('.inp-var') : null;
   var n;
   if (p.isCustom) {
@@ -1524,7 +1638,22 @@ function getProductVarSuffix(p, row) {
   } else {
     return '';
   }
+  if (cfg.nFormat) return ' (' + cfg.label + ' n° ' + n + ')';
   return cfg.unitFirst ? ' (' + (n === 1 ? cfg.singular : cfg.label) + ' ' + n + ')' : ' (' + n + ' ' + (n === 1 ? cfg.singular : cfg.label) + ')';
+}
+
+function formatRowPriceCell(finalVal, calcVal, isCanone) {
+  if (!isCanone && finalVal <= 0) return '—';
+  var finalStr = '€ ' + finalVal.toLocaleString('it-IT', { minimumFractionDigits: 2 });
+  // Sconto sulla riga: il valore finale (override incluso) è più basso del calcolato/listino
+  if (calcVal > 0 && finalVal < calcVal) {
+    var pct = Math.round((1 - finalVal / calcVal) * 1000) / 10; // 1 decimale
+    var calcStr = '€ ' + calcVal.toLocaleString('it-IT', { minimumFractionDigits: 2 });
+    return '<span class="bozza-price-list">' + calcStr + '</span> ' + finalStr +
+      ' <span class="bozza-price-pct">(-' + pct.toLocaleString('it-IT') + '%)</span>';
+  }
+  // Maggiorazione o prezzo standard: solo il prezzo finale
+  return finalStr;
 }
 
 function renderBozza() {
@@ -1552,7 +1681,7 @@ function renderBozza() {
       var p   = products[s.key] ? products[s.key].find(function(x){ return x.id === pid; }) : null;
       if (!p) return;
       if (cbCost && cbCost.checked) {
-        sectionCost.push({ name: p.name + getProductVarSuffix(p, row), ut: getRowUT(row), canone: getRowCanone(row), presentUrl: p.presentUrl || '' });
+        sectionCost.push({ name: p.name + getProductVarSuffix(p, row), ut: getRowUT(row), utCalc: getRowUTCalc(row), canone: getRowCanone(row), canoneCalc: getRowCanoneCalc(row), presentUrl: p.presentUrl || '' });
       }
       if (cbSuggest && cbSuggest.checked) {
         suggestItems.push({ name: p.name + getProductVarSuffix(p, row), presentUrl: p.presentUrl || '' });
@@ -1579,8 +1708,24 @@ function renderBozza() {
   var dealerLogoImg = document.getElementById('dealer-logo-img');
   var hasDealerLogo = dealerLogoImg && dealerLogoImg.style.display !== 'none' && dealerLogoImg.src && dealerLogoImg.src !== window.location.href;
   var dealerLogoSrc = hasDealerLogo ? dealerLogoImg.src : '';
+
+  // Calcolo dimensioni esplicite (non solo altezza) in base al reale rapporto larghezza/altezza del file caricato,
+  // così il logo non viene MAI stirato: html2canvas (usato per il PDF) non rispetta sempre object-fit.
+  function computeLogoBoxStyle(targetHeight, maxWidth) {
+    var w = targetHeight, h = targetHeight; // fallback quadrato se non ancora calcolabile
+    if (dealerLogoImg && dealerLogoImg.naturalWidth && dealerLogoImg.naturalHeight) {
+      var ratio = dealerLogoImg.naturalWidth / dealerLogoImg.naturalHeight;
+      h = targetHeight;
+      w = h * ratio;
+      if (maxWidth && w > maxWidth) { w = maxWidth; h = w / ratio; }
+    }
+    return 'height:' + h.toFixed(1) + 'px;width:' + w.toFixed(1) + 'px;display:block';
+  }
+  var dealerLogoCoverStyle = hasDealerLogo ? computeLogoBoxStyle(52, 170) : '';
+  var dealerLogoHeaderStyle = hasDealerLogo ? computeLogoBoxStyle(40, null) : '';
+
   // Logo dealer da affiancare al logo MotorK piccolo, in ogni pagina interna (sfondo già bianco, nessun badge)
-  var dealerLogoHeaderHtml = hasDealerLogo ? '<img src="' + dealerLogoSrc + '" alt="' + dealerName + '">' : '';
+  var dealerLogoHeaderHtml = hasDealerLogo ? '<img src="' + dealerLogoSrc + '" alt="' + dealerName + '" style="' + dealerLogoHeaderStyle + '">' : '';
 
   var html = '';
 
@@ -1597,7 +1742,7 @@ function renderBozza() {
   html += '  <img class="mk-logo-cover" src="' + MK_LOGO_LIGHT + '" alt="MotorK">';
   if (hasDealerLogo) {
     html += '  <div class="bozza-cover-logo-sep"></div>';
-    html += '  <div class="dealer-logo-cover-badge"><img class="dealer-logo-cover" src="' + dealerLogoSrc + '" alt="' + dealerName + '"></div>';
+    html += '  <div class="dealer-logo-cover-badge"><img src="' + dealerLogoSrc + '" alt="' + dealerName + '" style="' + dealerLogoCoverStyle + '"></div>';
   }
   html += '</div>';
 
@@ -1655,8 +1800,8 @@ function renderBozza() {
       totalUT  += item.ut;
       totalCan += item.canone;
       html += '<tr><td>' + item.name + (item.presentUrl ? '<a class="bozza-pres-link" href="' + item.presentUrl + '" target="_blank">↗ Vedi presentazione</a>' : '') + '</td>';
-      html += '<td>' + (item.ut > 0 ? '€ ' + item.ut.toLocaleString('it-IT',{minimumFractionDigits:2}) : '—') + '</td>';
-      html += '<td>€ ' + item.canone.toLocaleString('it-IT',{minimumFractionDigits:2}) + '</td></tr>';
+      html += '<td>' + formatRowPriceCell(item.ut, item.utCalc, false) + '</td>';
+      html += '<td>' + formatRowPriceCell(item.canone, item.canoneCalc, true) + '</td></tr>';
     });
     html += '</tbody></table>';
   });
