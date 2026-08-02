@@ -587,6 +587,7 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
         <button class="btn-gray" onclick="toggleAllLogCheckboxes()" title="Seleziona / deseleziona tutte" style="width:auto;padding:8px 12px">☑︎ Tutte</button>
         <button class="btn-gray" onclick="deleteSelectedOffers()" title="Cancella le offerte selezionate" style="width:auto;padding:8px 12px">🗑️ Cancella selezionate</button>
         <button class="btn-red" onclick="deleteAllOffers()" title="Cancella tutte le offerte" style="width:auto;padding:8px 12px">🗑️ Cancella tutte</button>
+        <button class="btn-gray" onclick="cleanupLogLogos()" title="Rimuove i loghi salvati dalle offerte nel log, per liberare spazio se il salvataggio fallisce per memoria piena" style="width:auto;padding:8px 12px">🧹 Libera spazio (rimuovi loghi salvati)</button>
         <button class="btn-gray" onclick="exportLogOfferte()" title="Scarica un file di backup con tutte le offerte" style="width:auto;padding:8px 12px">⬇️ Esporta log</button>
         <label class="btn-gray" for="log-import-file" title="Carica un file di backup esportato in precedenza" style="width:auto;padding:8px 12px;cursor:pointer;display:inline-flex;align-items:center">⬆️ Importa log</label>
         <input type="file" id="log-import-file" accept="application/json" style="display:none" onchange="importLogOfferte(this)">
@@ -1259,12 +1260,10 @@ function collectOfferState() {
       totalCan += getRowCanone(row);
     }
   });
-  var dealerLogoImgEl = document.getElementById('dealer-logo-img');
   return {
     dealerName:        document.getElementById('dealer-name').value || '',
     contactName:       document.getElementById('contact-name').value || '',
     dmName:            document.getElementById('dm-name').value || '',
-    dealerLogoData:    (dealerLogoImgEl && dealerLogoImgEl.src && dealerLogoImgEl.src.indexOf('data:') === 0) ? dealerLogoImgEl.src : '',
     scontoData:        document.getElementById('sconto-data').value || '',
     scontoUtPct:       document.getElementById('sconto-ut-pct').value || '',
     scontoCanFirmaPct: document.getElementById('sconto-canone-firma-pct').value || '',
@@ -1337,8 +1336,6 @@ function loadOfferFromLog(id) {
   document.getElementById('dealer-name').value  = entry.dealerName  || '';
   document.getElementById('contact-name').value = entry.contactName || '';
   document.getElementById('dm-name').value      = entry.dmName      || '';
-  if (entry.dealerLogoData) showDealerLogoImg(entry.dealerLogoData);
-  else clearDealerLogo();
 
   // Sconti
   document.getElementById('sconto-data').value                  = entry.scontoData        || '';
@@ -1517,6 +1514,18 @@ async function deleteAllOffers() {
   setLogOfferte([]);
   writeLogFileToDisk();
   renderLog();
+}
+
+async function cleanupLogLogos() {
+  var log = getLogOfferte();
+  var withLogo = log.filter(function(e) { return e.dealerLogoData; });
+  if (withLogo.length === 0) { await uiAlert('Nessun logo salvato da rimuovere: le offerte nel log non ne contengono.'); return; }
+  if (!(await uiConfirm('Rimuovere il logo salvato da ' + withLogo.length + ' offerta/e nel log, per liberare spazio? Prodotti, quantità, sconti e totali restano intatti — viene tolto solo il logo memorizzato in quelle vecchie offerte.'))) return;
+  log.forEach(function(e) { delete e.dealerLogoData; });
+  setLogOfferte(log);
+  writeLogFileToDisk();
+  renderLog();
+  await uiAlert('Logo rimosso da ' + withLogo.length + ' offerta/e. Ora dovresti avere più spazio libero per salvare.');
 }
 
 async function exportLogOfferte() {
