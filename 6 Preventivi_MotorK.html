@@ -67,7 +67,8 @@ thead{background:#4D4D4D;color:#fff}
 th{padding:8px 7px;text-align:right;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;border-right:1px solid #5a5a5a}
 th:last-child{border-right:none}
 /* Larghezze colonne: 46+46+110+72+70+72+76+80+78 = 650 → nome prende il resto */
-th:nth-child(1){width:46px;text-align:center}   /* ✅❓ checkbox in offerta / suggerito */
+th:nth-child(1){width:66px;text-align:center}   /* ✅❓SP checkbox in offerta / suggerito / pacchetto */
+.th-sp{display:block;font-size:9px;letter-spacing:.5px;margin-top:1px;color:#fff;opacity:.85}
 th:nth-child(2){text-align:left}                 /* Nome prodotto - auto */
 th:nth-child(3){width:150px;text-align:center}   /* Variabili */
 th:nth-child(4){width:110px}                     /* Canone base */
@@ -75,6 +76,7 @@ th:nth-child(5){width:80px}                      /* UT calc */
 th:nth-child(6){width:82px}                      /* UT libero */
 th:nth-child(7){width:82px}                      /* Canone calc */
 th:nth-child(8){width:82px}                      /* Canone libero */
+th:nth-child(9){width:64px;text-align:center}     /* Free */
 td{padding:7px 7px;border-bottom:1px solid #f0f0f0;font-size:13px;vertical-align:middle;text-align:right;overflow:hidden;white-space:nowrap;border-right:1px solid #f0f0f0}
 td:last-child{border-right:none}
 td:nth-child(1){text-align:center}
@@ -101,6 +103,7 @@ input[type=number].inp-ut-ov{width:72px;color:#c00020;border-color:#c00020;backg
 input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;background:#f5f8ff}
 .cb-cost{accent-color:#1E9E5A}
 .cb-suggest{accent-color:#F90032}
+.cb-sp{accent-color:#2B7FF5}
 .cb-pair{display:flex;gap:6px;justify-content:center;align-items:center}
 
 /* Search */
@@ -115,6 +118,11 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
 /* Discounts */
 .disc-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
 .disc-box{background:#fff;border:1px solid #E9E9E9;border-radius:4px;padding:10px}
+.sp-package-box{background:#F0F6FF;border:1px solid #2B7FF5;border-radius:5px;padding:10px 14px;margin-bottom:14px}
+.sp-package-label{font-size:11px;font-weight:700;color:#2B7FF5;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.sp-package-fields{display:flex;gap:18px}
+.sp-package-fields label{font-size:11px;font-weight:600;color:#4D4D4D;display:flex;align-items:center;gap:6px}
+.sp-package-fields input{width:60px;padding:5px 7px;border:1px solid #C2C1C1;border-radius:3px;font-size:12px}
 .disc-box label{font-size:10px;font-weight:600;color:#4D4D4D;display:block;margin-bottom:4px}
 .disc-box input[type=date]{width:100%;padding:5px;border:1px solid #C2C1C1;border-radius:3px;font-size:11px;margin-bottom:6px}
 .disc-inline{display:flex;gap:8px;align-items:center;margin-top:4px}
@@ -148,6 +156,7 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
 .bozza-table{width:100%;border-collapse:collapse;margin-bottom:4px}
 .bozza-price-list{color:#C21818;text-decoration:line-through;font-size:10.5px;margin-right:4px}
 .bozza-price-pct{color:#C21818;font-size:10.5px;font-weight:600}
+.bozza-price-free{color:#1E9E5A;font-size:10.5px;font-weight:600}
 .bozza-table th{font-size:11px;font-weight:600;color:#1A1A1A;background:#F5F5F5;padding:7px 10px;text-align:right;border-bottom:2px solid #F90032}
 .bozza-table th:first-child{text-align:left}
 .bozza-table td{font-size:12px;padding:7px 10px;border-bottom:1px solid #f0f0f0;color:#4D4D4D;text-align:right}
@@ -158,11 +167,13 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
 .pres-link{display:inline-block;margin-left:7px;font-size:10px;color:#999;text-decoration:none;font-weight:500;vertical-align:middle;opacity:1}
 .pres-link:hover{color:#F90032;opacity:1}
 .bozza-pres-link{display:block;font-size:10px;color:#C2C1C1;text-decoration:none;margin-top:3px;font-weight:400}
+.bozza-sp-tag{font-size:10px;color:#2B7FF5;font-weight:600;margin-left:6px}
 .bozza-pres-link:hover{color:#F90032}
 
 /* Totali */
 .bozza-totali{background:#F8F8F8;border-radius:6px;padding:16px 20px;margin-top:20px}
 .bozza-tot-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;font-weight:600;color:#4D4D4D;border-bottom:1px solid #E9E9E9}
+.bozza-tot-saving{color:#1E9E5A;font-size:11px;font-weight:600}
 .bozza-tot-row:last-child{border-bottom:none}
 .bozza-tot-row.grand{font-size:15px;color:#F90032;padding-top:12px;margin-top:6px;border-top:2px solid #E9E9E9;border-bottom:none}
 .bozza-sconti{background:#fff;border:1px solid #E9E9E9;border-radius:4px;padding:12px 16px;margin-top:10px}
@@ -351,6 +362,14 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
   <!-- TAB SPARK -->
   <div id="spark" class="tab-content active">
 
+    <div class="sp-package-box">
+      <div class="sp-package-label">📦 Sconto pacchetto SparK Platform <span style="font-weight:400;color:#999;text-transform:none;letter-spacing:0">(si applica solo se flaggati almeno 2 prodotti con "SP")</span></div>
+      <div class="sp-package-fields">
+        <label>% Una Tantum <input type="number" id="sp-ut-pct" min="0" max="100" step="0.5" placeholder="0" oninput="calculateAll()"></label>
+        <label>% Canone <input type="number" id="sp-canone-pct" min="0" max="100" step="0.5" placeholder="0" oninput="calculateAll()"></label>
+      </div>
+    </div>
+
     <!-- STOCK -->
     <div class="section">
       <div class="section-hdr" onclick="toggleSection('s-stock')">
@@ -359,7 +378,7 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
       <div id="s-stock" class="section-body open">
         <table>
           <thead><tr>
-            <th title="✅ Verde = in offerta (quotato) · ❓ Rosso = suggerito">✅❓</th>
+            <th title="✅ Verde = in offerta (quotato) · ❓ Rosso = suggerito · SP = unisci nel pacchetto SparK Platform">✅❓<span class="th-sp">SP</span></th>
             <th style="text-align:left">Prodotto</th>
             <th>Variabili</th>
             <th>Canone<br>base</th>
@@ -367,6 +386,7 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
             <th>UT<br>libero</th>
             <th>Canone<br>calc.</th>
             <th>Canone<br>libero</th>
+            <th>Free</th>
           </tr></thead>
           <tbody id="tbody-stock"></tbody>
         </table>
@@ -381,7 +401,7 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
       <div id="s-web" class="section-body open">
         <table>
           <thead><tr>
-            <th title="✅ Verde = in offerta (quotato) · ❓ Rosso = suggerito">✅❓</th>
+            <th title="✅ Verde = in offerta (quotato) · ❓ Rosso = suggerito · SP = unisci nel pacchetto SparK Platform">✅❓<span class="th-sp">SP</span></th>
             <th style="text-align:left">Prodotto</th>
             <th>Variabili</th>
             <th>Canone<br>base</th>
@@ -389,6 +409,7 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
             <th>UT<br>libero</th>
             <th>Canone<br>calc.</th>
             <th>Canone<br>libero</th>
+            <th>Free</th>
           </tr></thead>
           <tbody id="tbody-web"></tbody>
         </table>
@@ -403,7 +424,7 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
       <div id="s-crm" class="section-body open">
         <table>
           <thead><tr>
-            <th title="✅ Verde = in offerta (quotato) · ❓ Rosso = suggerito">✅❓</th>
+            <th title="✅ Verde = in offerta (quotato) · ❓ Rosso = suggerito · SP = unisci nel pacchetto SparK Platform">✅❓<span class="th-sp">SP</span></th>
             <th style="text-align:left">Prodotto</th>
             <th>Variabili</th>
             <th>Canone<br>base</th>
@@ -411,6 +432,7 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
             <th>UT<br>libero</th>
             <th>Canone<br>calc.</th>
             <th>Canone<br>libero</th>
+            <th>Free</th>
           </tr></thead>
           <tbody id="tbody-crm"></tbody>
         </table>
@@ -425,7 +447,7 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
       <div id="s-aftersales" class="section-body open">
         <table>
           <thead><tr>
-            <th title="✅ Verde = in offerta (quotato) · ❓ Rosso = suggerito">✅❓</th>
+            <th title="✅ Verde = in offerta (quotato) · ❓ Rosso = suggerito · SP = unisci nel pacchetto SparK Platform">✅❓<span class="th-sp">SP</span></th>
             <th style="text-align:left">Prodotto</th>
             <th>Variabili</th>
             <th>Canone<br>base</th>
@@ -433,6 +455,7 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
             <th>UT<br>libero</th>
             <th>Canone<br>calc.</th>
             <th>Canone<br>libero</th>
+            <th>Free</th>
           </tr></thead>
           <tbody id="tbody-aftersales"></tbody>
         </table>
@@ -450,7 +473,7 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
         </div>
         <table>
           <thead><tr>
-            <th title="✅ Verde = in offerta (quotato) · ❓ Rosso = suggerito">✅❓</th>
+            <th title="✅ Verde = in offerta (quotato) · ❓ Rosso = suggerito · SP = unisci nel pacchetto SparK Platform">✅❓<span class="th-sp">SP</span></th>
             <th style="text-align:left">Prodotto</th>
             <th>Variabili</th>
             <th>Canone<br>base</th>
@@ -458,6 +481,7 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
             <th>UT<br>libero</th>
             <th>Canone<br>calc.</th>
             <th>Canone<br>libero</th>
+            <th>Free</th>
           </tr></thead>
           <tbody id="tbody-integrazioni-spark"></tbody>
         </table>
@@ -496,7 +520,7 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
       <div id="s-marketing" class="section-body open">
         <table>
           <thead><tr>
-            <th title="✅ Verde = in offerta (quotato) · ❓ Rosso = suggerito">✅❓</th>
+            <th title="✅ Verde = in offerta (quotato) · ❓ Rosso = suggerito · SP = unisci nel pacchetto SparK Platform">✅❓<span class="th-sp">SP</span></th>
             <th style="text-align:left">Prodotto</th>
             <th>Variabili</th>
             <th>Canone<br>base</th>
@@ -504,6 +528,7 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
             <th>UT<br>libero</th>
             <th>Canone<br>calc.</th>
             <th>Canone<br>libero</th>
+            <th>Free</th>
           </tr></thead>
           <tbody id="tbody-marketing"></tbody>
         </table>
@@ -719,11 +744,15 @@ function renderTable(section, tbodyId) {
     // --- Canone libero override (colonna 9) ---
     var canOvHtml = '<input type="number" class="inp-can-ov" placeholder="override" oninput="calculateAll()" title="Sostituisce canone calcolato">';
 
+    // --- Free (colonna 10): mesi in cui il canone è gratuito per il cliente ---
+    var freeHtml = '<input type="number" class="inp-free-months" min="0" max="99" step="1" placeholder="0" oninput="if(this.value.length>2) this.value=this.value.slice(0,2); calculateAll()" title="Numero di mesi in cui questo prodotto è gratuito per il cliente (poi si passa al canone concordato)" style="width:40px;text-align:center">';
+
     tr.innerHTML =
       '<td>' +
         '<div class="cb-pair">' +
           '<input type="checkbox" class="cb-cost" title="✅ In offerta (verde)" onchange="handleCbToggle(this)">' +
           '<input type="checkbox" class="cb-suggest" title="❓ Suggerisci (rosso)" onchange="handleCbToggle(this)">' +
+          '<input type="checkbox" class="cb-sp" title="📦 Unisci nel pacchetto SparK Platform (serve min. 2 prodotti flaggati)" onchange="calculateAll()">' +
         '</div>' +
       '</td>' +
       '<td>' + p.name + (p.presentUrl ? '<a class="pres-link" href="' + p.presentUrl + '" target="_blank" title="Vedi presentazione">↗ presentazione</a>' : '') + '</td>' +
@@ -732,7 +761,8 @@ function renderTable(section, tbodyId) {
       '<td id="ut-' + p.id + '">' + utCalcHtml + '</td>' +
       '<td>' + utOvHtml + '</td>' +
       '<td>' + canCalcHtml + '</td>' +
-      '<td>' + canOvHtml + '</td>';
+      '<td>' + canOvHtml + '</td>' +
+      '<td>' + freeHtml + '</td>';
 
     tbody.appendChild(tr);
   });
@@ -813,7 +843,66 @@ function getRowUT(row) {
   return getRowUTCalc(row);
 }
 
+// Pacchetto SparK Platform: raggruppa i prodotti flaggati "SP" (min. 2) in un'unica voce scontata sul totale.
+// Condivisa tra calculateAll() (totali in toolbar) e renderBozza() (anteprima/PDF) per evitare disallineamenti.
+function getActiveSPPackage() {
+  var spCandidates = [];
+  document.querySelectorAll('tr[data-pid]').forEach(function(row) {
+    var cbCost = row.querySelector('.cb-cost');
+    var cbSp   = row.querySelector('.cb-sp');
+    if (!(cbCost && cbCost.checked && cbSp && cbSp.checked)) return;
+    var pid = row.dataset.pid, section = row.dataset.section;
+    var p = products[section] ? products[section].find(function(x) { return x.id === pid; }) : null;
+    if (!p) return;
+    var freeInp = row.querySelector('.inp-free-months');
+    spCandidates.push({
+      pid: pid, section: section,
+      ut: getRowUT(row), utCalc: getRowUTCalc(row),
+      canone: getRowCanone(row), canoneCalc: getRowCanoneCalc(row),
+      freeMonths: freeInp ? (parseInt(freeInp.value) || 0) : 0
+    });
+  });
+  if (spCandidates.length < 2) return null;
+
+  var famStock = spCandidates.some(function(i) { return i.section === 'stock'; });
+  var famWeb   = spCandidates.some(function(i) { return i.section === 'web'; });
+  var famLead  = spCandidates.some(function(i) { return i.section === 'crm'; });
+  var famPost  = spCandidates.some(function(i) { return i.section === 'aftersales'; });
+  var famOther = spCandidates.some(function(i) { return i.section === 'integrazioni' || i.section === 'marketing'; });
+
+  var name;
+  if (!famOther && (famStock || famWeb) && !famLead && !famPost) name = 'SparK Platform WebSparK Pillar';
+  else if (!famOther && (famLead || famPost) && !famStock && !famWeb) name = 'SparK Platform LeadSparK Pillar';
+  else name = 'SparK Platform';
+
+  var spUtPctEl  = document.getElementById('sp-ut-pct');
+  var spCanPctEl = document.getElementById('sp-canone-pct');
+  var spUtPct  = spUtPctEl  ? (parseFloat(spUtPctEl.value)  || 0) : 0;
+  var spCanPct = spCanPctEl ? (parseFloat(spCanPctEl.value) || 0) : 0;
+
+  var rawUT = 0, rawUTCalc = 0, rawCan = 0, rawCanCalc = 0, freeMonths = 0;
+  spCandidates.forEach(function(i) {
+    rawUT += i.ut; rawUTCalc += i.utCalc; rawCan += i.canone; rawCanCalc += i.canoneCalc;
+    if (!freeMonths && i.freeMonths > 0) freeMonths = i.freeMonths;
+  });
+
+  return {
+    name: name,
+    items: spCandidates,
+    utCalc: rawUTCalc, canoneCalc: rawCanCalc,
+    ut: rawUT * (1 - spUtPct / 100),
+    canone: rawCan * (1 - spCanPct / 100),
+    freeMonths: freeMonths
+  };
+}
+
+function isRowInSPPackage(pkg, row) {
+  if (!pkg) return false;
+  return pkg.items.some(function(i) { return i.pid === row.dataset.pid && i.section === row.dataset.section; });
+}
+
 function calculateAll() {
+  var pkg = getActiveSPPackage();
   var totalUT = 0, totalCanone = 0;
   document.querySelectorAll('tr[data-pid]').forEach(function(row) {
     var pid = row.dataset.pid;
@@ -822,12 +911,13 @@ function calculateAll() {
     // Aggiorna sempre il canone calcolato visibile
     var c = getRowCanone(row);
     if (canCalcSpan) canCalcSpan.textContent = c > 0 ? '€ ' + c.toFixed(2).replace('.',',') : '—';
-    if (cost && cost.checked) {
+    if (cost && cost.checked && !isRowInSPPackage(pkg, row)) {
       var u = getRowUT(row);
       totalUT += u;
       totalCanone += c;
     }
   });
+  if (pkg) { totalUT += pkg.ut; totalCanone += pkg.canone; }
 
   document.getElementById('total-ut').textContent = '€ ' + totalUT.toLocaleString('it-IT', {minimumFractionDigits:2});
   document.getElementById('total-canone').textContent = '€ ' + totalCanone.toLocaleString('it-IT', {minimumFractionDigits:2}) + '/mese';
@@ -988,11 +1078,14 @@ function collectOfferState() {
     var v2 = row.querySelector('.inp-var-2');
     var p1 = row.querySelector('.inp-custom-unitprice-1');
     var p2 = row.querySelector('.inp-custom-unitprice-2');
+    var freeInp = row.querySelector('.inp-free-months');
+    var cbSp = row.querySelector('.cb-sp');
     rows.push({
       pid: row.dataset.pid,
       section: row.dataset.section,
       cost: isCost,
       suggest: isSuggest,
+      sp: !!(cbSp && cbSp.checked),
       varVal: varInp ? varInp.value : '',
       utOv: utOv ? utOv.value : '',
       canOv: canOv ? canOv.value : '',
@@ -1000,7 +1093,8 @@ function collectOfferState() {
       var1: v1 ? v1.value : '',
       var2: v2 ? v2.value : '',
       unitPrice1: p1 ? p1.value : '',
-      unitPrice2: p2 ? p2.value : ''
+      unitPrice2: p2 ? p2.value : '',
+      freeMonths: freeInp ? freeInp.value : ''
     });
     if (isCost) {
       totalUT  += getRowUT(row);
@@ -1018,6 +1112,8 @@ function collectOfferState() {
     scontoCanFirmaPct: document.getElementById('sconto-canone-firma-pct').value || '',
     scontoAnnUtPct:    document.getElementById('sconto-annuale-ut-pct').value || '',
     scontoAnnCanPct:   document.getElementById('sconto-annuale-canone-pct').value || '',
+    spUtPct:           document.getElementById('sp-ut-pct').value || '',
+    spCanonePct:       document.getElementById('sp-canone-pct').value || '',
     totalUT: totalUT,
     totalCan: totalCan,
     rows: rows
@@ -1053,8 +1149,10 @@ function loadOfferFromLog(id) {
   document.querySelectorAll('tr[data-pid]').forEach(function(row) {
     var cbCost    = row.querySelector('.cb-cost');
     var cbSuggest = row.querySelector('.cb-suggest');
+    var cbSp      = row.querySelector('.cb-sp');
     if (cbCost)    cbCost.checked = false;
     if (cbSuggest) cbSuggest.checked = false;
+    if (cbSp)      cbSp.checked = false;
 
     var pid = row.dataset.pid, section = row.dataset.section;
     var p = products[section] ? products[section].find(function(x) { return x.id === pid; }) : null;
@@ -1073,6 +1171,7 @@ function loadOfferFromLog(id) {
     var v2 = row.querySelector('.inp-var-2'); if (v2) v2.value = '';
     var p1 = row.querySelector('.inp-custom-unitprice-1'); if (p1) p1.value = '';
     var p2 = row.querySelector('.inp-custom-unitprice-2'); if (p2) p2.value = '';
+    var freeInp = row.querySelector('.inp-free-months'); if (freeInp) freeInp.value = '';
     var canOv = row.querySelector('.inp-can-ov'); if (canOv) canOv.value = '';
   });
 
@@ -1089,6 +1188,8 @@ function loadOfferFromLog(id) {
   document.getElementById('sconto-canone-firma-pct').value       = entry.scontoCanFirmaPct  || '';
   document.getElementById('sconto-annuale-ut-pct').value         = entry.scontoAnnUtPct     || '';
   document.getElementById('sconto-annuale-canone-pct').value     = entry.scontoAnnCanPct    || '';
+  document.getElementById('sp-ut-pct').value                     = entry.spUtPct            || '';
+  document.getElementById('sp-canone-pct').value                 = entry.spCanonePct        || '';
 
   // Prodotti dell'offerta
   (entry.rows || []).forEach(function(r) {
@@ -1096,8 +1197,10 @@ function loadOfferFromLog(id) {
     if (!row) return;
     var cbCost    = row.querySelector('.cb-cost');
     var cbSuggest = row.querySelector('.cb-suggest');
+    var cbSp      = row.querySelector('.cb-sp');
     if (cbCost)    cbCost.checked    = !!r.cost;
     if (cbSuggest) cbSuggest.checked = !!r.suggest;
+    if (cbSp)      cbSp.checked      = !!r.sp;
     var varInp = row.querySelector('.inp-var');
     if (varInp && r.varVal !== '' && r.varVal != null) varInp.value = r.varVal;
     var unitPriceInp = row.querySelector('.inp-custom-unitprice');
@@ -1106,6 +1209,7 @@ function loadOfferFromLog(id) {
     var v2 = row.querySelector('.inp-var-2'); if (v2 && r.var2 !== '' && r.var2 != null) v2.value = r.var2;
     var p1 = row.querySelector('.inp-custom-unitprice-1'); if (p1 && r.unitPrice1 !== '' && r.unitPrice1 != null) p1.value = r.unitPrice1;
     var p2 = row.querySelector('.inp-custom-unitprice-2'); if (p2 && r.unitPrice2 !== '' && r.unitPrice2 != null) p2.value = r.unitPrice2;
+    var freeInp = row.querySelector('.inp-free-months'); if (freeInp && r.freeMonths !== '' && r.freeMonths != null) freeInp.value = r.freeMonths;
     var utOv  = row.querySelector('.inp-ut-ov');  if (utOv  && r.utOv)  utOv.value  = r.utOv;
     var canOv = row.querySelector('.inp-can-ov'); if (canOv && r.canOv) canOv.value = r.canOv;
   });
@@ -1523,8 +1627,10 @@ function applyParsedOfferToForm(parsed) {
   document.querySelectorAll('tr[data-pid]').forEach(function(row) {
     var cbCost    = row.querySelector('.cb-cost');
     var cbSuggest = row.querySelector('.cb-suggest');
+    var cbSp      = row.querySelector('.cb-sp');
     if (cbCost)    cbCost.checked = false;
     if (cbSuggest) cbSuggest.checked = false;
+    if (cbSp)      cbSp.checked = false;
     var pid = row.dataset.pid, section = row.dataset.section;
     var p = products[section] ? products[section].find(function(x) { return x.id === pid; }) : null;
     var varInp = row.querySelector('.inp-var');
@@ -1542,6 +1648,7 @@ function applyParsedOfferToForm(parsed) {
     var v2 = row.querySelector('.inp-var-2'); if (v2) v2.value = '';
     var p1 = row.querySelector('.inp-custom-unitprice-1'); if (p1) p1.value = '';
     var p2 = row.querySelector('.inp-custom-unitprice-2'); if (p2) p2.value = '';
+    var freeInp = row.querySelector('.inp-free-months'); if (freeInp) freeInp.value = '';
     var canOv = row.querySelector('.inp-can-ov'); if (canOv) canOv.value = '';
   });
 
@@ -1647,18 +1754,19 @@ function getProductVarSuffix(p, row) {
   return cfg.unitFirst ? ' (' + (n === 1 ? cfg.singular : cfg.label) + ' ' + n + ')' : ' (' + n + ' ' + (n === 1 ? cfg.singular : cfg.label) + ')';
 }
 
-function formatRowPriceCell(finalVal, calcVal, isCanone) {
+function formatRowPriceCell(finalVal, calcVal, isCanone, freeMonths) {
   if (!isCanone && finalVal <= 0) return '—';
   var finalStr = '€ ' + finalVal.toLocaleString('it-IT', { minimumFractionDigits: 2 });
+  var freeStr = (isCanone && freeMonths > 0) ? ' <span class="bozza-price-free">(free per ' + freeMonths + (freeMonths === 1 ? ' mese' : ' mesi') + ')</span>' : '';
   // Sconto sulla riga: il valore finale (override incluso) è più basso del calcolato/listino
   if (calcVal > 0 && finalVal < calcVal) {
     var pct = Math.round((1 - finalVal / calcVal) * 1000) / 10; // 1 decimale
     var calcStr = '€ ' + calcVal.toLocaleString('it-IT', { minimumFractionDigits: 2 });
     return '<span class="bozza-price-list">' + calcStr + '</span> ' + finalStr +
-      ' <span class="bozza-price-pct">(-' + pct.toLocaleString('it-IT') + '%)</span>';
+      ' <span class="bozza-price-pct">(-' + pct.toLocaleString('it-IT') + '%)</span>' + freeStr;
   }
   // Maggiorazione o prezzo standard: solo il prezzo finale
-  return finalStr;
+  return finalStr + freeStr;
 }
 
 function renderBozza() {
@@ -1675,6 +1783,7 @@ function renderBozza() {
   ];
 
   var costItems = [], suggestItems = [];
+  var spPackage = getActiveSPPackage(); // stessa funzione usata dal totale in toolbar, per coerenza
 
   sectionDefs.forEach(function(s) {
     var rows = Array.from(document.querySelectorAll('tr[data-section="' + s.key + '"]'));
@@ -1686,7 +1795,10 @@ function renderBozza() {
       var p   = products[s.key] ? products[s.key].find(function(x){ return x.id === pid; }) : null;
       if (!p) return;
       if (cbCost && cbCost.checked) {
-        sectionCost.push({ name: p.name + getProductVarSuffix(p, row), ut: getRowUT(row), utCalc: getRowUTCalc(row), canone: getRowCanone(row), canoneCalc: getRowCanoneCalc(row), presentUrl: p.presentUrl || '' });
+        var freeInp = row.querySelector('.inp-free-months');
+        var freeMonths = freeInp ? (parseInt(freeInp.value) || 0) : 0;
+        var item = { name: p.name + getProductVarSuffix(p, row), ut: getRowUT(row), utCalc: getRowUTCalc(row), canone: getRowCanone(row), canoneCalc: getRowCanoneCalc(row), freeMonths: freeMonths, presentUrl: p.presentUrl || '', isSP: isRowInSPPackage(spPackage, row) };
+        sectionCost.push(item);
       }
       if (cbSuggest && cbSuggest.checked) {
         suggestItems.push({ name: p.name + getProductVarSuffix(p, row), presentUrl: p.presentUrl || '' });
@@ -1696,6 +1808,7 @@ function renderBozza() {
   });
 
   if (costItems.length === 0 && suggestItems.length === 0) {
+
     el.innerHTML = '<p class="bozza-empty">Seleziona dei prodotti nelle tab SparK Platform o Marketing per vedere l\'anteprima.</p>';
     return;
   }
@@ -1795,6 +1908,7 @@ function renderBozza() {
   html += '<div class="bozza-section-label">Prodotti e servizi <span style="color:#F90032">oggetto dell\'offerta</span></div>';
 
   var totalUT = 0, totalCan = 0;
+  var listinoUT = 0, listinoCan = 0;
 
   costItems.forEach(function(section) {
     html += '<div class="bozza-section-hdr">' + section.label + '</div>';
@@ -1802,20 +1916,44 @@ function renderBozza() {
     html += '<th>Prodotto</th><th>Una Tantum</th><th>Canone / mese</th>';
     html += '</tr></thead><tbody>';
     section.rows.forEach(function(item) {
-      totalUT  += item.ut;
-      totalCan += item.canone;
-      html += '<tr><td>' + item.name + (item.presentUrl ? '<a class="bozza-pres-link" href="' + item.presentUrl + '" target="_blank">↗ Vedi presentazione</a>' : '') + '</td>';
-      html += '<td>' + formatRowPriceCell(item.ut, item.utCalc, false) + '</td>';
-      html += '<td>' + formatRowPriceCell(item.canone, item.canoneCalc, true) + '</td></tr>';
+      var isPkgMember = spPackage && item.isSP;
+      if (!isPkgMember) { totalUT += item.ut; totalCan += item.canone; }
+      listinoUT  += item.utCalc;
+      listinoCan += item.canoneCalc;
+      html += '<tr><td>' + item.name + (item.presentUrl ? '<a class="bozza-pres-link" href="' + item.presentUrl + '" target="_blank">↗ Vedi presentazione</a>' : '') + (isPkgMember ? ' <span class="bozza-sp-tag">📦 incluso in ' + spPackage.name + '</span>' : '') + '</td>';
+      html += '<td>' + (isPkgMember ? '—' : formatRowPriceCell(item.ut, item.utCalc, false)) + '</td>';
+      html += '<td>' + (isPkgMember ? '—' : formatRowPriceCell(item.canone, item.canoneCalc, true, item.freeMonths)) + '</td></tr>';
     });
     html += '</tbody></table>';
   });
+
+  if (spPackage) {
+    totalUT  += spPackage.ut;
+    totalCan += spPackage.canone;
+    html += '<div class="bozza-section-hdr"><strong style="color:#2B7FF5">📦 ' + spPackage.name + '</strong><span style="font-weight:400;color:#666"> — pacchetto unico, sconto calcolato sul totale</span></div>';
+    html += '<table class="bozza-table"><thead><tr>';
+    html += '<th>Prodotto</th><th>Una Tantum</th><th>Canone / mese</th>';
+    html += '</tr></thead><tbody>';
+    html += '<tr><td><strong>' + spPackage.name + ' totale</strong></td>';
+    html += '<td>' + formatRowPriceCell(spPackage.ut, spPackage.utCalc, false) + '</td>';
+    html += '<td>' + formatRowPriceCell(spPackage.canone, spPackage.canoneCalc, true, spPackage.freeMonths) + '</td></tr>';
+    html += '</tbody></table>';
+  }
+
   html += '</div>';
 
   // Totali
   html += '<div class="bozza-totali">';
-  html += '<div class="bozza-tot-row"><span>Totale Una Tantum</span><span>€ ' + totalUT.toLocaleString('it-IT',{minimumFractionDigits:2}) + '</span></div>';
-  html += '<div class="bozza-tot-row"><span>Totale Canone Mensile</span><span>€ ' + totalCan.toLocaleString('it-IT',{minimumFractionDigits:2}) + ' / mese</span></div>';
+  var utSavings  = listinoUT  - totalUT;
+  var canSavings = listinoCan - totalCan;
+  var utSavingsHtml = (utSavings > 0.01)
+    ? ' <span class="bozza-tot-saving">(risparmio totale di € ' + utSavings.toLocaleString('it-IT',{minimumFractionDigits:2}) + ')</span>'
+    : '';
+  var canSavingsHtml = (canSavings > 0.01)
+    ? ' <span class="bozza-tot-saving">(risparmio di € ' + canSavings.toLocaleString('it-IT',{minimumFractionDigits:2}) + '/mese, pari a € ' + (canSavings*24).toLocaleString('it-IT',{minimumFractionDigits:2}) + ' sui 24 mesi)</span>'
+    : '';
+  html += '<div class="bozza-tot-row"><span>Totale Una Tantum</span><span>€ ' + totalUT.toLocaleString('it-IT',{minimumFractionDigits:2}) + utSavingsHtml + '</span></div>';
+  html += '<div class="bozza-tot-row"><span>Totale Canone Mensile</span><span>€ ' + totalCan.toLocaleString('it-IT',{minimumFractionDigits:2}) + ' / mese' + canSavingsHtml + '</span></div>';
 
   // Sconti — calcola scenari
   var scontoData = document.getElementById('sconto-data').value;
