@@ -68,7 +68,7 @@ th{padding:8px 7px;text-align:right;font-size:12px;font-weight:600;white-space:n
 th:last-child{border-right:none}
 /* Larghezze colonne: 46+46+110+72+70+72+76+80+78 = 650 → nome prende il resto */
 th:nth-child(1){width:66px;text-align:center}   /* ✅❓SP checkbox in offerta / suggerito / pacchetto */
-.th-sp{display:block;font-size:9px;letter-spacing:.5px;margin-top:1px;color:#fff;opacity:.85}
+.th-sp{display:inline;font-size:9px;letter-spacing:.5px;margin-left:2px;color:#fff;opacity:.85;vertical-align:middle}
 th:nth-child(2){text-align:left}                 /* Nome prodotto - auto */
 th:nth-child(3){width:150px;text-align:center}   /* Variabili */
 th:nth-child(4){width:110px}                     /* Canone base */
@@ -752,7 +752,7 @@ function renderTable(section, tbodyId) {
         '<div class="cb-pair">' +
           '<input type="checkbox" class="cb-cost" title="✅ In offerta (verde)" onchange="handleCbToggle(this)">' +
           '<input type="checkbox" class="cb-suggest" title="❓ Suggerisci (rosso)" onchange="handleCbToggle(this)">' +
-          '<input type="checkbox" class="cb-sp" title="📦 Unisci nel pacchetto SparK Platform (serve min. 2 prodotti flaggati)" onchange="calculateAll()">' +
+          '<input type="checkbox" class="cb-sp" title="📦 Unisci nel pacchetto SparK Platform (serve min. 2 prodotti flaggati)" onchange="handleSpToggle(this)">' +
         '</div>' +
       '</td>' +
       '<td>' + p.name + (p.presentUrl ? '<a class="pres-link" href="' + p.presentUrl + '" target="_blank" title="Vedi presentazione">↗ presentazione</a>' : '') + '</td>' +
@@ -775,8 +775,28 @@ function handleCbToggle(cb) {
   const row = cb.closest('tr');
   const cost = row.querySelector('.cb-cost');
   const suggest = row.querySelector('.cb-suggest');
+  const sp = row.querySelector('.cb-sp');
   if (cb.classList.contains('cb-cost') && cb.checked) suggest.checked = false;
-  if (cb.classList.contains('cb-suggest') && cb.checked) cost.checked = false;
+  if (cb.classList.contains('cb-suggest') && cb.checked) { cost.checked = false; if (sp) sp.checked = false; }
+  if (cb.classList.contains('cb-cost') && !cb.checked && sp) sp.checked = false;
+
+  // Tutto o niente: se il pacchetto SP è già attivo su altri prodotti, allinea anche questo appena messo in offerta
+  if (cb.classList.contains('cb-cost') && cb.checked && sp) {
+    var spModeActive = Array.from(document.querySelectorAll('.cb-sp')).some(function(el) { return el.checked; });
+    if (spModeActive) sp.checked = true;
+  }
+
+  calculateAll();
+}
+
+function handleSpToggle(cb) {
+  // Non esiste una via di mezzo: o tutti i prodotti in offerta sono nel pacchetto SP, o nessuno lo è
+  var checked = cb.checked;
+  document.querySelectorAll('tr[data-pid]').forEach(function(row) {
+    var cbCost = row.querySelector('.cb-cost');
+    var cbSp   = row.querySelector('.cb-sp');
+    if (cbCost && cbCost.checked && cbSp) cbSp.checked = checked;
+  });
   calculateAll();
 }
 
