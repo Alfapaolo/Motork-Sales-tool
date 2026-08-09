@@ -1029,12 +1029,37 @@ function calculateAll() {
 // ============================================================
 // UI HELPERS
 // ============================================================
-function handleLogoUpload(inputEl) {
+var _logoCompressedForStorage = ''; // versione leggera del logo, usata SOLO per il salvataggio nel Log (non per anteprima/PDF)
+
+function compressImageDataUrl(dataUrl, maxWidth, maxHeight, quality) {
+  return new Promise(function(resolve) {
+    try {
+      var img = new Image();
+      img.onload = function() {
+        var w = img.naturalWidth || 1, h = img.naturalHeight || 1;
+        var ratio = Math.min(maxWidth / w, maxHeight / h, 1);
+        var cw = Math.max(1, Math.round(w * ratio)), ch = Math.max(1, Math.round(h * ratio));
+        var canvas = document.createElement('canvas');
+        canvas.width = cw; canvas.height = ch;
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cw, ch); // sfondo bianco: evita artefatti neri su loghi trasparenti convertiti in JPEG
+        ctx.drawImage(img, 0, 0, cw, ch);
+        try { resolve(canvas.toDataURL('image/jpeg', quality)); }
+        catch (e) { resolve(dataUrl); }
+      };
+      img.onerror = function() { resolve(dataUrl); };
+      img.src = dataUrl;
+    } catch (e) { resolve(dataUrl); }
+  });
+}
+
+async function handleLogoUpload(inputEl) {
   var file = inputEl.files && inputEl.files[0];
   if (!file) return;
   var reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = async function(e) {
     showDealerLogoImg(e.target.result);
+    _logoCompressedForStorage = await compressImageDataUrl(e.target.result, 240, 120, 0.7);
   };
   reader.readAsDataURL(file);
 }
@@ -1054,6 +1079,7 @@ function clearDealerLogo() {
   if (img) { img.src = ''; img.style.display = 'none'; }
   if (sep) sep.style.display = 'none';
   if (fileInput) fileInput.value = '';
+  _logoCompressedForStorage = '';
 }
 
 function switchTab(tabId, btn) {
@@ -1215,9 +1241,26 @@ function getLogOfferte() {
   catch (e) { return []; }
 }
 
+function tryFreeSpaceByStrippingLogos() {
+  try {
+    var log = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
+    var changed = false;
+    log.forEach(function(e) { if (e.dealerLogoData) { delete e.dealerLogoData; changed = true; } });
+    if (changed) localStorage.setItem(LOG_KEY, JSON.stringify(log));
+    return changed;
+  } catch (e) { return false; }
+}
+
 function setLogOfferte(log) {
-  try { localStorage.setItem(LOG_KEY, JSON.stringify(log)); }
-  catch (e) { uiAlert('Impossibile salvare il log: memoria del browser piena. Cancella qualche offerta vecchia.'); }
+  try { localStorage.setItem(LOG_KEY, JSON.stringify(log)); return true; }
+  catch (e) {
+    if (tryFreeSpaceByStrippingLogos()) {
+      try { localStorage.setItem(LOG_KEY, JSON.stringify(log)); return true; }
+      catch (e2) { /* ancora piena, vedi messaggio sotto */ }
+    }
+    uiAlert('Impossibile salvare il log: memoria del browser piena, anche dopo aver liberato spazio dai vecchi loghi. Cancella qualche offerta vecchia dal Log Offerte.');
+    return false;
+  }
 }
 
 function collectOfferState() {
@@ -1264,6 +1307,7 @@ function collectOfferState() {
     dealerName:        document.getElementById('dealer-name').value || '',
     contactName:       document.getElementById('contact-name').value || '',
     dmName:            document.getElementById('dm-name').value || '',
+    dealerLogoData:    _logoCompressedForStorage || '',
     scontoData:        document.getElementById('sconto-data').value || '',
     scontoUtPct:       document.getElementById('sconto-ut-pct').value || '',
     scontoCanFirmaPct: document.getElementById('sconto-canone-firma-pct').value || '',
@@ -1336,6 +1380,8 @@ function loadOfferFromLog(id) {
   document.getElementById('dealer-name').value  = entry.dealerName  || '';
   document.getElementById('contact-name').value = entry.contactName || '';
   document.getElementById('dm-name').value      = entry.dmName      || '';
+  if (entry.dealerLogoData) showDealerLogoImg(entry.dealerLogoData);
+  else clearDealerLogo();
 
   // Sconti
   document.getElementById('sconto-data').value                  = entry.scontoData        || '';
@@ -1693,8 +1739,15 @@ function getPresets() {
 }
 
 function setPresets(list) {
-  try { localStorage.setItem(PRESET_KEY, JSON.stringify(list)); }
-  catch (e) { uiAlert('Impossibile salvare il preset: memoria del browser piena.'); }
+  try { localStorage.setItem(PRESET_KEY, JSON.stringify(list)); return true; }
+  catch (e) {
+    if (tryFreeSpaceByStrippingLogos()) {
+      try { localStorage.setItem(PRESET_KEY, JSON.stringify(list)); return true; }
+      catch (e2) { /* ancora piena, vedi messaggio sotto */ }
+    }
+    uiAlert('Impossibile salvare il preset: memoria del browser piena, anche dopo aver liberato spazio dai vecchi loghi salvati nel log. Prova a cancellare qualche offerta vecchia dal Log Offerte.');
+    return false;
+  }
 }
 
 function collectPresetState() {
@@ -2698,10 +2751,12 @@ function renderBozza() {
 function populateRandom() {
   var logoImgEl = document.getElementById('dealer-logo-img');
   var savedLogo = (logoImgEl && logoImgEl.src && logoImgEl.src.indexOf('data:') === 0) ? logoImgEl.src : null;
+  var savedCompressedLogo = _logoCompressedForStorage;
 
   resetForm();
 
   if (savedLogo) showDealerLogoImg(savedLogo);
+  _logoCompressedForStorage = savedCompressedLogo;
 
   // Dealer random
   var dealers = ['Autosalone Bianchi','Gruppo Ferrari','AutoPrime','MotorCity','Mondial Auto','Autoshow Torino','Delta Motors','Autostore Bergamo'];
