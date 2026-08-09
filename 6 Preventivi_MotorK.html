@@ -102,6 +102,8 @@ input[type=number].inp-var{width:48px}
 input[type=number].inp-custom-unitprice{width:56px}
 input[type=number].inp-ut-ov{width:72px;color:#c00020;border-color:#c00020;background:#fff8f9}
 input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;background:#f5f8ff}
+.price-active{font-weight:800!important}
+input.price-active{border-width:2px}
 .cb-cost{accent-color:#1E9E5A}
 .cb-suggest{accent-color:#F90032}
 .cb-sp{accent-color:#2B7FF5}
@@ -1015,9 +1017,22 @@ function calculateAll() {
     var pid = row.dataset.pid;
     var cost = row.querySelector('.cb-cost');
     var canCalcSpan = document.getElementById('can-' + pid);
+    var utCalcCell = document.getElementById('ut-' + pid);
+    var utOvInput = row.querySelector('.inp-ut-ov');
+    var canOvInput = row.querySelector('.inp-can-ov');
     // Aggiorna sempre il canone calcolato visibile
     var c = getRowCanone(row);
     if (canCalcSpan) canCalcSpan.textContent = c > 0 ? '€ ' + Math.round(c).toString() : '—';
+
+    // Neretto sul prezzo effettivamente in uso: quello manuale se compilato, altrimenti quello calcolato — solo se il prodotto è selezionato
+    var isSelected = !!(cost && cost.checked);
+    var utHasOverride = !!(utOvInput && utOvInput.value !== '');
+    var canHasOverride = !!(canOvInput && canOvInput.value !== '');
+    if (utCalcCell)  utCalcCell.classList.toggle('price-active', isSelected && !utHasOverride);
+    if (utOvInput)   utOvInput.classList.toggle('price-active', isSelected && utHasOverride);
+    if (canCalcSpan) canCalcSpan.classList.toggle('price-active', isSelected && !canHasOverride);
+    if (canOvInput)  canOvInput.classList.toggle('price-active', isSelected && canHasOverride);
+
     if (cost && cost.checked && !isRowInSPPackage(pkg, row)) {
       var u = getRowUT(row);
       totalUT += u;
