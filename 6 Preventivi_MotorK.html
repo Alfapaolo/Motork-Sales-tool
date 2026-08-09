@@ -114,10 +114,27 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
 .totals-box{background:#F8F8F8;padding:14px;border-radius:6px;margin-top:14px}
 .tot-row{display:flex;justify-content:space-between;padding:5px 0;color:#4D4D4D;font-weight:600;font-size:13px}
 .tot-row.grand{color:#F90032;font-size:15px;border-top:2px solid #E9E9E9;padding-top:10px;margin-top:10px}
+.tot-row.grand.riepilogo-risparmi{color:#1E9E5A;font-size:13px;border-top:1px dashed #C2C1C1;padding-top:8px;margin-top:8px}
+.final-round-box{background:#FFF9E8;border:1px solid #E8C468;border-radius:5px;padding:10px 14px;margin-top:10px}
+.final-round-label{font-size:11px;font-weight:700;color:#8A6100;margin-bottom:8px}
+.final-round-fields{display:flex;gap:20px;flex-wrap:wrap}
+.final-round-fields label{font-size:12px;font-weight:600;color:#4D4D4D;display:flex;align-items:center;gap:6px}
+.final-round-fields input{width:90px;padding:6px 8px;border:1px solid #C2C1C1;border-radius:4px;font-size:13px}
+.final-round-clear{width:24px;height:24px;border:1px solid #C2C1C1;background:#fff;border-radius:4px;font-size:11px;color:#999;cursor:pointer;padding:0;line-height:1}
+.final-round-clear:hover{border-color:#F90032;color:#F90032;background:#FFF5F5}
+.final-pct{font-size:11px;font-weight:700;color:#1E9E5A}
+.final-pct.warn{color:#F90032}
 
 /* Discounts */
-.disc-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.disc-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px}
 .disc-box{background:#fff;border:1px solid #E9E9E9;border-radius:4px;padding:10px}
+.disc-box-sp{border-color:#2B7FF5}
+.disc-box-sp label:first-child{color:#2B7FF5}
+.disc-box-sp.disc-box-disabled{background:#F7F7F7;border-color:#E0E0E0;opacity:.55;cursor:not-allowed}
+.disc-box-sp.disc-box-disabled label:first-child{color:#999}
+.disc-box-sp.disc-box-disabled input{pointer-events:none;background:#F0F0F0}
+.disc-box-status{font-size:10.5px;color:#2B7FF5;font-weight:600;margin-top:6px}
+.disc-box-status.inactive{color:#999;font-weight:500}
 .sp-package-box{background:#F0F6FF;border:1px solid #2B7FF5;border-radius:5px;padding:10px 14px;margin-bottom:14px}
 .sp-package-label{font-size:11px;font-weight:700;color:#2B7FF5;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
 .sp-package-fields{display:flex;gap:18px}
@@ -196,6 +213,14 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
 .bozza-scenario-saving{margin-top:8px;font-size:11px;font-weight:600;color:#F90032}
 .bozza-scenario-box.annuale .bozza-scenario-saving{color:#2B7FF5}
 .bozza-scenario-box.combinato .bozza-scenario-saving{color:#1E9E5A}
+.bozza-scenario-omaggio{background:#FFF3D6;color:#8A6100;font-size:11.5px;font-weight:700;padding:5px 9px;border-radius:4px;margin-bottom:8px;display:inline-block}
+.bozza-annuale-nudge{margin-top:14px;padding:12px 16px;background:#F0F6FF;border:1.5px dashed #2B7FF5;border-radius:6px;font-size:12px;color:#1A1A1A;line-height:1.5;break-inside:avoid;page-break-inside:avoid}
+.bozza-annuale-nudge b{color:#2B7FF5}
+.bozza-riepilogo-risparmi{margin-top:14px;padding:12px 16px;background:#EAFBF1;border:1.5px solid #1E9E5A;border-radius:6px;font-size:12.5px;color:#1A1A1A;line-height:1.5;break-inside:avoid;page-break-inside:avoid}
+.bozza-riepilogo-risparmi b{color:#1E9E5A}
+.bozza-final-round{margin-top:14px;padding:14px 16px;background:#FFF9E8;border:1.5px solid #E8C468;border-radius:6px;font-size:12.5px;color:#1A1A1A;break-inside:avoid;page-break-inside:avoid}
+.bozza-final-round b{display:block;margin-bottom:8px;color:#8A6100;font-size:13px}
+.bozza-final-round-pct{font-size:10.5px;color:#8A6100;font-weight:600}
 
 /* Suggeriti */
 .bozza-suggest-box{border:1px solid #EBEBEB;border-left:3px solid #F90032;border-radius:0 6px 6px 0;padding:14px 20px;margin-top:22px;break-inside:avoid;page-break-inside:avoid}
@@ -390,14 +415,6 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
   <!-- TAB SPARK -->
   <div id="spark" class="tab-content active">
 
-    <div class="sp-package-box">
-      <div class="sp-package-label">📦 Sconto pacchetto SparK Platform <span style="font-weight:400;color:#999;text-transform:none;letter-spacing:0">(si applica solo se flaggati almeno 2 prodotti con "SP")</span></div>
-      <div class="sp-package-fields">
-        <label>% Una Tantum <input type="number" id="sp-ut-pct" min="0" max="100" step="0.5" placeholder="0" oninput="calculateAll()"></label>
-        <label>% Canone <input type="number" id="sp-canone-pct" min="0" max="100" step="0.5" placeholder="0" oninput="calculateAll()"></label>
-      </div>
-    </div>
-
     <!-- STOCK -->
     <div class="section">
       <div class="section-hdr" onclick="toggleSection('s-stock')">
@@ -521,21 +538,37 @@ input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;back
       <div class="tot-row"><span>TOTALE UNA TANTUM</span><span id="total-ut">€ 0</span></div>
       <div class="tot-row"><span>TOTALE CANONI MENSILI</span><span id="total-canone">€ 0/mese</span></div>
       <div class="disc-grid">
-        <div class="disc-box">
+        <div class="disc-box disc-box-sp" id="disc-box-sp" title="Questo sconto funziona SOLO vendendo a pacchetto SparK Platform: flagga almeno 2 prodotti con &quot;SP&quot; nelle tabelle sopra. Se vendi prodotti singolarmente, questo box resta disattivato: usa invece gli sconti riga per riga o i box Firma/Annuale qui a fianco.">
+          <label>📦 Sconto pacchetto SparK Platform</label>
+          <div class="disc-inline"><label>% UT</label><input type="number" id="sp-ut-pct" class="var-input" min="0" max="100" step="0.5" placeholder="0" oninput="calculateAll()"></div>
+          <div class="disc-inline"><label>% Can.</label><input type="number" id="sp-canone-pct" class="var-input" min="0" max="100" step="0.5" placeholder="0" oninput="calculateAll()"></div>
+          <div class="disc-box-status" id="sp-box-status"></div>
+          <div class="disc-savings" id="sp-savings"></div>
+        </div>
+        <div class="disc-box" id="disc-box-firma" title="Questo sconto funziona SOLO vendendo prodotti singolarmente (senza pacchetto SparK Platform attivo). Si applica sul totale calcolato dalle righe prodotto.">
           <label>Sconto firma entro</label>
           <input type="date" id="sconto-data" onchange="calculateAll()">
           <div class="disc-inline"><label>% UT</label><input type="number" id="sconto-ut-pct" class="var-input" min="0" max="100" step="0.5" oninput="calculateAll()"></div>
           <div class="disc-inline"><label>% Can.</label><input type="number" id="sconto-canone-firma-pct" class="var-input" min="0" max="100" step="0.5" oninput="calculateAll()"></div>
+          <div class="disc-inline" title="Se compilato, il cliente ha i primi N mesi di canone in omaggio, oltre all'eventuale % sconto sopra"><label>🎁 Mesi omaggio</label><input type="number" id="sconto-firma-mesi-omaggio" class="var-input" min="0" max="24" step="1" placeholder="0" oninput="calculateAll()"></div>
           <div class="disc-savings" id="firma-savings"></div>
         </div>
-        <div class="disc-box">
+        <div class="disc-box" id="disc-box-annuale" title="Questo sconto funziona SOLO vendendo prodotti singolarmente (senza pacchetto SparK Platform attivo). Si applica sul totale calcolato dalle righe prodotto.">
           <label>Sconto pagamento annuale anticipato</label>
           <div class="disc-inline"><label>% UT</label><input type="number" id="sconto-annuale-ut-pct" class="var-input" min="0" max="100" step="0.5" oninput="calculateAll()"></div>
           <div class="disc-inline"><label>% Can.</label><input type="number" id="sconto-annuale-canone-pct" class="var-input" min="0" max="100" step="0.5" oninput="calculateAll()"></div>
           <div class="disc-savings" id="annuale-savings"></div>
         </div>
       </div>
+      <div class="tot-row grand riepilogo-risparmi" id="riepilogo-risparmi-row" style="display:none"><span>💰 RISPARMIO TOTALE (sconti selezionati)</span><span id="riepilogo-risparmi"></span></div>
       <div class="tot-row grand"><span>TOTALE SCONTATO</span><span id="total-scontato">€ 0</span></div>
+      <div class="final-round-box" title="Modifica qui UT e/o Canone finali (es. per un arrotondamento con il cliente). La % qui a fianco è lo sconto totale reale rispetto al listino, ricalcolato in automatico — utile per capire se lo sconto complessivo è troppo alto. Attenzione: lascia il campo VUOTO per usare il valore calcolato — scrivere 0 forza il prezzo a zero (sconto 100%), non annulla l'override.">
+        <div class="final-round-label">✏️ Prezzo finale concordato con il cliente (opzionale, es. arrotondamento) <span style="font-weight:400;color:#8A6100;text-transform:none">— lascia vuoto per usare il calcolato, "0" forza il prezzo a zero</span></div>
+        <div class="final-round-fields">
+          <label>UT finale € <input type="number" id="final-ut-override" placeholder="calcolato" oninput="calculateAll()"> <button type="button" class="final-round-clear" onclick="document.getElementById('final-ut-override').value='';calculateAll()" title="Svuota (torna al calcolato)">✕</button> <span id="final-ut-pct" class="final-pct"></span></label>
+          <label>Canone finale € <input type="number" id="final-canone-override" placeholder="calcolato" oninput="calculateAll()"> <button type="button" class="final-round-clear" onclick="document.getElementById('final-canone-override').value='';calculateAll()" title="Svuota (torna al calcolato)">✕</button> <span id="final-canone-pct" class="final-pct"></span></label>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -997,18 +1030,35 @@ function calculateAll() {
   document.getElementById('total-ut').textContent = '€ ' + totalUT.toLocaleString('it-IT', {maximumFractionDigits:0});
   document.getElementById('total-canone').textContent = '€ ' + totalCanone.toLocaleString('it-IT', {maximumFractionDigits:0}) + '/mese';
 
+  // Box sconto pacchetto SP: attivo solo se il pacchetto è davvero attivo (min. 2 prodotti flaggati SP)
+  var spBox = document.getElementById('disc-box-sp');
+  var spStatus = document.getElementById('sp-box-status');
+  if (spBox) spBox.classList.toggle('disc-box-disabled', !pkg);
+  if (spStatus) {
+    spStatus.textContent = pkg ? '✓ Attivo: ' + pkg.name : 'Non attivo: flagga almeno 2 prodotti con "SP"';
+    spStatus.classList.toggle('inactive', !pkg);
+  }
+  var spSavUT = pkg ? (pkg.utCalc - pkg.ut) : 0;
+  var spSavCanAnnual = pkg ? (pkg.canoneCalc - pkg.canone) * 12 : 0;
+  document.getElementById('sp-savings').textContent = (pkg && (spSavUT > 0.5 || spSavCanAnnual > 0.5))
+    ? ('Risparmi subito € ' + Math.round(spSavUT).toString() + ' e poi € ' + Math.round(spSavCanAnnual).toString() + ' all\'anno')
+    : '';
+
   // Sconti firma
   const scontoData = document.getElementById('sconto-data').value;
   const sUTPct = parseFloat(document.getElementById('sconto-ut-pct').value) || 0;
   const sCanPct = parseFloat(document.getElementById('sconto-canone-firma-pct').value) || 0;
+  const sMesiOmaggio = parseInt(document.getElementById('sconto-firma-mesi-omaggio').value) || 0;
   const sAnnUTPct = parseFloat(document.getElementById('sconto-annuale-ut-pct').value) || 0;
   const sAnnCanPct = parseFloat(document.getElementById('sconto-annuale-canone-pct').value) || 0;
 
   let scUTFirma = 0, scCanFirma = 0;
-  if (scontoData && (sUTPct > 0 || sCanPct > 0)) {
+  if (scontoData && (sUTPct > 0 || sCanPct > 0 || sMesiOmaggio > 0)) {
     scUTFirma = totalUT * sUTPct / 100;
     scCanFirma = totalCanone * sCanPct / 100;
-    document.getElementById('firma-savings').textContent = 'Risparmi subito € ' + Math.round(scUTFirma).toString() + ' e poi € ' + Math.round(scCanFirma*12).toString() + ' all\'anno';
+    var firmaTxt = 'Risparmi subito € ' + Math.round(scUTFirma).toString() + ' e poi € ' + Math.round(scCanFirma*12).toString() + ' all\'anno';
+    if (sMesiOmaggio > 0) firmaTxt += ' + 🎁 ' + sMesiOmaggio + (sMesiOmaggio === 1 ? ' mese' : ' mesi') + ' di canone in omaggio';
+    document.getElementById('firma-savings').textContent = firmaTxt;
   } else {
     document.getElementById('firma-savings').textContent = '';
   }
@@ -1024,6 +1074,35 @@ function calculateAll() {
   const totScUt = totalUT - scUTFirma - scUTAnn;
   const totScCan = totalCanone - scCanFirma - scCanAnn;
   document.getElementById('total-scontato').textContent = '€ ' + Math.round(totScUt).toString() + ' UT + € ' + Math.round(totScCan).toString() + '/m';
+
+  // Prezzo finale concordato (arrotondamento manuale) + % sconto totale reale ricalcolata
+  var trueListinoUT  = totalUT     + spSavUT;         // il "vero" listino iniziale, prima anche dello sconto SP
+  var trueListinoCan = totalCanone + spSavCanAnnual/12;
+  var finalUtInp = document.getElementById('final-ut-override');
+  var finalCanInp = document.getElementById('final-canone-override');
+  var finalUt  = (finalUtInp.value  !== '') ? (parseFloat(finalUtInp.value)  || 0) : totScUt;
+  var finalCan = (finalCanInp.value !== '') ? (parseFloat(finalCanInp.value) || 0) : totScCan;
+  var finalUtPct  = trueListinoUT > 0  ? (1 - finalUt  / trueListinoUT)  * 100 : 0;
+  var finalCanPct = trueListinoCan > 0 ? (1 - finalCan / trueListinoCan) * 100 : 0;
+  var utPctEl  = document.getElementById('final-ut-pct');
+  var canPctEl = document.getElementById('final-canone-pct');
+  utPctEl.textContent  = trueListinoUT > 0  ? '(-' + finalUtPct.toFixed(1).replace('.',',')  + '% sul listino)' : '';
+  canPctEl.textContent = trueListinoCan > 0 ? '(-' + finalCanPct.toFixed(1).replace('.',',') + '% sul listino)' : '';
+  utPctEl.classList.toggle('warn', finalUtPct > 40);
+  canPctEl.classList.toggle('warn', finalCanPct > 40);
+
+  // Riepilogo: risparmio totale rispetto al VERO listino iniziale (SP + firma + annuale + arrotondamento manuale)
+  var grandSavUT = trueListinoUT - finalUt;
+  var grandSavCanAnnual = (trueListinoCan - finalCan) * 12;
+  var riepilogoRow = document.getElementById('riepilogo-risparmi-row');
+  if (grandSavUT > 0.5 || grandSavCanAnnual > 0.5 || sMesiOmaggio > 0) {
+    var riepilogoTxt = '€ ' + Math.round(grandSavUT).toString() + ' una tantum (sconto ' + finalUtPct.toFixed(1).replace('.',',') + '%) + € ' + Math.round(grandSavCanAnnual).toString() + '/anno (sconto ' + finalCanPct.toFixed(1).replace('.',',') + '%)';
+    if (sMesiOmaggio > 0) riepilogoTxt += ' + 🎁 ' + sMesiOmaggio + (sMesiOmaggio === 1 ? ' mese' : ' mesi') + ' omaggio';
+    document.getElementById('riepilogo-risparmi').textContent = riepilogoTxt;
+    riepilogoRow.style.display = '';
+  } else {
+    riepilogoRow.style.display = 'none';
+  }
 }
 
 // ============================================================
@@ -1313,6 +1392,9 @@ function collectOfferState() {
     scontoCanFirmaPct: document.getElementById('sconto-canone-firma-pct').value || '',
     scontoAnnUtPct:    document.getElementById('sconto-annuale-ut-pct').value || '',
     scontoAnnCanPct:   document.getElementById('sconto-annuale-canone-pct').value || '',
+    scontoFirmaMesiOmaggio: document.getElementById('sconto-firma-mesi-omaggio').value || '',
+    finalUtOverride:   document.getElementById('final-ut-override').value || '',
+    finalCanOverride:  document.getElementById('final-canone-override').value || '',
     spUtPct:           document.getElementById('sp-ut-pct').value || '',
     spCanonePct:       document.getElementById('sp-canone-pct').value || '',
     totalUT: totalUT,
@@ -1389,6 +1471,9 @@ function loadOfferFromLog(id) {
   document.getElementById('sconto-canone-firma-pct').value       = entry.scontoCanFirmaPct  || '';
   document.getElementById('sconto-annuale-ut-pct').value         = entry.scontoAnnUtPct     || '';
   document.getElementById('sconto-annuale-canone-pct').value     = entry.scontoAnnCanPct    || '';
+  document.getElementById('sconto-firma-mesi-omaggio').value     = entry.scontoFirmaMesiOmaggio || '';
+  document.getElementById('final-ut-override').value             = entry.finalUtOverride  || '';
+  document.getElementById('final-canone-override').value         = entry.finalCanOverride || '';
   document.getElementById('sp-ut-pct').value                     = entry.spUtPct            || '';
   document.getElementById('sp-canone-pct').value                 = entry.spCanonePct        || '';
 
@@ -1791,6 +1876,9 @@ function collectPresetState() {
     scontoCanFirmaPct: document.getElementById('sconto-canone-firma-pct').value || '',
     scontoAnnUtPct:    document.getElementById('sconto-annuale-ut-pct').value || '',
     scontoAnnCanPct:   document.getElementById('sconto-annuale-canone-pct').value || '',
+    scontoFirmaMesiOmaggio: document.getElementById('sconto-firma-mesi-omaggio').value || '',
+    finalUtOverride:   document.getElementById('final-ut-override').value || '',
+    finalCanOverride:  document.getElementById('final-canone-override').value || '',
     spUtPct:           document.getElementById('sp-ut-pct').value || '',
     spCanonePct:       document.getElementById('sp-canone-pct').value || '',
     rows: rows
@@ -1879,6 +1967,9 @@ async function applyPreset(id) {
   document.getElementById('sconto-canone-firma-pct').value       = preset.scontoCanFirmaPct  || '';
   document.getElementById('sconto-annuale-ut-pct').value         = preset.scontoAnnUtPct     || '';
   document.getElementById('sconto-annuale-canone-pct').value     = preset.scontoAnnCanPct    || '';
+  document.getElementById('sconto-firma-mesi-omaggio').value     = preset.scontoFirmaMesiOmaggio || '';
+  document.getElementById('final-ut-override').value             = preset.finalUtOverride  || '';
+  document.getElementById('final-canone-override').value         = preset.finalCanOverride || '';
   document.getElementById('sp-ut-pct').value                     = preset.spUtPct            || '';
   document.getElementById('sp-canone-pct').value                 = preset.spCanonePct        || '';
 
@@ -2558,10 +2649,11 @@ function renderBozza() {
   var scontoData = document.getElementById('sconto-data').value;
   var sUTPct     = parseFloat(document.getElementById('sconto-ut-pct').value) || 0;
   var sCanPct    = parseFloat(document.getElementById('sconto-canone-firma-pct').value) || 0;
+  var sMesiOmaggio = parseInt(document.getElementById('sconto-firma-mesi-omaggio').value) || 0;
   var sAnnUTPct  = parseFloat(document.getElementById('sconto-annuale-ut-pct').value) || 0;
   var sAnnCanPct = parseFloat(document.getElementById('sconto-annuale-canone-pct').value) || 0;
 
-  var hasFirma   = scontoData && (sUTPct > 0 || sCanPct > 0);
+  var hasFirma   = scontoData && (sUTPct > 0 || sCanPct > 0 || sMesiOmaggio > 0);
   var hasAnnuale = sAnnUTPct > 0 || sAnnCanPct > 0;
 
   var scUTFirma = hasFirma   ? totalUT  * sUTPct    / 100 : 0;
@@ -2584,10 +2676,17 @@ function renderBozza() {
       var rispFirma = scUTFirma + scCanFirma;
       html += '<div class="bozza-scenario-box">';
       html += '  <div class="bozza-scenario-label">✍️ Se firmi entro il ' + dataFmt + '</div>';
-      html += '  <div class="bozza-scenario-desc">Sconto ' + sUTPct + '% sull\'una tantum e ' + sCanPct + '% sul canone mensile</div>';
+      if (sUTPct > 0 || sCanPct > 0) {
+        html += '  <div class="bozza-scenario-desc">Sconto ' + sUTPct + '% sull\'una tantum e ' + sCanPct + '% sul canone mensile</div>';
+      }
+      if (sMesiOmaggio > 0) {
+        html += '  <div class="bozza-scenario-omaggio">🎁 In regalo: ' + (sMesiOmaggio === 1 ? 'il primo mese' : 'i primi ' + sMesiOmaggio + ' mesi') + ' di canone GRATIS</div>';
+      }
       html += '  <div class="bozza-scenario-row"><span>Una Tantum</span><span>€ ' + firmaUT.toLocaleString('it-IT',{maximumFractionDigits:0}) + '</span></div>';
       html += '  <div class="bozza-scenario-row"><span>Canone mensile</span><span>€ ' + firmaCan.toLocaleString('it-IT',{maximumFractionDigits:0}) + ' / mese</span></div>';
-      html += '  <div class="bozza-scenario-saving">Risparmi subito € ' + scUTFirma.toLocaleString('it-IT',{maximumFractionDigits:0}) + ' e poi € ' + (scCanFirma*12).toLocaleString('it-IT',{maximumFractionDigits:0}) + ' all\'anno</div>';
+      if (scUTFirma > 0 || scCanFirma > 0) {
+        html += '  <div class="bozza-scenario-saving">Risparmi subito € ' + scUTFirma.toLocaleString('it-IT',{maximumFractionDigits:0}) + ' e poi € ' + (scCanFirma*12).toLocaleString('it-IT',{maximumFractionDigits:0}) + ' all\'anno</div>';
+      }
       html += '</div>';
     }
 
@@ -2626,6 +2725,43 @@ function renderBozza() {
     }
   } else {
     // nessuno sconto, non chiudiamo di nuovo (già chiuso)
+  }
+
+  // Riepilogo risparmio totale: somma SP + Firma + Annuale + eventuale arrotondamento manuale finale
+  var totScUtBozza  = totalUT  - scUTFirma - scUTAnn;
+  var totScCanBozza = totalCan - scCanFirma - scCanAnn;
+  var finalUtInpBozza  = document.getElementById('final-ut-override');
+  var finalCanInpBozza = document.getElementById('final-canone-override');
+  var finalUtBozza  = (finalUtInpBozza  && finalUtInpBozza.value  !== '') ? (parseFloat(finalUtInpBozza.value)  || 0) : totScUtBozza;
+  var finalCanBozza = (finalCanInpBozza && finalCanInpBozza.value !== '') ? (parseFloat(finalCanInpBozza.value) || 0) : totScCanBozza;
+  var isManualRound = (finalUtInpBozza && finalUtInpBozza.value !== '') || (finalCanInpBozza && finalCanInpBozza.value !== '');
+
+  var spSavUTBozza = spPackage ? (spPackage.utCalc - spPackage.ut) : 0;
+  var spSavCanAnnualBozza = spPackage ? (spPackage.canoneCalc - spPackage.canone) * 12 : 0;
+  var trueListinoUTBozza  = totalUT  + spSavUTBozza;
+  var trueListinoCanBozza = totalCan + spSavCanAnnualBozza / 12;
+  var grandSavUTBozza = trueListinoUTBozza - finalUtBozza;
+  var grandSavCanAnnualBozza = (trueListinoCanBozza - finalCanBozza) * 12;
+  var finalUtPctBozza  = trueListinoUTBozza  > 0 ? (1 - finalUtBozza  / trueListinoUTBozza)  * 100 : 0;
+  var finalCanPctBozza = trueListinoCanBozza > 0 ? (1 - finalCanBozza / trueListinoCanBozza) * 100 : 0;
+  if (grandSavUTBozza > 0.5 || grandSavCanAnnualBozza > 0.5 || sMesiOmaggio > 0) {
+    html += '<div class="bozza-riepilogo-risparmi">💰 <b>Risparmio totale con gli sconti selezionati:</b> € ' +
+      Math.round(grandSavUTBozza).toLocaleString('it-IT') + ' una tantum (sconto ' + finalUtPctBozza.toFixed(1).replace('.',',') + '%) + € ' + Math.round(grandSavCanAnnualBozza).toLocaleString('it-IT') + '/anno (sconto ' + finalCanPctBozza.toFixed(1).replace('.',',') + '%)' +
+      (sMesiOmaggio > 0 ? ' + 🎁 ' + sMesiOmaggio + (sMesiOmaggio === 1 ? ' mese' : ' mesi') + ' di canone in omaggio' : '') +
+      '</div>';
+  }
+
+  // Prezzo finale concordato: mostrato solo se il commerciale ha inserito un arrotondamento manuale
+  if (isManualRound) {
+    html += '<div class="bozza-final-round">🤝 <b>Prezzo finale concordato</b>' +
+      '<div class="bozza-scenario-row"><span>Una Tantum</span><span>€ ' + Math.round(finalUtBozza).toLocaleString('it-IT') + ' <span class="bozza-final-round-pct">(-' + finalUtPctBozza.toFixed(1).replace('.',',') + '% sul listino)</span></span></div>' +
+      '<div class="bozza-scenario-row"><span>Canone mensile</span><span>€ ' + Math.round(finalCanBozza).toLocaleString('it-IT') + ' / mese <span class="bozza-final-round-pct">(-' + finalCanPctBozza.toFixed(1).replace('.',',') + '% sul listino)</span></span></div>' +
+      '</div>';
+  }
+
+  // Nudge persuasivo: se lo sconto annuale anticipato non è impostato, suggerisci di chiederlo
+  if (!hasAnnuale) {
+    html += '<div class="bozza-annuale-nudge">💰 <b>Sai che puoi risparmiare ancora di più?</b> Pagando in anticipo su base annuale hai diritto a uno sconto supplementare sia sull\'una tantum che sul canone mensile. Parlane con il tuo Dealer Coach per scoprire quanto puoi risparmiare.</div>';
   }
 
   // Suggeriti
