@@ -823,15 +823,13 @@ function renderTable(section, tbodyId) {
     var utCalcHtml = p.ut > 0 ? '€&nbsp;' + p.ut.toLocaleString('it-IT') : '—';
 
     // --- UT libero override (colonna 7) ---
-    var utOvHtml = p.ut > 0
-      ? '<input type="number" class="inp-ut-ov" placeholder="override" oninput="calculateAll()" title="Sostituisce UT calcolata">'
-      : '<input type="number" class="inp-ut-ov" placeholder="inserisci" oninput="calculateAll()" title="UT manuale">';
+    var utOvHtml = '<input type="number" class="inp-ut-ov" placeholder="inserisci" oninput="calculateAll()" title="Sostituisce/imposta la UT">';
 
     // --- Canone calcolato (colonna 8) ---
     var canCalcHtml = '<span class="can-calc" id="can-' + p.id + '">—</span>';
 
     // --- Canone libero override (colonna 9) ---
-    var canOvHtml = '<input type="number" class="inp-can-ov" placeholder="override" oninput="calculateAll()" title="Sostituisce canone calcolato">';
+    var canOvHtml = '<input type="number" class="inp-can-ov" placeholder="inserisci" oninput="calculateAll()" title="Sostituisce/imposta il canone">';
 
     // --- Free (colonna 10): mesi in cui il canone è gratuito per il cliente ---
     var freeHtml = '<input type="number" class="inp-free-months" min="0" max="99" step="1" placeholder="0" oninput="if(this.value.length>2) this.value=this.value.slice(0,2); calculateAll()" title="Numero di mesi in cui questo prodotto è gratuito per il cliente (poi si passa al canone concordato)" style="width:40px;text-align:center">';
