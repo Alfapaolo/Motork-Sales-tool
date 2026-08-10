@@ -545,6 +545,9 @@ input.price-active{border-width:2px}
           <label>📦 Sconto pacchetto SparK Platform</label>
           <div class="disc-inline"><label>% UT</label><input type="number" id="sp-ut-pct" class="var-input" min="0" max="100" step="0.5" placeholder="0" oninput="calculateAll()"></div>
           <div class="disc-inline"><label>% Can.</label><input type="number" id="sp-canone-pct" class="var-input" min="0" max="100" step="0.5" placeholder="0" oninput="calculateAll()"></div>
+          <div class="disc-inline" title="Se flaggato, nel preventivo al cliente ogni prodotto del pacchetto mostra il proprio prezzo scontato (listino sbarrato + netto + %), come per un prodotto singolo. Se sflaggato, i prodotti restano nascosti (solo — e il totale di pacchetto in fondo).">
+            <label style="cursor:pointer"><input type="checkbox" id="sp-show-prices" checked onchange="renderBozza()" style="accent-color:#2B7FF5;margin-right:5px;vertical-align:middle">Mostra prezzi</label>
+          </div>
           <div class="disc-box-status" id="sp-box-status"></div>
           <div class="disc-savings" id="sp-savings"></div>
         </div>
@@ -1409,6 +1412,7 @@ function collectOfferState() {
     scontoFirmaMesiOmaggio: document.getElementById('sconto-firma-mesi-omaggio').value || '',
     finalUtOverride:   document.getElementById('final-ut-override').value || '',
     finalCanOverride:  document.getElementById('final-canone-override').value || '',
+    spShowPrices:      document.getElementById('sp-show-prices') ? document.getElementById('sp-show-prices').checked : true,
     spUtPct:           document.getElementById('sp-ut-pct').value || '',
     spCanonePct:       document.getElementById('sp-canone-pct').value || '',
     totalUT: totalUT,
@@ -1488,6 +1492,7 @@ function loadOfferFromLog(id) {
   document.getElementById('sconto-firma-mesi-omaggio').value     = entry.scontoFirmaMesiOmaggio || '';
   document.getElementById('final-ut-override').value             = entry.finalUtOverride  || '';
   document.getElementById('final-canone-override').value         = entry.finalCanOverride || '';
+  if (document.getElementById('sp-show-prices')) document.getElementById('sp-show-prices').checked = entry.spShowPrices !== false;
   document.getElementById('sp-ut-pct').value                     = entry.spUtPct            || '';
   document.getElementById('sp-canone-pct').value                 = entry.spCanonePct        || '';
 
@@ -1893,6 +1898,7 @@ function collectPresetState() {
     scontoFirmaMesiOmaggio: document.getElementById('sconto-firma-mesi-omaggio').value || '',
     finalUtOverride:   document.getElementById('final-ut-override').value || '',
     finalCanOverride:  document.getElementById('final-canone-override').value || '',
+    spShowPrices:      document.getElementById('sp-show-prices') ? document.getElementById('sp-show-prices').checked : true,
     spUtPct:           document.getElementById('sp-ut-pct').value || '',
     spCanonePct:       document.getElementById('sp-canone-pct').value || '',
     rows: rows
@@ -1984,6 +1990,7 @@ async function applyPreset(id) {
   document.getElementById('sconto-firma-mesi-omaggio').value     = preset.scontoFirmaMesiOmaggio || '';
   document.getElementById('final-ut-override').value             = preset.finalUtOverride  || '';
   document.getElementById('final-canone-override').value         = preset.finalCanOverride || '';
+  if (document.getElementById('sp-show-prices')) document.getElementById('sp-show-prices').checked = preset.spShowPrices !== false;
   document.getElementById('sp-ut-pct').value                     = preset.spUtPct            || '';
   document.getElementById('sp-canone-pct').value                 = preset.spCanonePct        || '';
 
@@ -2528,7 +2535,7 @@ function renderBozza() {
 
   // Logo dealer
   var dealerLogoImg = document.getElementById('dealer-logo-img');
-  var hasDealerLogo = dealerLogoImg && dealerLogoImg.style.display !== 'none' && dealerLogoImg.src && dealerLogoImg.src !== window.location.href;
+  var hasDealerLogo = !!(dealerLogoImg && dealerLogoImg.src && dealerLogoImg.src.indexOf('data:') === 0);
   var dealerLogoSrc = hasDealerLogo ? dealerLogoImg.src : '';
 
   // Calcolo dimensioni esplicite (non solo altezza) in base al reale rapporto larghezza/altezza del file caricato,
@@ -2613,6 +2620,10 @@ function renderBozza() {
 
   var totalUT = 0, totalCan = 0;
   var listinoUT = 0, listinoCan = 0;
+  var spShowPricesEl = document.getElementById('sp-show-prices');
+  var spShowPrices = spShowPricesEl ? spShowPricesEl.checked : true;
+  var spUtPctForRows  = spPackage ? (parseFloat(document.getElementById('sp-ut-pct').value)     || 0) : 0;
+  var spCanPctForRows = spPackage ? (parseFloat(document.getElementById('sp-canone-pct').value) || 0) : 0;
 
   costItems.forEach(function(section) {
     html += '<div class="bozza-section-hdr">' + section.label + '</div>';
@@ -2625,8 +2636,16 @@ function renderBozza() {
       listinoUT  += item.utCalc;
       listinoCan += item.canoneCalc;
       html += '<tr><td>' + item.name + (item.presentUrl ? '<a class="bozza-pres-link" href="' + item.presentUrl + '" target="_blank">↗ Vedi presentazione</a>' : '') + (isPkgMember ? ' <span class="bozza-sp-tag">📦 incluso in ' + spPackage.name + '</span>' : '') + '</td>';
-      html += '<td>' + (isPkgMember ? '—' : formatRowPriceCell(item.ut, item.utCalc, false)) + '</td>';
-      html += '<td>' + (isPkgMember ? '—' : formatRowPriceCell(item.canone, item.canoneCalc, true, item.freeMonths)) + '</td></tr>';
+      if (isPkgMember && spShowPrices) {
+        // Sconto pacchetto applicato in ugual modo a ogni prodotto, mostrato come un normale sconto di riga
+        var utNetRow  = item.ut     * (1 - spUtPctForRows  / 100);
+        var canNetRow = item.canone * (1 - spCanPctForRows / 100);
+        html += '<td>' + formatRowPriceCell(utNetRow, item.utCalc, false) + '</td>';
+        html += '<td>' + formatRowPriceCell(canNetRow, item.canoneCalc, true, item.freeMonths) + '</td></tr>';
+      } else {
+        html += '<td>' + (isPkgMember ? '—' : formatRowPriceCell(item.ut, item.utCalc, false)) + '</td>';
+        html += '<td>' + (isPkgMember ? '—' : formatRowPriceCell(item.canone, item.canoneCalc, true, item.freeMonths)) + '</td></tr>';
+      }
     });
     html += '</tbody></table>';
   });
