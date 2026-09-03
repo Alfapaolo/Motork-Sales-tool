@@ -2262,16 +2262,15 @@ function parseItDate(v){
   if(m){
     let a = parseInt(m[1], 10), b = parseInt(m[2], 10), y = m[3];
     if(y.length === 2) y = '20' + y;
-    // Google Sheets CSV export can use either D/M or M/D depending on the
-    // spreadsheet's locale setting, regardless of how the cell displays —
-    // so we can't just assume one format. Whichever number is > 12 must be
-    // the day (months only go up to 12), no ambiguity there. When both
-    // numbers are ≤ 12 (genuinely ambiguous), default to month-first (M/D),
-    // which is what this export has been observed to use.
+    // The export preserves day/month as typed (D/M, Italian convention) —
+    // confirmed against real data: "04/09/2026" (4 settembre) must parse
+    // as September 4th, not April 9th. Whichever number is > 12 is
+    // unambiguously the day regardless of convention; when both are ≤ 12,
+    // default to day-first (D/M).
     let day, month;
     if(a > 12){ day = a; month = b; }
     else if(b > 12){ day = b; month = a; }
-    else { month = a; day = b; }
+    else { day = a; month = b; }
     return `${y}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
   }
   if(!isNaN(s) && s !== ''){
