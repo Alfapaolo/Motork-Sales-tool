@@ -1277,26 +1277,32 @@ async function syncFromSheet(silent){
 
   try{
     let allItems = [];
+    const attempted = [];
     if(cfg.gidTask){
+      attempted.push('task');
       const wb = await fetchSheetTabAsWorkbook(cfg.sheetId, cfg.gidTask);
       const sheetName = wb.SheetNames[0];
       const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, blankrows: false });
       allItems = allItems.concat(parseTaskSheetRows(rows));
     }
     if(cfg.gidOpp){
+      attempted.push('opp');
       const wb = await fetchSheetTabAsWorkbook(cfg.sheetId, cfg.gidOpp);
       const sheetName = wb.SheetNames[0];
       const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, blankrows: false });
       allItems = allItems.concat(parseOppSheetRows(rows));
     }
-    if(allItems.length === 0) throw new Error('Nessuna riga letta dal foglio.');
 
     allItems.forEach(it => {
       const match = STATE.opportunities.find(o => o.dealer && it.dealer && o.dealer.toLowerCase() === it.dealer.toLowerCase());
       it._matchedId = match ? match.id : null;
     });
 
-    await applyImportBatch(allItems);
+    // Pass which tabs were actually fetched explicitly — an empty tab (0
+    // rows) still means "replace with nothing", not "skip, nothing to do".
+    // Inferring this from allItems.length would wrongly leave stale data
+    // behind whenever a tab goes from some rows to genuinely zero.
+    await applyImportBatch(allItems, true, attempted);
 
     if(cfg.gidContacts){
       try{
@@ -2483,16 +2489,17 @@ async function runExtraction(){
   }
 }
 
-async function applyImportBatch(items, wipe){
+async function applyImportBatch(items, wipe, sourceTypesAttempted){
   if(wipe === undefined) wipe = true;
   const now = Date.now();
+  const attemptedTypes = sourceTypesAttempted || [...new Set(items.map(it => it._sourceType).filter(Boolean))];
 
   // The Task tab is always a full daily snapshot of everything currently open
   // in Salesforce: a Task-type import must replace the whole task list, not
   // pile on top of it, or closed/edited tasks would linger forever.
   // (skipped when wipe=false, e.g. a live/partial Salesforce pull where we
   // can't be sure we received literally everything, so replacing could lose data)
-  const hasTaskImport = wipe && items.some(it => it._sourceType === 'task');
+  const hasTaskImport = wipe && attemptedTypes.includes('task');
   if(hasTaskImport){
     STATE.opportunities.forEach(o => { o.tasks = (o.tasks||[]).filter(t => t.source === 'manual'); });
   }
@@ -2501,7 +2508,7 @@ async function applyImportBatch(items, wipe){
   // opportunities: an Opp-type import must replace the SF opportunities list,
   // not leave stale/closed ones lingering, and must not collapse multiple
   // distinct open opportunities on the same dealer into just one.
-  const hasOppImport = wipe && items.some(it => it._sourceType === 'opp');
+  const hasOppImport = wipe && attemptedTypes.includes('opp');
   let oldStageMap = {};
   if(hasOppImport){
     STATE.opportunities.forEach(o => {
@@ -2595,7 +2602,7 @@ async function applyImportBatch(items, wipe){
     target.updatedAt = now;
   });
 
-  const typesTouched = new Set(items.map(it => it._sourceType).filter(Boolean));
+  const typesTouched = new Set(attemptedTypes);
   typesTouched.forEach(t => {
     if(t === 'task') STATE.meta.lastImport.task = now;
     else if(t === 'opp') STATE.meta.lastImport.opp = now;
