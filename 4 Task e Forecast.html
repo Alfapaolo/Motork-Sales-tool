@@ -43,7 +43,9 @@
   .sync-status span{ display:block; }
 
   /* Tabs */
-  .tabs{ display:flex; gap:4px; margin-bottom:18px; background:var(--panel); padding:4px; border-radius:10px; border:1px solid var(--border); }
+  .tabs{ display:flex; gap:4px; margin-bottom:6px; background:var(--panel); padding:4px; border-radius:10px; border:1px solid var(--border); }
+  .tabs-legend{ font-size:10.5px; color:var(--text-dim); margin-bottom:16px; padding:0 2px; line-height:1.5; }
+  .tab-divider{ width:1px; background:var(--border); margin:4px 3px; flex:0 0 1px; }
   .tab{
     flex:1; text-align:center; padding:9px 6px; border-radius:7px; cursor:pointer;
     color:var(--text-dim); font-weight:600; font-size:12.5px; transition:all .15s;
@@ -140,6 +142,16 @@
   .pill.nb{ background:rgba(74,158,255,0.15); color:var(--blue); }
   .pill.up{ background:rgba(46,204,113,0.15); color:var(--green); }
   .pill.stage{ background:var(--panel2); color:var(--text-dim); border:1px solid var(--border); }
+  .pill.source-sf{ background:rgba(74,158,255,0.15); color:var(--blue); }
+  .pill.source-manual{ background:rgba(185,110,0,0.15); color:var(--amber); }
+
+  .section-header{
+    display:flex; align-items:center; gap:10px; margin-bottom:14px; padding-bottom:10px;
+    border-bottom:2px solid var(--red);
+  }
+  .section-header .icon{ font-size:22px; }
+  .section-header .title{ font-size:17px; font-weight:800; }
+  .section-header .subtitle{ font-size:11.5px; color:var(--text-dim); }
 
   .task-date{ font-family:var(--mono); font-size:11.5px; color:var(--text-dim); white-space:nowrap; }
 
@@ -254,6 +266,7 @@
   .action-btn.call-btn:hover, .action-btn.call-btn:active{ background:rgba(28,154,86,0.12); border-color:var(--green); color:var(--green); }
   .action-btn.email-btn:hover, .action-btn.email-btn:active{ background:rgba(249,0,50,0.08); border-color:var(--red-dim); color:var(--red); }
   @media (max-width: 480px){
+    .tab-divider{ display:none; }
     .task-meta-row{ flex-direction:column; align-items:flex-start; }
     .task-actions{ width:100%; justify-content:flex-start; }
     .action-btn{ flex:1; justify-content:center; font-size:12px; padding:0 8px; }
@@ -267,7 +280,6 @@
     .tabs input[type=file]{ display:none; }
     .tab{ font-size:11.5px; padding:9px 4px; gap:4px; }
     .tab.import-tab-btn{ flex:1 1 100%; order:1; }
-    .tab[data-sheetconfigbtn]{ flex:0 0 auto; order:2; padding:9px 14px; }
     .tab[data-tab]{ flex:1 1 auto; order:3; min-width:0; }
     .tab .badge{ font-size:10px; padding:1px 5px; }
 
@@ -322,6 +334,9 @@ let STATE = {
   importText: '',
   importType: 'auto',
   importLoading: false,
+  sfSyncLoading: false,
+  sfSyncLabel: '',
+  sfSyncError: null,
   importError: null,
   importPreview: null, // { items: [...], summary: '' }
   taskFilter: 'all',
@@ -332,10 +347,17 @@ let STATE = {
   undoStack: [],
   expandedHistory: {},
   callModal: null,
+  manualTaskModal: null,
+  manualOppModal: null,
   callModalRecording: false,
   sheetConfig: { sheetId: '18vIfwCnBM9PWgDL8_vk5SxvSRsbXC7w8Ouu4G90greo', gidTask: '595528304', gidOpp: '1721033441', gidContacts: '374587942' },
   contacts: [],
   contactSearch: '',
+  contactSearchResults: [],
+  contactSearchLoading: false,
+  contactSearchDone: false,
+  contactSearchError: null,
+  contactSearchDebug: null,
   sheetConfigModal: null,
   emailModal: null
 };
@@ -440,13 +462,16 @@ function render(){
   app.innerHTML = `
     ${renderTopbar()}
     ${renderTabs()}
+    ${STATE.importError ? `<div class="error-box">${escapeHtml(STATE.importError)}</div>` : ''}
+    ${STATE.sfSyncError ? `<div class="error-box">${escapeHtml(STATE.sfSyncError)}</div>` : ''}
     ${STATE.importPreview ? renderImportPreview() : ''}
-    <div class="view ${STATE.activeTab==='task'?'active':''}">${renderTaskView()}</div>
-    <div class="view ${STATE.activeTab==='pipeline'?'active':''}">${renderPipelineView()}</div>
-    <div class="view ${STATE.activeTab==='contacts'?'active':''}">${renderContactsView()}</div>
+    <div class="view ${STATE.activeTab==='task'?'active':''}">${sectionHeaderHtml('📋','Task di oggi','Cosa devi gestire adesso — da Salesforce e aggiunti da te')}${renderTaskView()}</div>
+    <div class="view ${STATE.activeTab==='pipeline'?'active':''}">${sectionHeaderHtml('📊','Opportunità & Forecast','Pipeline aperta, per temperatura, importo o prodotto')}${renderPipelineView()}</div>
+    <div class="view ${STATE.activeTab==='contacts'?'active':''}">${sectionHeaderHtml('👤','Agenda contatti','Cerca una persona o un\'azienda, contattala, aggancia un follow up')}${renderContactsView()}</div>
     ${renderCallModal()}
     ${renderEmailModal()}
-    ${renderSheetConfigModal()}
+    ${renderManualTaskModal()}
+    ${renderManualOppModal()}
   `;
   attachHandlers();
 }
@@ -540,18 +565,27 @@ function totalTaskCount(){
   return STATE.opportunities.reduce((s,o) => s + (o.tasks||[]).length, 0);
 }
 
+function sectionHeaderHtml(icon, title, subtitle){
+  return `<div class="section-header"><span class="icon">${icon}</span><div><div class="title">${title}</div><div class="subtitle">${subtitle}</div></div></div>`;
+}
+
 function renderTabs(){
   const oc = overdueCount();
   const tc = totalTaskCount();
-  const syncLabel = STATE.importLoading ? (STATE.importLoadingLabel||'Elaborazione…') : '🔄 Sincronizza';
+  const sfLabel = STATE.sfSyncLoading ? (STATE.sfSyncLabel||'⏳ Sync in corso…') : '🔮 Sync SF';
+  const sheetLabel = STATE.importLoading ? (STATE.importLoadingLabel||'⏳ Sync in corso…') : '🔄 Sync Excel';
   return `
   <div class="tabs">
-    <input type="file" id="dailyFileInput" accept=".xlsx,.xls" style="display:none;">
-    <div class="tab import-tab-btn" data-syncbtn="1">${syncLabel}</div>
-    <div class="tab" data-sheetconfigbtn="1" style="flex:0 0 auto; padding:9px 12px;" title="Carica manualmente invece">📎</div>
+    ${IS_CLAUDE_ENV ? `<div class="tab import-tab-btn" data-sfsyncbtn="1">${sfLabel}</div>` : ''}
+    <div class="tab ${IS_CLAUDE_ENV?'':'import-tab-btn'}" data-syncbtn="1" ${IS_CLAUDE_ENV ? 'style="background:var(--panel2); color:var(--text); border:1px solid var(--border);"' : ''}>${sheetLabel}</div>
+    <div class="tab-divider"></div>
     <div class="tab ${STATE.activeTab==='task'?'active':''}" data-tab="task">Solleciti / Task <span class="badge ${oc>0?'urgent':''}">${tc}</span></div>
     <div class="tab ${STATE.activeTab==='pipeline'?'active':''}" data-tab="pipeline">OPP/Pipeline <span class="badge">${STATE.opportunities.length}</span></div>
-    <div class="tab ${STATE.activeTab==='contacts'?'active':''}" data-tab="contacts">Contatti <span class="badge">${STATE.contacts.length}</span></div>
+    <div class="tab-divider"></div>
+    <div class="tab ${STATE.activeTab==='contacts'?'active':''}" data-tab="contacts">Contatti ${IS_CLAUDE_ENV ? '<span class="badge">🔮</span>' : `<span class="badge">${STATE.contacts.length}</span>`}</div>
+  </div>
+  <div class="tabs-legend">
+    ${IS_CLAUDE_ENV ? '🔮 Sync SF = live da Salesforce (solo qui in chat) &nbsp;·&nbsp; ' : ''}🔄 Sync Excel = dal tuo Google Sheet &nbsp;·&nbsp; a destra le tre schede: Task, Pipeline, Contatti
   </div>`;
 }
 
@@ -643,11 +677,14 @@ function renderTaskView(){
       <div><div class="lbl">Oggi</div><div class="num" style="color:var(--amber);">${todayCountN}</div></div>
       <div><div class="lbl">Alta priorità</div><div class="num">${highCountN}</div></div>
     </div>
-    <div class="row" style="justify-content:flex-end; margin-bottom:12px; gap:8px;">
-      <button class="secondary small" id="exportDailyBtn">📋 Riepilogo di oggi</button>
-      <button class="secondary small" id="mailDailyBtn">📧 Invia via mail</button>
-      ${IS_CLAUDE_ENV ? `<button class="secondary small" id="exportDataBtn">⬇ Esporta dati per GitHub</button>` : ''}
-      <button class="secondary small" id="exportLogBtn">⬇ Esporta log chiamate</button>
+    <div class="row-between" style="margin-bottom:12px; gap:8px; flex-wrap:wrap;">
+      <button id="addManualTaskBtn">➕ Nuovo task</button>
+      <div class="row" style="gap:8px; flex-wrap:wrap;">
+        <button class="secondary small" id="exportDailyBtn">📋 Riepilogo di oggi</button>
+        <button class="secondary small" id="mailDailyBtn">📧 Invia via mail</button>
+        ${IS_CLAUDE_ENV ? `<button class="secondary small" id="exportDataBtn">⬇ Esporta dati per GitHub</button>` : ''}
+        <button class="secondary small" id="exportLogBtn">⬇ Esporta log chiamate</button>
+      </div>
     </div>
     ${renderDailySummaryPanel()}`;
 
@@ -688,6 +725,7 @@ function renderTaskRow(o, t, d){
   const prio = (t.priority||'').toLowerCase();
   const highPill = (prio.includes('high')||prio.includes('alta')) ? `<span class="pill high">Alta</span>` : '';
   const stagePill = o.sf_stage ? `<span class="pill stage">${escapeHtml(o.sf_stage)}</span>` : '';
+  const sourcePill = t.source === 'manual' ? `<span class="pill source-manual">✍️ Manuale</span>` : `<span class="pill source-sf">☁️ SF</span>`;
   const log = (o.contact_log || []).slice().sort((a,b) => b.ts - a.ts);
 
   return `
@@ -698,7 +736,7 @@ function renderTaskRow(o, t, d){
         <div class="task-note">${escapeHtml(t.text)}</div>
         <div class="task-meta-row">
           <div class="task-pills">
-            ${datePill}${highPill}${stagePill}
+            ${sourcePill}${datePill}${highPill}${stagePill}
             ${o.forecast_categoria ? `<span class="pill soon">${escapeHtml(o.forecast_categoria)}</span>` : ''}
           </div>
           <div class="task-actions">
@@ -736,17 +774,45 @@ function totalOppCount(){
   return STATE.opportunities.reduce((s,o) => s + (o.sf_opportunities ? o.sf_opportunities.length : 0), 0);
 }
 
+const KNOWN_PRODUCTS = ['LeadSparK','LSR','LS ','CSK','CDP','WebSparK','AdSparK','PSK','AgentSparK','GA ','SEO','SEM','Vads','Vehicle ADS','AI ','CC ','Prime','Pillar'];
+function extractProductFromName(name){
+  if(!name) return 'Non specificato';
+  const upper = name.toString();
+  for(const p of KNOWN_PRODUCTS){
+    if(upper.toLowerCase().includes(p.toLowerCase())) return p.trim();
+  }
+  return 'Altro / Non specificato';
+}
+
 function dealerAcv(o){
   if(o.forecast_acv !== undefined && o.forecast_acv !== null) return o.forecast_acv;
   return (o.sf_opportunities || []).reduce((s,x) => s + (x.acv || 0), 0);
 }
 
 function renderContactsView(){
+  const q = (STATE.contactSearch || '').trim().toLowerCase();
+
+  if(IS_CLAUDE_ENV){
+    const liveResults = STATE.contactSearchResults || [];
+    return `
+      <div class="panel">
+        <div class="row" style="gap:8px;">
+          <input type="text" id="contactSearchInput" placeholder="Cerca per nome, cognome, azienda o mail..." value="${escapeHtml(STATE.contactSearch||'')}" style="flex:1; padding:11px 14px; font-size:14px; border-radius:8px; border:1px solid var(--border); background:var(--panel2); color:var(--text);">
+          <button id="contactSearchLiveBtn" ${STATE.contactSearchLoading?'disabled':''}>${STATE.contactSearchLoading?'🔮 Cerco…':'🔮 Cerca su Salesforce'}</button>
+        </div>
+        <div style="font-size:11px; color:var(--text-dim); margin-top:6px;">Scrivi almeno 3 caratteri e premi il bottone (o Invio) — Salesforce ha migliaia di contatti, la ricerca è live, non precaricata.</div>
+      </div>
+      ${STATE.contactSearchError ? `<div class="panel"><div class="error-box">${escapeHtml(STATE.contactSearchError)}</div></div>` : ''}
+      ${STATE.contactSearchLoading ? `<div class="panel"><div class="loading"><div class="spinner"></div> Cerco su Salesforce…</div></div>` : ''}
+      ${(!STATE.contactSearchLoading && STATE.contactSearchDone && liveResults.length === 0) ? `<div class="panel"><div class="empty" style="padding:24px;">Nessun contatto trovato su Salesforce per "${escapeHtml(STATE.contactSearch)}".</div>${STATE.contactSearchDebug ? `<div style="font-size:11px; color:var(--text-dim); padding:0 16px 16px; font-family:var(--mono);">Risposta di Claude: ${escapeHtml(STATE.contactSearchDebug)}</div>` : ''}</div>` : ''}
+      ${liveResults.map(c => renderContactCard(c)).join('')}
+    `;
+  }
+
   if(STATE.contacts.length === 0){
     return `<div class="panel"><div class="empty"><div class="big">👤</div>Nessun contatto ancora.<br>Premi "🔄 Sincronizza" per caricarli dal Google Sheet.</div></div>`;
   }
 
-  const q = (STATE.contactSearch || '').trim().toLowerCase();
   let results = [];
   if(q.length >= 2){
     results = STATE.contacts.filter(c => {
@@ -782,6 +848,9 @@ function renderContactCard(c){
         ${(!c.phone && !c.mobilePhone && c.companyPhone) ? `<a href="tel:${encodeURIComponent(c.companyPhone)}" class="contact-link">🏢 ${escapeHtml(c.companyPhone)}</a>` : ''}
       </div>
       ${c.dsmName ? `<div style="margin-top:8px; font-size:12px; color:var(--text-dim);">DSM: ${escapeHtml(c.dsmName)}${c.dsmEmail ? ` — <a href="mailto:${encodeURIComponent(c.dsmEmail)}" class="contact-link" style="font-size:12px;">✉️ ${escapeHtml(c.dsmEmail)}</a>` : ''}</div>` : ''}
+      <div style="margin-top:10px;">
+        <button class="action-btn call-btn" data-contacttask="${escapeHtml(c.company||'')}" data-contactname="${escapeHtml(fullName)}" title="Ho contattato questa persona: agganciaci un task di follow up">📌 Contattato, crea follow up</button>
+      </div>
     </div>`;
 }
 
@@ -841,12 +910,47 @@ function renderPipelineView(){
     <div class="filter-chips">
       <div class="chip ${STATE.pipelineSortBy==='temperatura'?'active':''}" data-sortby="temperatura">Ordina per temperatura</div>
       <div class="chip ${STATE.pipelineSortBy==='importo'?'active':''}" data-sortby="importo">💰 Ordina per importo</div>
+      <div class="chip ${STATE.pipelineSortBy==='prodotto'?'active':''}" data-sortby="prodotto">📦 Raggruppa per prodotto</div>
     </div>`;
 
   let bodyHtml;
   if(STATE.pipelineSortBy === 'importo'){
     const sortedItems = items.slice().sort((a,b) => (dealerAcv(b)||0) - (dealerAcv(a)||0));
     bodyHtml = `<div class="group"><div class="group-body" style="padding-top:8px;">${sortedItems.map(o => renderOppRow(o)).join('')}</div></div>`;
+  } else if(STATE.pipelineSortBy === 'prodotto'){
+    const byProduct = {};
+    items.forEach(o => {
+      (o.sf_opportunities && o.sf_opportunities.length > 0 ? o.sf_opportunities : [{name:null, acv:null}]).forEach(x => {
+        const product = extractProductFromName(x.name || o.prodotto);
+        if(!byProduct[product]) byProduct[product] = [];
+        byProduct[product].push({ dealer: o, opp: x });
+      });
+    });
+    const productNames = Object.keys(byProduct).sort((a,b) => {
+      const totalA = byProduct[a].reduce((s,e) => s + (e.opp.acv||0), 0);
+      const totalB = byProduct[b].reduce((s,e) => s + (e.opp.acv||0), 0);
+      return totalB - totalA;
+    });
+    bodyHtml = productNames.map(p => {
+      const entries = byProduct[p];
+      const total = entries.reduce((s,e) => s + (e.opp.acv||0), 0);
+      const collapsed = !!STATE.collapsedGroups['prod_'+p];
+      const seenDealers = new Set();
+      const rows = entries.filter(e => {
+        const key = e.dealer.id + (e.opp.name||'');
+        if(seenDealers.has(key)) return false;
+        seenDealers.add(key);
+        return true;
+      });
+      return `
+        <div class="group ${collapsed?'collapsed':''}">
+          <div class="group-header" data-grouptoggle="prod_${escapeHtml(p)}">
+            <div class="group-title"><span class="group-caret">▾</span> ${escapeHtml(p)} <span class="group-count">(${rows.length})</span></div>
+            <div class="group-total">${fmtEuro(total)}</div>
+          </div>
+          <div class="group-body">${rows.map(e => renderOppRow(e.dealer)).join('')}</div>
+        </div>`;
+    }).join('');
   } else {
     bodyHtml = groupNames.map(name => renderGroup(name, groups[name], dealerAcv)).join('');
   }
@@ -856,7 +960,8 @@ function renderPipelineView(){
       <div><div class="lbl">Totale OPP</div><div class="num">${totalOpps}</div></div>
       <div><div class="lbl">Totale ACV OPP/Pipeline</div><div class="num">${fmtEuro(grandTotal)}</div></div>
     </div>
-    <div class="row" style="justify-content:flex-end; margin-bottom:12px;">
+    <div class="row-between" style="margin-bottom:12px; gap:8px; flex-wrap:wrap;">
+      <button id="addManualOppBtn">➕ Nuova opportunità</button>
       <button class="secondary small" id="directorEmailBtn">📧 Invia stato pipeline al direttore</button>
     </div>
     ${stageChipsHtml}
@@ -895,7 +1000,7 @@ function renderOppRow(o){
             ${escapeHtml(o.dealer)} ${sfOpps.length > 1 ? `<span class="pill soon">${sfOpps.length} opp SF</span>` : ''}
           </div>
           ${o.prodotto ? `<div class="opp-prod">${escapeHtml(o.prodotto)}</div>` : ''}
-          ${sfOpps.map(x => `<div class="opp-prod">${escapeHtml(x.name)} — ${escapeHtml(x.stage||'Senza fase')}${x.close_date?(' · chiusura '+(fmtDate(x.close_date)||x.close_date)):''}${x.acv?(' · '+fmtEuro(x.acv)):''}${isStalled(x)?` <span class="pill high">⚠️ Ferma da ${daysSinceTs(x.last_stage_change)}g</span>`:''}</div>`).join('')}
+          ${sfOpps.map(x => `<div class="opp-prod">${x.source==='manual'?'<span class="pill source-manual">✍️ Manuale</span> ':'<span class="pill source-sf">☁️ SF</span> '}${escapeHtml(x.name)} — ${escapeHtml(x.stage||'Senza fase')}${x.close_date?(' · chiusura '+(fmtDate(x.close_date)||x.close_date)):''}${x.acv?(' · '+fmtEuro(x.acv)):''}${isStalled(x)?` <span class="pill high">⚠️ Ferma da ${daysSinceTs(x.last_stage_change)}g</span>`:''}</div>`).join('')}
           ${(o.tasks && o.tasks.length > 0) ? o.tasks.map(t => `<div class="opp-note">→ ${escapeHtml(t.text)}${t.due_date?(' ('+(fmtDate(t.due_date)||t.due_date)+')'):''}</div>`).join('') : ''}
           ${o.forecast_note ? `<div class="opp-note">${escapeHtml(o.forecast_note)}</div>` : ''}
         </div>
@@ -921,12 +1026,13 @@ function escapeHtml(s){
 const EMAIL_SYSTEM_PROMPT = `Sei l'assistente di Paolo Pesenti, Senior Dealer Coach / venditore MotorK (settore automotive). Paolo vende soluzioni tecnologiche (siti, CRM, tool AI) a concessionari auto e discute con i clienti quasi sempre argomenti commerciali: proposte di nuovi prodotti, upsell, demo, trattative, preventivi. NON si occupa di pagamenti, fatturazione o amministrazione: ignora completamente questi thread, non presentarli nemmeno come opzione tra cui scegliere.
 
 Quando ti viene chiesto di preparare una mail di follow up per un dealer:
-1. Cerca nella sua casella Gmail gli ultimi thread scambiati con quel cliente (usa il nome dell'azienda come chiave di ricerca).
-2. Considera SOLO i thread dove il dealer indicato è realmente destinatario o mittente diretto della mail (a lui, o scritta da lui). Ignora i thread dove il nome del dealer compare solo citato di passaggio in una conversazione con un'altra azienda o persona diversa, e ignora i thread puramente amministrativi/di pagamento.
-3. Se dopo questo filtro trovi un solo thread commerciale pertinente, leggilo per capire tono di voce, contenuto e chi era in copia (CC). Crea poi UNA bozza di risposta (draft, non inviarla) agganciata a quel thread come reply, con lo stesso destinatario e le stesse persone in CC, coerente per contenuto e tono con quel cliente.
-4. Se invece trovi più thread commerciali pertinenti su argomenti diversi tra loro, NON scegliere a caso: rispondi con una domanda breve chiedendo a Paolo su quale argomento vuole il follow up, elencando in una riga le opzioni trovate. Non creare nessuna bozza finché non ricevi la sua risposta.
-5. Se Paolo ti risponde dicendo che nessuno dei thread proposti è quello giusto, o ti dà indicazioni aggiuntive (anche dettate a voce, quindi possono contenere piccole imperfezioni di trascrizione), usa quel contesto per cercare meglio o per scrivere la bozza direttamente basandoti su quanto ti ha detto lui, anche se non hai trovato un thread preciso.
-Alla fine: se hai creato la bozza, rispondi con una riga di conferma sintetica. Se hai bisogno di chiarimenti, scrivi solo la domanda, niente altro.`;
+1. Cerca prima su Salesforce la trattativa/opportunità legata a quel dealer e leggi le note, i commenti e la fase attuale: ti servono per capire a che punto è la trattativa e cosa è già stato detto o promesso.
+2. Cerca nella sua casella Gmail gli ultimi thread scambiati con quel cliente (usa il nome dell'azienda come chiave di ricerca).
+3. Considera SOLO i thread dove il dealer indicato è realmente destinatario o mittente diretto della mail (a lui, o scritta da lui). Ignora i thread dove il nome del dealer compare solo citato di passaggio in una conversazione con un'altra azienda o persona diversa, e ignora i thread puramente amministrativi/di pagamento.
+4. Se dopo questo filtro trovi un solo thread commerciale pertinente, leggilo per capire tono di voce, contenuto e chi era in copia (CC). Metti insieme quanto trovato su Salesforce (stato, note) e sulla mail (tono, contenuto) e crea UNA bozza di risposta (draft, non inviarla) agganciata a quel thread come reply, con lo stesso destinatario e le stesse persone in CC, coerente per contenuto e tono con quel cliente e coerente con lo stato reale della trattativa.
+5. Se invece trovi più thread commerciali pertinenti su argomenti diversi tra loro, NON scegliere a caso: rispondi con una domanda breve chiedendo a Paolo su quale argomento vuole il follow up, elencando in una riga le opzioni trovate. Non creare nessuna bozza finché non ricevi la sua risposta.
+6. Se Paolo ti risponde dicendo che nessuno dei thread proposti è quello giusto, o ti dà indicazioni aggiuntive (anche dettate a voce, quindi possono contenere piccole imperfezioni di trascrizione), usa quel contesto per cercare meglio o per scrivere la bozza direttamente basandoti su quanto ti ha detto lui, anche se non hai trovato un thread preciso.
+Alla fine: se hai creato la bozza, rispondi con una riga di conferma sintetica che riassuma anche lo stato della trattativa emerso da Salesforce. Se hai bisogno di chiarimenti, scrivi solo la domanda, niente altro.`;
 
 async function createFollowUpDraft(o, taskId){
   STATE.emailModal = {
@@ -953,7 +1059,10 @@ async function stepEmailFlow(){
         max_tokens: 4096,
         system: EMAIL_SYSTEM_PROMPT,
         messages: STATE.emailModal.messages,
-        mcp_servers: [{ type: "url", url: "https://gmailmcp.googleapis.com/mcp/v1", name: "gmail-mcp" }]
+        mcp_servers: [
+          { type: "url", url: "https://gmailmcp.googleapis.com/mcp/v1", name: "gmail-mcp" },
+          { type: "url", url: "https://api.salesforce.com/platform/mcp/v1/platform/sobject-reads", name: "salesforce" }
+        ]
       })
     });
     const data = await response.json();
@@ -1012,37 +1121,6 @@ function renderEmailModal(){
   </div>`;
 }
 
-function renderSheetConfigModal(){
-  if(!STATE.sheetConfigModal) return '';
-  const cfg = STATE.sheetConfig || {};
-  return `
-  <div class="modal-overlay" id="sheetConfigOverlay">
-    <div class="modal-box">
-      <div class="modal-title">🔗 Collega Google Sheet</div>
-      <div style="font-size:12.5px; color:var(--text-dim); margin-bottom:12px; line-height:1.5;">
-        Metti i dati di Task e Opp in due tab dello stesso Google Sheet, condiviso come "Chiunque abbia il link — Visualizzatore".
-        Incolla qui il link dello Sheet (mentre hai aperto il tab Task) e poi il link mentre hai aperto il tab Opp — prendo io i codici che servono.
-      </div>
-      <div style="margin-bottom:10px;">
-        <div style="font-size:11.5px; color:var(--text-dim); margin-bottom:4px;">Link con il tab "Task" aperto</div>
-        <input type="text" id="sheetTaskUrlInput" value="" placeholder="https://docs.google.com/spreadsheets/d/.../edit#gid=..." style="width:100%;">
-      </div>
-      <div style="margin-bottom:10px;">
-        <div style="font-size:11.5px; color:var(--text-dim); margin-bottom:4px;">Link con il tab "Opp" aperto</div>
-        <input type="text" id="sheetOppUrlInput" value="" placeholder="https://docs.google.com/spreadsheets/d/.../edit#gid=..." style="width:100%;">
-      </div>
-      ${cfg.sheetId ? `<div style="font-size:11px; color:var(--text-dim); margin-bottom:10px;">Attualmente collegato: ID ${escapeHtml(cfg.sheetId)} (Task gid ${escapeHtml(cfg.gidTask||'—')}, Opp gid ${escapeHtml(cfg.gidOpp||'—')})</div>` : ''}
-      <div class="row" style="margin-top:12px; justify-content:space-between;">
-        <button class="secondary" id="sheetManualUploadBtn">📎 Carica manualmente invece</button>
-        <div class="row">
-          <button class="secondary" id="sheetConfigCancel">Chiudi</button>
-          <button id="sheetConfigSave">Salva</button>
-        </div>
-      </div>
-    </div>
-  </div>`;
-}
-
 function extractSheetIdAndGid(url){
   if(!url) return { sheetId: null, gid: null };
   const idMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
@@ -1056,6 +1134,133 @@ async function fetchSheetTabAsWorkbook(sheetId, gid){
   if(!resp.ok) throw new Error('HTTP ' + resp.status);
   const text = await resp.text();
   return XLSX.read(text, { type: 'string' });
+}
+
+const SF_LIVE_TASKS_PROMPT = `Sei l'assistente di Paolo Pesenti, Senior Dealer Coach / venditore MotorK. Hai accesso in sola lettura a Salesforce. Cerca tutti i TASK aperti (Status non "Completed") assegnati a Paolo, in ordine di scadenza più vicina, massimo 40 risultati. Per ciascuno prendi: account/dealer collegato, oggetto o descrizione del prossimo passo, data di scadenza (ActivityDate), priorità. Usa una query mirata e diretta (una SOQL con filtro su Owner e Status è più veloce di uno strumento di ricerca generico) per rispondere il più rapidamente possibile.
+
+Rispondi SOLO con un array JSON valido, senza testo aggiuntivo, senza markdown. Ogni elemento:
+{ "_sourceType": "task", "dealer": "nome pulito del dealer/account, senza il nome del prodotto", "task_next_step": "oggetto o descrizione", "task_due_date": "data ISO yyyy-mm-dd", "task_priority": "priorità" }
+Se non trovi nulla, rispondi [].`;
+
+const SF_LIVE_OPPS_PROMPT = `Sei l'assistente di Paolo Pesenti, Senior Dealer Coach / venditore MotorK. Hai accesso in sola lettura a Salesforce. Cerca tutte le OPPORTUNITÀ aperte (StageName non "Closed Won" né "Closed Lost") di cui Paolo è il proprietario, in ordine di importo decrescente, massimo 60 risultati. Per ciascuna prendi: nome dell'account/dealer, nome dell'opportunità, fase (StageName), data di chiusura prevista (CloseDate), valore (Amount). Usa una query SOQL mirata e diretta per rispondere il più rapidamente possibile.
+
+Rispondi SOLO con un array JSON valido, senza testo aggiuntivo, senza markdown. Ogni elemento:
+{ "_sourceType": "opp", "dealer": "nome pulito del dealer/account, senza il nome del prodotto", "sf_opportunity_name": "nome opportunità", "sf_stage": "fase", "sf_close_date": "data ISO yyyy-mm-dd", "sf_acv": numero }
+Se non trovi nulla, rispondi [].`;
+
+const CONTACT_SEARCH_SYSTEM_PROMPT = `Sei l'assistente di Paolo Pesenti, venditore MotorK. Hai accesso in sola lettura a Salesforce tramite gli strumenti collegati (tra cui uno strumento di ricerca testuale generale, chiamato "find", pensato apposta per cercare un termine anche parziale attraverso più oggetti come Contact e Account — usalo come primo tentativo, è più affidabile di scrivere query SOQL a mano per nomi parziali). Ti verrà dato un termine da cercare: trova i Contact (con il relativo Account collegato) il cui nome, cognome, azienda o email contengono quel termine, anche solo in parte e senza distinguere maiuscole/minuscole. Se il primo strumento non trova nulla, prova anche una query SOQL con LIKE '%termine%' su FirstName, LastName ed Email prima di arrenderti. Restituisci al massimo 20 risultati, i più pertinenti.
+
+Per ogni Account collegato, includi SEMPRE anche il nome e l'email del Success Manager (DSM): sono campi già disponibili sull'Account stesso, leggibili nella stessa interrogazione senza bisogno di chiamate aggiuntive — i nomi esatti dei campi sono Account.Success_Manager__r.Name (nome del DSM) e Account.SuccessManagerEmail__c (email del DSM). Se stai usando SOQL, includili semplicemente nella stessa SELECT; se usi lo strumento "find", recupera comunque questi due campi dall'Account trovato prima di rispondere. Non sono un arricchimento opzionale da saltare: fanno parte del risultato normale.
+
+Rispondi SOLO con un array JSON valido, senza testo aggiuntivo, senza markdown. Ogni elemento deve avere questa forma (usa null o ometti i campi che non trovi, non inventare mai dati):
+{
+  "firstName": "...", "lastName": "...", "company": "nome Account",
+  "email": "...", "phone": "...", "mobilePhone": "...", "otherPhone": "...", "companyPhone": "...",
+  "dsmName": "da Account.Success_Manager__r.Name", "dsmEmail": "da Account.SuccessManagerEmail__c"
+}
+Se dopo aver provato davvero a cercare non trovi nessun risultato, rispondi con un array vuoto []. Non scrivere mai testo libero, spiegazioni o scuse: solo l'array JSON.`;
+
+async function searchContactsLive(){
+  const q = (STATE.contactSearch || '').trim();
+  if(q.length < 3) return;
+  STATE.contactSearchLoading = true;
+  STATE.contactSearchError = null;
+  STATE.contactSearchDone = false;
+  render();
+
+  try{
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 8192,
+        system: CONTACT_SEARCH_SYSTEM_PROMPT,
+        messages: [{ role: "user", content: `Cerca "${q}" tra i contatti Salesforce.` }],
+        mcp_servers: [{ type: "url", url: "https://api.salesforce.com/platform/mcp/v1/platform/sobject-reads", name: "salesforce" }]
+      })
+    });
+    const data = await response.json();
+    const textBlock = (data.content || []).find(b => b.type === 'text');
+    if(!textBlock) throw new Error('Nessuna risposta testuale da Salesforce');
+    const results = extractJsonObjects(textBlock.text);
+    STATE.contactSearchResults = results;
+    STATE.contactSearchDebug = results.length === 0 ? textBlock.text.trim().slice(0, 400) : null;
+    STATE.contactSearchLoading = false;
+    STATE.contactSearchDone = true;
+    render();
+  }catch(e){
+    STATE.contactSearchLoading = false;
+    STATE.contactSearchError = 'Errore ricerca Salesforce: ' + e.message;
+    render();
+  }
+}
+
+async function fetchSalesforceLive(systemPrompt, userMsg){
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 8192,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userMsg }],
+      mcp_servers: [{ type: "url", url: "https://api.salesforce.com/platform/mcp/v1/platform/sobject-reads", name: "salesforce" }]
+    })
+  });
+  const data = await response.json();
+  const textBlock = (data.content || []).find(b => b.type === 'text');
+  if(!textBlock) throw new Error('Nessuna risposta testuale da Salesforce');
+  return extractJsonObjects(textBlock.text);
+}
+
+async function syncFromSalesforceLive(){
+  if(!IS_CLAUDE_ENV) return;
+  STATE.sfSyncLoading = true;
+  STATE.sfSyncError = null;
+  render();
+
+  let allItems = [];
+  let taskError = null, oppError = null;
+
+  STATE.sfSyncLabel = '🔮 Leggo i task…';
+  render();
+  try{
+    const taskItems = await fetchSalesforceLive(SF_LIVE_TASKS_PROMPT, 'Recupera i miei task aperti da Salesforce.');
+    allItems = allItems.concat(taskItems);
+  }catch(e){ taskError = e.message; }
+
+  STATE.sfSyncLabel = '🔮 Leggo le opportunità…';
+  render();
+  try{
+    const oppItems = await fetchSalesforceLive(SF_LIVE_OPPS_PROMPT, 'Recupera le mie opportunità aperte da Salesforce.');
+    allItems = allItems.concat(oppItems);
+  }catch(e){ oppError = e.message; }
+
+  if(allItems.length === 0 && taskError && oppError){
+    STATE.sfSyncLoading = false;
+    STATE.sfSyncError = 'Errore lettura Salesforce — task: ' + taskError + ' · opportunità: ' + oppError;
+    render();
+    return;
+  }
+
+  allItems.forEach(it => {
+    const match = STATE.opportunities.find(o => o.dealer && it.dealer && o.dealer.toLowerCase() === it.dealer.toLowerCase());
+    it._matchedId = match ? match.id : null;
+  });
+
+  const taskCount = allItems.filter(it => it._sourceType === 'task').length;
+  const oppCount = allItems.filter(it => it._sourceType === 'opp').length;
+
+  // wipe=false: this is a live, possibly-partial pull, not a guaranteed
+  // full snapshot — merge additively instead of replacing, so nothing
+  // from the Google Sheet or a manual upload gets lost by accident.
+  await applyImportBatch(allItems, false);
+
+  STATE.sfSyncLoading = false;
+  render();
+  const warn = (taskError ? ' (task falliti: ' + taskError + ')' : '') + (oppError ? ' (opp fallite: ' + oppError + ')' : '');
+  showToast(`✅ Da Salesforce: ${taskCount} task, ${oppCount} opportunità${warn}`);
 }
 
 async function syncFromSheet(silent){
@@ -1110,10 +1315,94 @@ async function syncFromSheet(silent){
   }catch(e){
     STATE.importLoading = false;
     if(!silent){
-      STATE.importError = 'Google Sheet non raggiungibile (' + e.message + '). Uso i dati già salvati su questo dispositivo; puoi anche caricare il file manualmente con ⚙️.';
+      STATE.importError = 'Google Sheet non raggiungibile (' + e.message + '). Uso i dati già salvati su questo dispositivo.';
     }
     render();
   }
+}
+
+function renderManualTaskModal(){
+  if(!STATE.manualTaskModal) return '';
+  const m = STATE.manualTaskModal;
+  const dealerNames = [...new Set(STATE.opportunities.map(o => o.dealer))];
+  return `
+  <div class="modal-overlay" id="manualTaskOverlay">
+    <div class="modal-box">
+      <div class="modal-title">📝 Nuovo task</div>
+      <datalist id="dealerSuggestions">${dealerNames.map(d => `<option value="${escapeHtml(d)}">`).join('')}</datalist>
+      <div style="margin-bottom:10px;">
+        <div style="font-size:11.5px; color:var(--text-dim); margin-bottom:4px;">Dealer</div>
+        <input type="text" id="manualTaskDealer" list="dealerSuggestions" value="${escapeHtml(m.dealer||'')}" placeholder="Nome dealer" style="width:100%;">
+      </div>
+      <div style="margin-bottom:10px;">
+        <div style="font-size:11.5px; color:var(--text-dim); margin-bottom:4px;">Cosa devi fare</div>
+        <textarea id="manualTaskText" placeholder="Scrivi o detta il task...">${escapeHtml(m.text||'')}</textarea>
+      </div>
+      <div class="row-between" style="margin-bottom:10px;">
+        <button class="secondary mic-btn ${STATE.callModalRecording?'recording':''}" id="manualTaskMicBtn">
+          🎙️ ${STATE.callModalRecording ? 'Sto ascoltando…' : 'Registra vocale'}
+        </button>
+      </div>
+      <div class="row" style="gap:10px; margin-bottom:10px;">
+        <div style="flex:1;">
+          <div style="font-size:11.5px; color:var(--text-dim); margin-bottom:4px;">Scadenza</div>
+          <input type="date" id="manualTaskDate" value="${escapeHtml(m.dueDate||'')}" style="width:100%;">
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:11.5px; color:var(--text-dim); margin-bottom:4px;">Priorità</div>
+          <select id="manualTaskPriority" style="width:100%;">
+            <option value="Normal" ${m.priority==='Normal'?'selected':''}>Normale</option>
+            <option value="High" ${m.priority==='High'?'selected':''}>Alta</option>
+          </select>
+        </div>
+      </div>
+      <div class="row" style="justify-content:flex-end;">
+        <button class="secondary" id="manualTaskCancel">Annulla</button>
+        <button id="manualTaskSave">Salva</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderManualOppModal(){
+  if(!STATE.manualOppModal) return '';
+  const m = STATE.manualOppModal;
+  const dealerNames = [...new Set(STATE.opportunities.map(o => o.dealer))];
+  return `
+  <div class="modal-overlay" id="manualOppOverlay">
+    <div class="modal-box">
+      <div class="modal-title">💡 Nuova opportunità</div>
+      <datalist id="dealerSuggestions2">${dealerNames.map(d => `<option value="${escapeHtml(d)}">`).join('')}</datalist>
+      <div style="margin-bottom:10px;">
+        <div style="font-size:11.5px; color:var(--text-dim); margin-bottom:4px;">Dealer</div>
+        <input type="text" id="manualOppDealer" list="dealerSuggestions2" value="${escapeHtml(m.dealer||'')}" placeholder="Nome dealer" style="width:100%;">
+      </div>
+      <div style="margin-bottom:10px;">
+        <div style="font-size:11.5px; color:var(--text-dim); margin-bottom:4px;">Nome opportunità / prodotto</div>
+        <input type="text" id="manualOppName" value="${escapeHtml(m.name||'')}" placeholder="Es. Rinnovo LeadSparK" style="width:100%;">
+      </div>
+      <div class="row" style="gap:10px; margin-bottom:10px;">
+        <div style="flex:1;">
+          <div style="font-size:11.5px; color:var(--text-dim); margin-bottom:4px;">Fase</div>
+          <select id="manualOppStage" style="width:100%;">
+            ${STAGE_ORDER.map(s => `<option value="${s}" ${m.stage===s?'selected':''}>${s}</option>`).join('')}
+          </select>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:11.5px; color:var(--text-dim); margin-bottom:4px;">ACV (€)</div>
+          <input type="number" id="manualOppAcv" value="${escapeHtml(m.acv||'')}" placeholder="0" style="width:100%;">
+        </div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <div style="font-size:11.5px; color:var(--text-dim); margin-bottom:4px;">Data chiusura prevista</div>
+        <input type="date" id="manualOppDate" value="${escapeHtml(m.closeDate||'')}" style="width:100%;">
+      </div>
+      <div class="row" style="justify-content:flex-end;">
+        <button class="secondary" id="manualOppCancel">Annulla</button>
+        <button id="manualOppSave">Salva</button>
+      </div>
+    </div>
+  </div>`;
 }
 
 function showToast(text){
@@ -1410,6 +1699,15 @@ function attachHandlers(){
       const newInput = document.getElementById('contactSearchInput');
       if(newInput){ newInput.focus(); try{ newInput.setSelectionRange(cursorPos, cursorPos); }catch(err){} }
     });
+    if(IS_CLAUDE_ENV){
+      contactSearchInput.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter') searchContactsLive();
+      });
+    }
+  }
+  const contactSearchLiveBtn = document.getElementById('contactSearchLiveBtn');
+  if(contactSearchLiveBtn){
+    contactSearchLiveBtn.addEventListener('click', searchContactsLive);
   }
 
   document.querySelectorAll('[data-filtergroup]').forEach(el => {
@@ -1463,14 +1761,6 @@ function attachHandlers(){
     extractBtn.addEventListener('click', runExtraction);
   }
 
-  const dailyFileInput = document.getElementById('dailyFileInput');
-  if(dailyFileInput){
-    dailyFileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if(file) runDailyFileImport(file);
-      e.target.value = '';
-    });
-  }
   const syncBtn = document.querySelector('[data-syncbtn]');
   if(syncBtn){
     syncBtn.addEventListener('click', () => {
@@ -1478,9 +1768,12 @@ function attachHandlers(){
       syncFromSheet(false);
     });
   }
-  const sheetConfigBtn = document.querySelector('[data-sheetconfigbtn]');
-  if(sheetConfigBtn){
-    sheetConfigBtn.addEventListener('click', () => { document.getElementById('dailyFileInput').click(); });
+  const sfSyncBtn = document.querySelector('[data-sfsyncbtn]');
+  if(sfSyncBtn){
+    sfSyncBtn.addEventListener('click', () => {
+      if(STATE.sfSyncLoading) return;
+      syncFromSalesforceLive();
+    });
   }
   const confirmBtn = document.getElementById('confirmImportBtn');
   if(confirmBtn){
@@ -1537,6 +1830,94 @@ function attachHandlers(){
   if(exportLogBtn){
     exportLogBtn.addEventListener('click', exportCallLog);
   }
+  const addManualTaskBtn = document.getElementById('addManualTaskBtn');
+  if(addManualTaskBtn){
+    addManualTaskBtn.addEventListener('click', () => {
+      STATE.manualTaskModal = { dealer: '', text: '', dueDate: '', priority: 'Normal' };
+      STATE.callModalRecording = false;
+      render();
+    });
+  }
+  document.querySelectorAll('[data-contacttask]').forEach(el => {
+    el.addEventListener('click', () => {
+      const dealer = el.dataset.contacttask;
+      const contactName = el.dataset.contactname;
+      STATE.manualTaskModal = {
+        dealer: dealer || '',
+        text: `Follow up dopo aver contattato ${contactName}`,
+        dueDate: '', priority: 'Normal'
+      };
+      STATE.callModalRecording = false;
+      render();
+    });
+  });
+  const manualTaskCancel = document.getElementById('manualTaskCancel');
+  if(manualTaskCancel){
+    manualTaskCancel.addEventListener('click', () => { stopVoiceRecording(); STATE.manualTaskModal = null; render(); });
+  }
+  const manualTaskMicBtn = document.getElementById('manualTaskMicBtn');
+  if(manualTaskMicBtn){
+    manualTaskMicBtn.addEventListener('click', () => {
+      if(STATE.callModalRecording) stopVoiceRecording();
+      else startVoiceRecording('manualTaskText', 'manualTaskMicBtn', () => {});
+    });
+  }
+  const manualTaskSave = document.getElementById('manualTaskSave');
+  if(manualTaskSave){
+    manualTaskSave.addEventListener('click', async () => {
+      stopVoiceRecording();
+      const dealer = document.getElementById('manualTaskDealer').value.trim();
+      const text = document.getElementById('manualTaskText').value.trim();
+      const dueDate = document.getElementById('manualTaskDate').value || null;
+      const priority = document.getElementById('manualTaskPriority').value;
+      if(!dealer || !text){ alert('Serve almeno il nome del dealer e cosa devi fare.'); return; }
+      let target = STATE.opportunities.find(o => o.dealer.toLowerCase() === dealer.toLowerCase());
+      if(!target){ target = { id: uid(), dealer, tasks: [], sf_opportunities: [] }; STATE.opportunities.push(target); }
+      if(!target.tasks) target.tasks = [];
+      target.tasks.push({ id: uid(), text, due_date: dueDate, priority, createdAt: Date.now(), source: 'manual' });
+      await saveOpportunities();
+      STATE.manualTaskModal = null;
+      render();
+    });
+  }
+
+  const addManualOppBtn = document.getElementById('addManualOppBtn');
+  if(addManualOppBtn){
+    addManualOppBtn.addEventListener('click', () => {
+      STATE.manualOppModal = { dealer: '', name: '', stage: STAGE_ORDER[0], acv: '', closeDate: '' };
+      render();
+    });
+  }
+  const manualOppCancel = document.getElementById('manualOppCancel');
+  if(manualOppCancel){
+    manualOppCancel.addEventListener('click', () => { STATE.manualOppModal = null; render(); });
+  }
+  const manualOppSave = document.getElementById('manualOppSave');
+  if(manualOppSave){
+    manualOppSave.addEventListener('click', async () => {
+      const dealer = document.getElementById('manualOppDealer').value.trim();
+      const name = document.getElementById('manualOppName').value.trim();
+      const stage = document.getElementById('manualOppStage').value;
+      const acvRaw = document.getElementById('manualOppAcv').value;
+      const closeDate = document.getElementById('manualOppDate').value || null;
+      if(!dealer || !name){ alert('Serve almeno il nome del dealer e dell\'opportunità.'); return; }
+      let target = STATE.opportunities.find(o => o.dealer.toLowerCase() === dealer.toLowerCase());
+      if(!target){ target = { id: uid(), dealer, tasks: [], sf_opportunities: [] }; STATE.opportunities.push(target); }
+      if(!target.sf_opportunities) target.sf_opportunities = [];
+      target.sf_opportunities.push({
+        id: uid(), name, stage,
+        close_date: closeDate,
+        acv: acvRaw ? Number(acvRaw) : null,
+        stage_history: [{ stage, ts: Date.now() }],
+        last_stage_change: Date.now(),
+        source: 'manual'
+      });
+      await saveOpportunities();
+      STATE.manualOppModal = null;
+      render();
+    });
+  }
+
   const exportDailyBtn = document.getElementById('exportDailyBtn');
   if(exportDailyBtn){
     exportDailyBtn.addEventListener('click', exportDailySummary);
@@ -2102,22 +2483,25 @@ async function runExtraction(){
   }
 }
 
-async function applyImportBatch(items){
+async function applyImportBatch(items, wipe){
+  if(wipe === undefined) wipe = true;
   const now = Date.now();
 
   // The Task tab is always a full daily snapshot of everything currently open
   // in Salesforce: a Task-type import must replace the whole task list, not
   // pile on top of it, or closed/edited tasks would linger forever.
-  const hasTaskImport = items.some(it => it._sourceType === 'task');
+  // (skipped when wipe=false, e.g. a live/partial Salesforce pull where we
+  // can't be sure we received literally everything, so replacing could lose data)
+  const hasTaskImport = wipe && items.some(it => it._sourceType === 'task');
   if(hasTaskImport){
-    STATE.opportunities.forEach(o => { o.tasks = []; });
+    STATE.opportunities.forEach(o => { o.tasks = (o.tasks||[]).filter(t => t.source === 'manual'); });
   }
 
   // The Opp tab is also a full snapshot of currently open Salesforce
   // opportunities: an Opp-type import must replace the SF opportunities list,
   // not leave stale/closed ones lingering, and must not collapse multiple
   // distinct open opportunities on the same dealer into just one.
-  const hasOppImport = items.some(it => it._sourceType === 'opp');
+  const hasOppImport = wipe && items.some(it => it._sourceType === 'opp');
   let oldStageMap = {};
   if(hasOppImport){
     STATE.opportunities.forEach(o => {
@@ -2130,7 +2514,7 @@ async function applyImportBatch(items){
         };
       });
     });
-    STATE.opportunities.forEach(o => { o.sf_opportunities = []; });
+    STATE.opportunities.forEach(o => { o.sf_opportunities = (o.sf_opportunities||[]).filter(x => x.source === 'manual'); });
   }
 
   items.forEach(it => {
@@ -2183,7 +2567,8 @@ async function applyImportBatch(items){
           id: uid(), name, stage,
           close_date: it.sf_close_date || null,
           acv: (it.sf_acv !== undefined ? it.sf_acv : null),
-          stage_history, last_stage_change
+          stage_history, last_stage_change,
+          source: 'import'
         });
       }
     }
@@ -2202,7 +2587,7 @@ async function applyImportBatch(items){
           c.text.trim().toLowerCase() === norm
         );
         if(!wasCompletedToday){
-          target.tasks.push({ id: uid(), text: it.task_next_step, due_date: it.task_due_date || null, priority: it.task_priority || null, createdAt: now });
+          target.tasks.push({ id: uid(), text: it.task_next_step, due_date: it.task_due_date || null, priority: it.task_priority || null, createdAt: now, source: 'import' });
         }
       }
     }
