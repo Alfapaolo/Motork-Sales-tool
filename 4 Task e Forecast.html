@@ -576,7 +576,7 @@ function renderTabs(){
   const sheetLabel = STATE.importLoading ? (STATE.importLoadingLabel||'⏳ Sync in corso…') : '🔄 Sync Excel';
   return `
   <div class="tabs">
-    ${IS_CLAUDE_ENV ? `<div class="tab import-tab-btn" data-sfsyncbtn="1">${sfLabel}</div>` : ''}
+    <div class="tab import-tab-btn" data-sfsyncbtn="1">${sfLabel}</div>
     <div class="tab ${IS_CLAUDE_ENV?'':'import-tab-btn'}" data-syncbtn="1" ${IS_CLAUDE_ENV ? 'style="background:var(--panel2); color:var(--text); border:1px solid var(--border);"' : ''}>${sheetLabel}</div>
     <div class="tab-divider"></div>
     <div class="tab ${STATE.activeTab==='task'?'active':''}" data-tab="task">Solleciti / Task <span class="badge ${oc>0?'urgent':''}">${tc}</span></div>
@@ -585,7 +585,7 @@ function renderTabs(){
     <div class="tab ${STATE.activeTab==='contacts'?'active':''}" data-tab="contacts">Contatti ${IS_CLAUDE_ENV ? '<span class="badge">🔮</span>' : `<span class="badge">${STATE.contacts.length}</span>`}</div>
   </div>
   <div class="tabs-legend">
-    ${IS_CLAUDE_ENV ? '🔮 Sync SF = live da Salesforce (solo qui in chat) &nbsp;·&nbsp; ' : ''}🔄 Sync Excel = dal tuo Google Sheet &nbsp;·&nbsp; a destra le tre schede: Task, Pipeline, Contatti
+    🔮 Sync SF = live da Salesforce (solo qui in chat, clicca il bottone per i dettagli) &nbsp;·&nbsp; 🔄 Sync Excel = dal tuo Google Sheet &nbsp;·&nbsp; a destra le tre schede: Task, Pipeline, Contatti
   </div>`;
 }
 
@@ -1778,6 +1778,18 @@ function attachHandlers(){
   if(sfSyncBtn){
     sfSyncBtn.addEventListener('click', () => {
       if(STATE.sfSyncLoading) return;
+      if(!IS_CLAUDE_ENV){
+        alert(
+          'Perché qui non funziona:\n' +
+          'Questo bottone si collega a Salesforce usando la sessione di Claude quando siamo in chat — un collegamento che esiste solo lì, non su una pagina pubblicata come questa.\n\n' +
+          'Come farlo funzionare anche qui su GitHub:\n' +
+          '1. Serve una "Connected App" creata nel vostro Salesforce (di solito la crea un amministratore SF / IT)\n' +
+          '2. Va configurata con OAuth (PKCE), con come indirizzo di callback quello di questa stessa pagina GitHub\n' +
+          '3. A quel punto aggiungo qui un bottone "Accedi con Salesforce": fai il login una volta, e da lì la pagina può leggere Salesforce direttamente, da qualunque dispositivo — senza passare da Claude\n\n' +
+          'Nel frattempo, usa "Sync SF" qui in chat con Claude, o "Sync Excel" per i dati dal Google Sheet.'
+        );
+        return;
+      }
       syncFromSalesforceLive();
     });
   }
