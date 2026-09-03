@@ -2260,9 +2260,19 @@ function parseItDate(v){
   const s = v.toString().trim();
   const m = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
   if(m){
-    let [, d, mo, y] = m;
-    if(y.length===2) y = '20'+y;
-    return `${y}-${mo.padStart(2,'0')}-${d.padStart(2,'0')}`;
+    let a = parseInt(m[1], 10), b = parseInt(m[2], 10), y = m[3];
+    if(y.length === 2) y = '20' + y;
+    // Google Sheets CSV export can use either D/M or M/D depending on the
+    // spreadsheet's locale setting, regardless of how the cell displays —
+    // so we can't just assume one format. Whichever number is > 12 must be
+    // the day (months only go up to 12), no ambiguity there. When both
+    // numbers are ≤ 12 (genuinely ambiguous), default to month-first (M/D),
+    // which is what this export has been observed to use.
+    let day, month;
+    if(a > 12){ day = a; month = b; }
+    else if(b > 12){ day = b; month = a; }
+    else { month = a; day = b; }
+    return `${y}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
   }
   if(!isNaN(s) && s !== ''){
     const n = Number(s);
