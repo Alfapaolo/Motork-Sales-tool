@@ -2248,10 +2248,15 @@ function extractDealerNameHeuristic(text){
   if(!text) return null;
   const s = text.toString().trim();
   if(!s) return null;
-  const m = s.match(/^[A-Z0-9À-Ý&.\-'\s]+?(?=\s[a-z]|$)/);
-  let dealer = m ? m[0].trim() : s.split(' ')[0];
-  if(!dealer) dealer = s.split(' ')[0];
-  return dealer.trim() || null;
+  const words = s.split(/\s+/);
+  const dealerWords = [];
+  for(const w of words){
+    if(/[a-zà-ÿ]/.test(w)) break; // first word containing a lowercase letter ends the dealer name
+    dealerWords.push(w);
+    if(dealerWords.length >= 5) break; // safety cap for unusually long all-caps strings
+  }
+  if(dealerWords.length === 0) dealerWords.push(words[0]);
+  return dealerWords.join(' ').trim() || null;
 }
 
 function parseItDate(v){
