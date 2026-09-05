@@ -1133,7 +1133,7 @@ async function fetchSheetTabAsWorkbook(sheetId, gid){
   const resp = await fetch(url);
   if(!resp.ok) throw new Error('HTTP ' + resp.status);
   const text = await resp.text();
-  return XLSX.read(text, { type: 'string' });
+  return XLSX.read(text, { type: 'string', raw: true });
 }
 
 const SF_LIVE_TASKS_PROMPT = `Sei l'assistente di Paolo Pesenti, Senior Dealer Coach / venditore MotorK. Hai accesso in sola lettura a Salesforce. Cerca tutti i TASK aperti (Status non "Completed") assegnati a Paolo, in ordine di scadenza più vicina, massimo 40 risultati. Per ciascuno prendi: account/dealer collegato, oggetto o descrizione del prossimo passo, data di scadenza (ActivityDate), priorità. Usa una query mirata e diretta (una SOQL con filtro su Owner e Status è più veloce di uno strumento di ricerca generico) per rispondere il più rapidamente possibile.
@@ -2470,7 +2470,7 @@ async function runDailyFileImport(file){
 
   try{
     const buf = await file.arrayBuffer();
-    const workbook = XLSX.read(buf, { type: 'array' });
+    const workbook = XLSX.read(buf, { type: 'array', raw: true });
     await processWorkbook(workbook);
     STATE.importLoading = false;
     render();
