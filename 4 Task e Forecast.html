@@ -127,8 +127,9 @@
   .task-check:hover{ border-color:var(--green); }
 
   .task-body{ flex:1; min-width:0; }
-  .task-dealer{ font-weight:700; font-size:13.5px; }
-  .task-note{ color:var(--text-dim); font-size:12.5px; margin-top:2px; }
+  .task-dealer{ font-weight:700; font-size:13.5px; text-transform:uppercase; }
+  .task-note{ color:var(--text-dim); font-size:12.5px; margin-top:2px; text-transform:lowercase; }
+  .task-note::first-letter{ text-transform:uppercase; }
   .task-meta{ display:flex; gap:8px; align-items:center; margin-top:5px; flex-wrap:wrap; }
 
   .pill{
