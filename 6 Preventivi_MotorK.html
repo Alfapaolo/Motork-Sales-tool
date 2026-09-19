@@ -227,6 +227,7 @@ input.price-active{border-width:2px}
 .bozza-scenario-box.annuale .bozza-scenario-saving{color:#2B7FF5}
 .bozza-scenario-box.combinato .bozza-scenario-saving{color:#1E9E5A}
 .bozza-scenario-omaggio{background:#FFF3D6;color:#8A6100;font-size:11.5px;font-weight:700;padding:5px 9px;border-radius:4px;margin-bottom:8px;display:inline-block}
+.bozza-integrazioni-nota{margin-top:10px;font-size:10.5px;color:#888;line-height:1.5;font-style:italic}
 .bozza-annuale-nudge{margin-top:14px;padding:12px 16px;background:#F0F6FF;border:1.5px dashed #2B7FF5;border-radius:6px;font-size:12px;color:#1A1A1A;line-height:1.5;break-inside:avoid;page-break-inside:avoid}
 .bozza-annuale-nudge b{color:#2B7FF5}
 .bozza-riepilogo-risparmi{margin-top:14px;padding:12px 16px;background:#EAFBF1;border:1.5px solid #1E9E5A;border-radius:6px;font-size:12.5px;color:#1A1A1A;line-height:1.5;break-inside:avoid;page-break-inside:avoid}
@@ -765,42 +766,68 @@ const products = {
     { id:'fb_ecom',      name:'Facebook Ecommerce Feed',                 ut:0, canone:100 }
   ],
   integrazioni: [
+    // --- API (custom) ---
+    { id:'api_stock',      name:'API Stock (Custom)',                            ut:400, canone:60 },
+    { id:'api_lead',       name:'API Lead (Custom)',                             ut:500, canone:60 },
+    // --- Customer First ---
+    { id:'cf_leads',       name:'Customer First - Offers & Contracts',          ut:0,   canone:100 },
+    { id:'cf_lead_db',     name:'Customer First - Database Connector per Lead', ut:110, canone:100 },
+    // --- Datacar ---
+    { id:'datacar',        name:'Datacar - Workshop Orders Data Import',        ut:0,   canone:100 },
+    // --- Ford ---
+    { id:'ford',           name:'Ford Power - Lead, Offers, Contracts',         ut:0,   canone:100 },
+    // --- Honda ---
+    { id:'honda',          name:'Honda Leads - Leads Data Import',              ut:0,   canone:100 },
+    // --- Hyundai ---
+    { id:'hyundai_leads',  name:'Hyundai Portal - Database Connector Lead',     ut:100, canone:100 },
+    { id:'hyundai_hway',   name:'Hyundai Hway - Database Connector Contratti/Negoziazioni (attivazione inclusa se abbinato a Hyundai Portal)', ut:0, canone:90 },
+    // --- Incadea ---
     { id:'incadea',        name:'Incadea - Customers & Privacy',                ut:0,   canone:130 },
-    { id:'kl_cust',        name:'Keyloop Windrakar - Customer',                 ut:0,   canone:50, locations:1, locationPrice:50 },
+    // --- Keyloop (Windrakar/Autoline) ---
+    { id:'kl_cust',        name:'Keyloop Windrakar - Customer',                 ut:0,   canone:50 },
     { id:'kl_maint',       name:'Keyloop Windrakar - Maintenance',              ut:0,   canone:90 },
-    { id:'kl_offers',      name:'Keyloop Windrakar - Offers & Contracts',       ut:0,   canone:50, locations:1, locationPrice:50 },
+    { id:'kl_offers',      name:'Keyloop Windrakar - Offers & Contracts',       ut:0,   canone:50 },
     { id:'kl_stock',       name:'Keyloop Windrakar - Vehicle Stock',            ut:0,   canone:50, locations:1, locationPrice:50 },
     { id:'kl_booking',     name:'Keyloop Windrakar - Workshop Booking',         ut:0,   canone:50, locations:1, locationPrice:50 },
     { id:'kl_orders',      name:'Keyloop Windrakar - Workshop Orders',          ut:0,   canone:50, locations:1, locationPrice:50 },
-    { id:'rsp_bmw',        name:'RSP BMW - Lead Connector',                     ut:83,  canone:83 },
-    { id:'swp2',           name:'SWP2 - Lead Management',                       ut:0,   canone:130 },
+    // --- KGM ---
+    { id:'kgm',            name:'KGM - Database Connector per Lead',            ut:110, canone:100 },
+    // --- KIA ---
+    { id:'kia',            name:'KIA MySales - Offers & Contracts',             ut:0,   canone:100 },
+    // --- Mazda / Ecar ---
+    { id:'mazda',          name:'Mazda - Database Connector Quotations/Contracts', ut:0, canone:90 },
+    { id:'ecar',           name:'Ecar - Data Import Offers & Contracts (solo Mazda)', ut:0, canone:100 },
+    // --- Mercedes ---
+    { id:'mercedes',       name:'Mercedes Partner Community - Import Lead CRM', ut:100, canone:100 },
+    // --- MG ---
+    { id:'mg_leads',       name:'MG Connector for Lead',                        ut:110, canone:100 },
+    { id:'mg_stock',       name:'MG - Database Connector Quotations/Contracts', ut:0,   canone:90 },
+    // --- Nextlane ---
+    { id:'nextlane_maint', name:'Nextlane - Maintenance Fee',                   ut:0,   canone:90 },
+    { id:'nextlane_orders',name:'Nextlane - Workshop Orders (incl. Customer)',  ut:0,   canone:70 },
+    { id:'nextlane_stock', name:'Nextlane - Vehicle Stock',                     ut:0,   canone:40 },
+    { id:'nextlane_contracts', name:'Nextlane - Contracts (incl. Customer)',    ut:0,   canone:50 },
+    // --- RSP BMW ---
+    { id:'rsp_bmw',        name:'RSP BMW - Lead Connector',                     ut:83.34, canone:83.34 },
+    // --- Sipadpower ---
     { id:'sipad_maint',    name:'Sipadpower - Maintenance',                     ut:0,   canone:90 },
-    { id:'sipad_offers',   name:'Sipadpower - Offers & Contracts',              ut:500, canone:30, locations:1, locationPrice:30 },
-    { id:'sipad_stock',    name:'Sipadpower - Vehicle Stock',                   ut:0,   canone:50, locations:1, locationPrice:50 },
-    { id:'sipad_cust',     name:'Sipadpower - Customers & Privacy',             ut:0,   canone:130 },
-    { id:'stellantis',     name:'Stellantis - Lead Connector',                  ut:0,   canone:130 },
-    { id:'toshiko',        name:'Toshiko - Lead Management',                    ut:0,   canone:130 },
-    { id:'ford',           name:'Ford - Lead Connector',                        ut:0,   canone:83 },
-    { id:'mazda',          name:'Mazda/Ecar - Lead Connector',                  ut:0,   canone:83 },
-    { id:'visual_soft',    name:'Visual Software - Lead Connector',             ut:0,   canone:130 },
+    { id:'sipad_offers',   name:'Sipadpower - Offers & Contracts, Customer & Privacy', ut:500, canone:30, locations:1, locationPrice:30 },
+    { id:'sipad_stock',    name:'Sipadpower - Vehicle Stock',                   ut:150, canone:15, locations:1, locationPrice:15 },
+    // --- Stellantis ---
+    { id:'stellantis',     name:'Stellantis - Offers & Contracts Connector',    ut:0,   canone:90 },
+    // --- StockSparK ---
     { id:'ssk_leadmgr',   name:'StockSparK Lead Manager API',                  ut:200, canone:150 },
-    { id:'datacar',        name:'Datacar - Lead Connector',                     ut:0,   canone:130 },
-    { id:'kia',            name:'KIA - Lead Connector',                         ut:0,   canone:83 },
-    { id:'tcar',           name:'TCAR - Lead Connector',                        ut:0,   canone:83 },
-    { id:'honda',          name:'Honda - Lead Connector',                       ut:0,   canone:83 },
-    { id:'hyundai_leads',  name:'Hyundai - Lead Connector',                     ut:0,   canone:83 },
-    { id:'hyundai_stock',  name:'Hyundai - Vehicle Stock',                      ut:0,   canone:50, locations:1, locationPrice:50 },
-    { id:'cf_leads',       name:'Customer First - Lead Connector',              ut:0,   canone:83 },
-    { id:'cf_stock',       name:'Customer First - Vehicle Stock',               ut:0,   canone:50, locations:1, locationPrice:50 },
-    { id:'kgm',            name:'KGM - Lead Connector',                         ut:0,   canone:83 },
-    { id:'api_stock',      name:'API Stock (Custom)',                            ut:0,   canone:200 },
-    { id:'api_lead',       name:'API Lead (Custom)',                             ut:0,   canone:200 },
-    { id:'mg_leads',       name:'MG - Lead Connector',                          ut:0,   canone:83 },
-    { id:'mg_stock',       name:'MG - Vehicle Stock',                           ut:0,   canone:50, locations:1, locationPrice:50 },
-    { id:'mercedes',       name:'Mercedes - Lead Connector',                    ut:0,   canone:130 },
-    { id:'nextlane_cust',  name:'Nextlane - Customer',                          ut:0,   canone:50, locations:1, locationPrice:50 },
-    { id:'nextlane_offers',name:'Nextlane - Offers & Contracts',                ut:0,   canone:50, locations:1, locationPrice:50 },
-    { id:'nextlane_stock', name:'Nextlane - Vehicle Stock',                     ut:0,   canone:50, locations:1, locationPrice:50 }
+    // --- TCAR ---
+    { id:'tcar',           name:'TCAR - Offers & Contracts',                    ut:0,   canone:100 },
+    { id:'tcar_lead',      name:'TCAR - Database Connector per Lead',           ut:110, canone:100 },
+    // --- Toshiko ---
+    { id:'toshiko',        name:'Toshiko - Offers & Contracts Connector',       ut:0,   canone:90 },
+    // --- Visual Software Infinity ---
+    { id:'visual_soft_db',      name:'Visual Software Infinity - Database Connector', ut:110, canone:90 },
+    { id:'visual_soft_contact', name:'Visual Software Infinity - Contact Import/Export API', ut:0, canone:50 },
+    { id:'visual_soft_appt',    name:'Visual Software Infinity - Import Appuntamenti Officina', ut:0, canone:50 },
+    // --- VU3 ---
+    { id:'vu3',            name:'VU3 - Lead Management',                        ut:0,   canone:130 }
   ]
 };
 
@@ -2765,6 +2792,7 @@ function renderBozza() {
 
   var costItems = [], suggestItems = [];
   var spPackage = getActiveSPPackage(); // stessa funzione usata dal totale in toolbar, per coerenza
+  var hasIntegrazioni = false;
 
   sectionDefs.forEach(function(s) {
     var rows = Array.from(document.querySelectorAll('tr[data-section="' + s.key + '"]'));
@@ -2780,6 +2808,7 @@ function renderBozza() {
         var freeMonths = freeInp ? (parseInt(freeInp.value) || 0) : 0;
         var item = { name: p.name + getProductVarSuffix(p, row), ut: getRowUT(row), utCalc: getRowUTCalc(row), canone: getRowCanone(row), canoneCalc: getRowCanoneCalc(row), freeMonths: freeMonths, presentUrl: p.presentUrl || '', isSP: isRowInSPPackage(spPackage, row) };
         sectionCost.push(item);
+        if (s.key === 'integrazioni') hasIntegrazioni = true;
       }
       if (cbSuggest && cbSuggest.checked) {
         suggestItems.push({ name: p.name + getProductVarSuffix(p, row), presentUrl: p.presentUrl || '' });
@@ -2934,6 +2963,10 @@ function renderBozza() {
   }
 
   html += '</div>';
+
+  if (hasIntegrazioni) {
+    html += '<div class="bozza-integrazioni-nota">* Il canone delle integrazioni è calcolato per Partita IVA / flusso dati DMS: se il dealer ha più sedi sotto un\'unica Partita IVA, il canone è unico. Se ha più Partite IVA o il DMS invia più flussi distinti, il calcolo è comunque impostato per 1, ma serve un approfondimento specifico.</div>';
+  }
 
   // Totali
   html += '<div class="bozza-totali">';
