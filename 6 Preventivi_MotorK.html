@@ -717,7 +717,7 @@ const products = {
     { id:'bgrem_100',   name:'Rimozione sfondo - 100+20 immagini/mese (20 in omaggio)',               ut:0, canone:70, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/present' },
     { id:'bgrem_250',   name:'Rimozione sfondo - 250+20 immagini/mese (20 in omaggio)',               ut:0, canone:160, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/present' },
     { id:'bgrem_500',   name:'Rimozione sfondo - 500+20 immagini/mese (20 in omaggio)',               ut:0, canone:280, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/present' },
-    { id:'bgrem_1000',  name:'Rimozione sfondo - 1000+20 immagini/mese (20 in omaggio)',              ut:0, canone:1000, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/present' },
+    { id:'bgrem_1000',  name:'Rimozione sfondo - 1000+20 immagini/mese (20 in omaggio)',              ut:0, canone:500, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/present' },
     { id:'bgrem_custom',name:'Rimozione sfondo - Custom (input immagini/mese)',    ut:0, canone:0, isCustom:true, customLabel:'immagini' },
     { id:'bgrem_sfondo',name:'Rimozione sfondo - Sfondo personalizzato',           ut:0, canone:20 },
     { id:'aiv_20',      name:'AI Video - 20 video simultanei',                     ut:0, canone:100, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/present' },
@@ -728,33 +728,39 @@ const products = {
     { id:'aiv_custom',  name:'AI Video - Custom (input posti video attivi)',        ut:0, canone:0, isCustom:true, customLabel:'posti' }
   ],
   web: [
-    { id:'wsk_core', name:'WebSparK Revolution - Core (incluso € 15 Cookie policy e € 10 European Accessibility Act obbligatori per legge)',     ut:1000, canone:300, variables:1, variablePrice:48, presentUrl:'https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present' },
-    { id:'wsk_adv',  name:'WebSparK Revolution - Advanced (incluso € 15 Cookie policy e € 10 European Accessibility Act obbligatori per legge)', ut:1500, canone:570, variables:1, variablePrice:48, presentUrl:'https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present' },
-    { id:'wsk_prem', name:'WebSparK Revolution - Premium (incluso € 15 Cookie policy e € 10 European Accessibility Act obbligatori per legge)',  ut:2000, canone:870, variables:1, variablePrice:48, presentUrl:'https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present' },
-    { id:'wsk_mob',  name:'WebSparK Revolution - Mobility (incluso € 15 Cookie policy e € 10 European Accessibility Act obbligatori per legge)', ut:1200, canone:500, variables:1, variablePrice:48, presentUrl:'https://docs.google.com/presentation/d/1yrbghZDpe7prWrcvEmYbK0uKunI3qKf271J0oecz8WE/present' },
-    { id:'wsk_srv',  name:'WebSparK Revolution - Service (incluso € 15 Cookie policy e € 10 European Accessibility Act obbligatori per legge)',  ut:1000, canone:300, variables:1, variablePrice:48, presentUrl:'https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present' },
-    { id:'wsk_trk',  name:'WebSparK Revolution - Truck (incluso € 15 Cookie policy e € 10 European Accessibility Act obbligatori per legge)',    ut:1200, canone:500, variables:1, variablePrice:25, presentUrl:'https://docs.google.com/presentation/d/196mZFXnlcAtrIFjWzBShXlJ8y08pZDMG5WUFR25tMAk/present' },
-    { id:'wsk_b2b',  name:'WebSparK B2B',                   ut:1500, canone:500, presentUrl:'https://drive.google.com/file/d/1JqFCLERcvEAzaHxJukixjY2-EeL4j3m6/view?usp=sharing' },
-    { id:'wsk_aste', name:'WebSparK Aste',                  ut:2000, canone:1000, presentUrl:'https://drive.google.com/file/d/1JqFCLERcvEAzaHxJukixjY2-EeL4j3m6/view?usp=sharing' },
-    { id:'wsk_ecom', name:'WebSparK - ecommerce',           ut:1500, canone:315, presentUrl:'https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present' },
-    { id:'wsk_conf', name:'WebSparK - Car Configurator',    ut:800,  canone:100, variables:1, variablePrice:100, presentUrl:'https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present' },
-    { id:'wsk_seo',  name:'SeoSparK Premium',                ut:1000, canone:250, variables:1, variablePrice:250, presentUrl:'https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present' }
+    { id:'wsk_core', name:'WebSparK Revolution - Core (incluso € 15 Cookie policy e € 10 European Accessibility Act obbligatori per legge)',     utMultiplier:4, canone:300, variables:1, variablePrice:48, presentUrl:'https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present' },
+    { id:'wsk_adv',  name:'WebSparK Revolution - Advanced (incluso € 15 Cookie policy e € 10 European Accessibility Act obbligatori per legge)', utMultiplier:4, canone:570, variables:1, variablePrice:48, presentUrl:'https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present' },
+    { id:'wsk_prem', name:'WebSparK Revolution - Premium (incluso € 15 Cookie policy e € 10 European Accessibility Act obbligatori per legge)',  utMultiplier:4, canone:870, variables:1, variablePrice:48, presentUrl:'https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present' },
+    { id:'wsk_mob',  name:'WebSparK Revolution - Mobility (incluso € 15 Cookie policy e € 10 European Accessibility Act obbligatori per legge)', utMultiplier:4, canone:500, variables:1, variablePrice:48, presentUrl:'https://docs.google.com/presentation/d/1yrbghZDpe7prWrcvEmYbK0uKunI3qKf271J0oecz8WE/present' },
+    { id:'wsk_srv',  name:'WebSparK Revolution - Service (incluso € 15 Cookie policy e € 10 European Accessibility Act obbligatori per legge)',  utMultiplier:4, canone:300, variables:1, variablePrice:48, presentUrl:'https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present' },
+    { id:'wsk_trk',  name:'WebSparK Revolution - Truck (incluso € 15 Cookie policy e € 10 European Accessibility Act obbligatori per legge)',    utMultiplier:4, canone:500, variables:1, variablePrice:25, presentUrl:'https://docs.google.com/presentation/d/196mZFXnlcAtrIFjWzBShXlJ8y08pZDMG5WUFR25tMAk/present' },
+    { id:'wsk_b2b',  name:'WebSparK B2B',                   utMultiplier:4, canone:500, variables:1, variablePrice:30, presentUrl:'https://drive.google.com/file/d/1JqFCLERcvEAzaHxJukixjY2-EeL4j3m6/view?usp=sharing' },
+    { id:'wsk_aste', name:'WebSparK Aste',                  utMultiplier:4, canone:1000, presentUrl:'https://drive.google.com/file/d/1JqFCLERcvEAzaHxJukixjY2-EeL4j3m6/view?usp=sharing' },
+    { id:'wsk_ecom', name:'WebSparK - ecommerce (ex SellSparK)', utMultiplier:4, canone:315, variables:1, variablePrice:100, presentUrl:'https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present' },
+    { id:'wsk_conf', name:'WebSparK - Car Configurator',    utMultiplier:4, canone:100, variables:1, variablePrice:100, presentUrl:'https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present' },
+    { id:'wsk_seo_prem', name:'SeoSparK x Premium',           utMultiplier:4, canone:120, presentUrl:'https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present' },
+    { id:'wsk_seo_adv',  name:'SeoSparK x Advanced (per clienti WSK Advanced/Premium)', utMultiplier:4, canone:70, presentUrl:'https://docs.google.com/presentation/d/1bwYKYMp3x3l08uln0iQ1nIyBlgOiVYLA2HoMeXSjUSQ/present' },
+    { id:'wsk_brand_universe', name:'WebSparK - Brand Universe (mini-siti per brand specifici)', utMultiplier:4, canone:100, variables:1, variablePrice:100 },
+    { id:'wsk_cloudflare',     name:'CloudFlare',                                    utMultiplier:4, canone:50, variables:1, variablePrice:50 },
+    { id:'wsk_multilang',      name:'WebSparK - Multilanguage (calcolo manuale: 2ª lingua +20%, 3ª +15%, 4ª+ +10% del prezzo WSK con sedi/brand incluse)', ut:0, canone:0, isCustom:true, customLabel:'lingue aggiuntive' }
   ],
   crm: [
-    { id:'lsk_ess',  name:'LeadSparK Essential',                         ut:1000, canone:75,   licenses:1, licensesPrice:75, presentUrl:'https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present' },
     { id:'lsk_rev',  name:'LeadSparK Revolution',                        ut:1500, canone:100,  licenses:1, licensesPrice:100, presentUrl:'https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present' },
     { id:'lsk_wa',   name:'LeadSparK WhatsApp Business',                 ut:500,  canone:39,   licenses:1, licensesPrice:39, presentUrl:'https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present' },
     { id:'lsk_conf', name:'LeadSparK Car Configurator',                  ut:800,  canone:100,  brands:1, brandsPrice:100, presentUrl:'https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present' },
-    { id:'lsk_mkt',  name:'LeadSparK Marketing/Process/AI Automation',   ut:3000, canone:1000, presentUrl:'https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present' },
+    { id:'lsk_mkt',  name:'LeadSparK Marketing/Process/AI Automation',   ut:3000, canone:550, presentUrl:'https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present' },
+    { id:'lsk_dw',   name:'LeadSparK Revolution - Data Warehouse',        ut:0,    canone:100,  licenses:1, licensesPrice:0 },
     { id:'csk_100',  name:'CallSparK - Gestione AI 100 lead/mese',       ut:1500, canone:350,  locations:1, locationPrice:100, presentUrl:'https://docs.google.com/presentation/d/185utUR8TkIl8lUsW3DkpNNW8RDtiVBHUIB_ghK8A2hk/present' },
     { id:'csk_200',  name:'CallSparK - Gestione AI 200 lead/mese',       ut:2000, canone:580,  locations:1, locationPrice:100, presentUrl:'https://docs.google.com/presentation/d/185utUR8TkIl8lUsW3DkpNNW8RDtiVBHUIB_ghK8A2hk/present' },
     { id:'csk_300',  name:'CallSparK - Gestione AI 300 lead/mese',       ut:2500, canone:790,  locations:1, locationPrice:100, presentUrl:'https://docs.google.com/presentation/d/185utUR8TkIl8lUsW3DkpNNW8RDtiVBHUIB_ghK8A2hk/present' },
     { id:'csk_500',  name:'CallSparK - Gestione AI 500 lead/mese',       ut:3000, canone:1200, locations:1, locationPrice:100, presentUrl:'https://docs.google.com/presentation/d/185utUR8TkIl8lUsW3DkpNNW8RDtiVBHUIB_ghK8A2hk/present' },
     { id:'csk_cust', name:'CallSparK - Custom (input Sedi + lead/mese)', ut:2000, canone:0,   isDualCustom:true, dualLabel1:'Sedi', dualLabel2:'lead' },
+    { id:'agsk',     name:'AgentSparK', ut:0, canone:0, hasFreeText:true },
     { id:'cdp',      name:'Customer Data Platform - CDP AI',              ut:1200, canone:100, presentUrl:'https://docs.google.com/presentation/d/15DxZnZXd-AmXoCEoW38UfM-Vzy7moBLVhvx8gkTfzDc/present' }
   ],
   aftersales: [
     { id:'fsk', name:'FidSparK',    ut:1000, canone:100, locations:1, locationPrice:50, presentUrl:'https://docs.google.com/presentation/d/1tKwQ8I8RfuCLswVCublwRyTGEnwUCwqAmaMzWxID7Is/present' },
+    { id:'fsk_live', name:'FidSparK LIVE', ut:1000, canone:100, locations:1, locationPrice:50 },
     { id:'psk', name:'PredictSparK',ut:2000, canone:500, locations:1, locationPrice:100, presentUrl:'https://docs.google.com/presentation/d/1LqHmmVMst3zOtl-KggSmUg0NWGezzIBG9qtFQ78RfqY/present' }
   ],
   marketing: [
@@ -854,7 +860,7 @@ function renderTable(section, tbodyId) {
       varHtml = '<div class="var-cell"><span class="var-label">' + (p.customLabel || '') + '</span>' +
         '<input type="number" class="inp-var" min="0" step="1" oninput="calculateAll()" placeholder="0"></div>';
     } else if (p.variables) {
-      var vLabelMap = { wsk_conf: 'Configuratori', wsk_seo: 'N° siti' };
+      var vLabelMap = { wsk_conf: 'Configuratori', wsk_b2b: 'Brand', wsk_brand_universe: 'Brand', wsk_cloudflare: 'Sito' };
       var vLabel = vLabelMap[p.id] || 'Location';
       varHtml = '<div class="var-cell"><span class="var-label">' + vLabel + '</span>' +
         '<input type="number" class="inp-var" min="1" value="' + p.variables + '" step="1" oninput="calculateAll()">' +
@@ -876,6 +882,8 @@ function renderTable(section, tbodyId) {
       varHtml = '<div class="var-cell"><span class="var-label">Feed</span>' +
         '<input type="number" class="inp-var" min="1" value="' + p.feeds + '" step="1" oninput="calculateAll()">' +
         '<span class="var-price">&times;&nbsp;€' + p.feedsPrice + '</span></div>';
+    } else if (p.hasFreeText) {
+      varHtml = '<input type="text" class="inp-free-desc" placeholder="es. Agente che qualifica lead" oninput="calculateAll()" style="width:100%">';
     } else {
       varHtml = '—';
     }
@@ -1012,6 +1020,7 @@ function getRowUTCalc(row) {
   var section = row.dataset.section;
   var p = products[section].find(function(x) { return x.id === pid; });
   if (!p) return 0;
+  if (p.utMultiplier) return getRowCanoneCalc(row) * p.utMultiplier;
   return p.ut;
 }
 
@@ -1317,6 +1326,9 @@ function calculateAll() {
     // Aggiorna sempre il canone calcolato "puro" visibile (senza override, coerente con UT calc.)
     var canCalcPuro = getRowCanoneCalc(row);
     if (canCalcSpan) canCalcSpan.textContent = canCalcPuro > 0 ? '€ ' + Math.round(canCalcPuro).toString() : '—';
+    // Aggiorna sempre la UT calcolata "pura" visibile (senza override) — necessario per i prodotti con utMultiplier, che dipendono dal canone
+    var utCalcPuro = getRowUTCalc(row);
+    if (utCalcCell) utCalcCell.textContent = utCalcPuro > 0 ? '€ ' + Math.round(utCalcPuro).toString() : '—';
     // Valore finale (con eventuale override), usato per i totali
     var c = getRowCanone(row);
 
@@ -1674,6 +1686,7 @@ function collectOfferState() {
     var p1 = row.querySelector('.inp-custom-unitprice-1');
     var p2 = row.querySelector('.inp-custom-unitprice-2');
     var freeInp = row.querySelector('.inp-free-months');
+    var freeDescInp = row.querySelector('.inp-free-desc');
     var cbSp = row.querySelector('.cb-sp');
     rows.push({
       pid: row.dataset.pid,
@@ -1689,7 +1702,8 @@ function collectOfferState() {
       var2: v2 ? v2.value : '',
       unitPrice1: p1 ? p1.value : '',
       unitPrice2: p2 ? p2.value : '',
-      freeMonths: freeInp ? freeInp.value : ''
+      freeMonths: freeInp ? freeInp.value : '',
+      freeDesc: freeDescInp ? freeDescInp.value : ''
     });
     if (isCost) {
       totalUT  += getRowUT(row);
@@ -1812,6 +1826,7 @@ function loadOfferFromLog(id) {
     var p1 = row.querySelector('.inp-custom-unitprice-1'); if (p1 && r.unitPrice1 !== '' && r.unitPrice1 != null) p1.value = r.unitPrice1;
     var p2 = row.querySelector('.inp-custom-unitprice-2'); if (p2 && r.unitPrice2 !== '' && r.unitPrice2 != null) p2.value = r.unitPrice2;
     var freeInp = row.querySelector('.inp-free-months'); if (freeInp && r.freeMonths !== '' && r.freeMonths != null) freeInp.value = r.freeMonths;
+    var freeDescInp = row.querySelector('.inp-free-desc'); if (freeDescInp && r.freeDesc) freeDescInp.value = r.freeDesc;
     var utOv  = row.querySelector('.inp-ut-ov');  if (utOv  && r.utOv)  utOv.value  = r.utOv;
     var canOv = row.querySelector('.inp-can-ov'); if (canOv && r.canOv) canOv.value = r.canOv;
   });
@@ -2169,6 +2184,7 @@ function collectPresetState() {
     var p1 = row.querySelector('.inp-custom-unitprice-1');
     var p2 = row.querySelector('.inp-custom-unitprice-2');
     var freeInp = row.querySelector('.inp-free-months');
+    var freeDescInp = row.querySelector('.inp-free-desc');
     rows.push({
       pid: row.dataset.pid,
       section: row.dataset.section,
@@ -2183,7 +2199,8 @@ function collectPresetState() {
       var2: v2 ? v2.value : '',
       unitPrice1: p1 ? p1.value : '',
       unitPrice2: p2 ? p2.value : '',
-      freeMonths: freeInp ? freeInp.value : ''
+      freeMonths: freeInp ? freeInp.value : '',
+      freeDesc: freeDescInp ? freeDescInp.value : ''
     });
   });
   return {
@@ -2311,6 +2328,7 @@ async function applyPreset(id) {
     var utOv  = row.querySelector('.inp-ut-ov');  if (utOv  && r.utOv)  utOv.value  = r.utOv;
     var canOv = row.querySelector('.inp-can-ov'); if (canOv && r.canOv) canOv.value = r.canOv;
     var freeInp = row.querySelector('.inp-free-months'); if (freeInp && r.freeMonths !== '' && r.freeMonths != null) freeInp.value = r.freeMonths;
+    var freeDescInp = row.querySelector('.inp-free-desc'); if (freeDescInp && r.freeDesc) freeDescInp.value = r.freeDesc;
   });
 
   calculateAll();
@@ -2348,6 +2366,7 @@ function computePresetRowListino(r) {
     n = (r.varVal !== '' && r.varVal != null) ? (parseInt(r.varVal) || p.feeds) : p.feeds;
     canone = p.canone + Math.max(0, n - p.feeds) * p.feedsPrice;
   }
+  if (p.utMultiplier) ut = canone * p.utMultiplier;
   if (r.utOv !== '' && r.utOv != null) ut = parseFloat(r.utOv) || 0;
   if (r.canOv !== '' && r.canOv != null) canone = parseFloat(r.canOv) || 0;
   return { ut: ut, canone: canone };
@@ -2717,7 +2736,6 @@ var VAR_DISPLAY_MAP = {
   bgrem_custom:{ label:'immagini/mese', singular:'immagine/mese', nFormat:true },
   aiv_custom:  { label:'posti video attivi in contemporanea', singular:'posto video attivo', nFormat:true },
   wsk_conf:    { label:'configuratori casa madre', singular:'configuratore casa madre', nFormat:true },
-  lsk_ess:     { label:'utenze', singular:'utenza', nFormat:true },
   lsk_rev:     { label:'utenze', singular:'utenza', nFormat:true },
   lsk_wa:      { label:'utenze', singular:'utenza', nFormat:true },
   lsk_conf:    { label:'configuratori', singular:'configuratore', nFormat:true },
@@ -2727,6 +2745,12 @@ var VAR_DISPLAY_MAP = {
 };
 
 function getProductVarSuffix(p, row) {
+  if (p.hasFreeText) {
+    var descInp = row ? row.querySelector('.inp-free-desc') : null;
+    var desc = descInp ? descInp.value.trim() : '';
+    return desc ? ' (' + desc + ')' : '';
+  }
+
   var cfg = VAR_DISPLAY_MAP[p.id];
   if (!cfg) return '';
 
