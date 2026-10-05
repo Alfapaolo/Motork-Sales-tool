@@ -786,6 +786,8 @@ function filterMarkers(){
   updateVisibleCount(visible);
   // Se il pannello mappa è aperto, aggiorna la lista laterale
   if(mapPanelOpen) refreshMapPanel();
+  // Se il pannello regione è aperto, aggiorna
+  if(window._regionPanelOpen && activeRegionFilter) refreshRegionPanel();
   autoZoomToVisible();
 }
 
@@ -1946,11 +1948,67 @@ function filterByRegion() {
   var val = document.getElementById('region-select').value;
   if(!val) {
     activeRegionFilter = null;
+    // Chiudi pannello se era aperto per regione
+    if(window._regionPanelOpen) {
+      document.getElementById('omw-result-panel').style.display = 'none';
+      window._regionPanelOpen = false;
+      mapPanelOpen = false;
+    }
   } else {
     var parts = val.split(':');
     activeRegionFilter = {type: parts[0], code: parts[1]};
+    window._regionPanelOpen = true;
   }
   filterMarkers();
+  if(activeRegionFilter) refreshRegionPanel();
+}
+
+function refreshRegionPanel() {
+  var q = document.getElementById('search').value.toLowerCase().trim();
+  var list = [];
+  markers.forEach(function(o) {
+    var d = o.dealer;
+    var passa = matchesRegionFilter(d) && (q ? d.Name.toLowerCase().includes(q) :
+      (activeTypes.size>0 && activeRatings.size>0 && activeTypes.has(d.Customer_Type__c) && activeRatings.has(d.Rating)));
+    if(passa) list.push(o);
+  });
+  // Ordina per provincia poi per nome
+  list.sort(function(a,b){
+    var pa = (a.dealer.BillingState||''), pb = (b.dealer.BillingState||'');
+    if(pa !== pb) return pa.localeCompare(pb);
+    return a.dealer.Name.localeCompare(b.dealer.Name);
+  });
+
+  var sel = document.getElementById('region-select');
+  var label = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text.trim() : 'Regione';
+  document.getElementById('omw-panel-title').textContent = list.length + ' dealer — ' + label;
+
+  var panelList = document.getElementById('omw-panel-list');
+  panelList.innerHTML = '';
+  if(list.length === 0) {
+    panelList.innerHTML = '<div style="padding:16px;color:#888;font-size:13px;text-align:center">Nessun dealer trovato</div>';
+  } else {
+    list.forEach(function(o, idx) {
+      var d = o.dealer;
+      var col = tc(d.Customer_Type__c);
+      var el = document.createElement('div');
+      el.className = 'omw-item';
+      el.innerHTML = buildItemHTML(idx, d, null, col);
+      el.onclick = (function(o){ return function(){ map.setView(o.marker.getLatLng(),13); o.marker.openPopup(); }; })(o);
+      panelList.appendChild(el);
+    });
+  }
+
+  var panel = document.getElementById('omw-result-panel');
+  panel.style.display = 'flex';
+  mapPanelOpen = false; // non è il pannello mappa, è quello regione
+  document.getElementById('omw-panel-close').onclick = function() {
+    panel.style.display = 'none';
+    window._regionPanelOpen = false;
+    document.getElementById('region-select').value = '';
+    activeRegionFilter = null;
+    filterMarkers();
+  };
 }
 
 function matchesRegionFilter(d) {
