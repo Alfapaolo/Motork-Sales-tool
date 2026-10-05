@@ -1023,9 +1023,10 @@ async function processCSVText(csvText){
       if(!c && billCity) c=getCityCoords(billCity);
       if(c) placeMarker(d,c); else toGeocode.push(d);
     });
+    filterMarkers(); // assicura che i filtri correnti siano applicati
     document.getElementById('status').textContent=markers.length+' dealer';
     updateVisibleCount(markers.length);
-    if(markers.length>0){var g=L.featureGroup(markers.map(function(o){return o.marker;}));map.fitBounds(g.getBounds().pad(.1));}
+    if(markers.length>0){var g=L.featureGroup(markerLayer.getLayers());if(g.getLayers().length>0)map.fitBounds(g.getBounds().pad(.1));}
     var stillMissed=[];
     if(toGeocode.length>0){
       // Geocodifica sia città fisica che legale per coprire tutti i casi
@@ -1086,7 +1087,7 @@ async function processCSVText(csvText){
       filterMarkers();
       document.getElementById('status').textContent=markers.length+' dealer';
       updateVisibleCount(markers.length);
-      if(markers.length>0){var g2=L.featureGroup(markers.map(function(o){return o.marker;}));map.fitBounds(g2.getBounds().pad(.1));}
+      if(markers.length>0){var gv=L.featureGroup(markerLayer.getLayers());if(gv.getLayers().length>0)map.fitBounds(gv.getBounds().pad(.1));}
     }
     var mb=document.getElementById('miss-bar');
     if(stillMissed.length>0){var uniqM=[...new Set(stillMissed)];mb.style.display='block';mb.textContent='⚠ '+stillMissed.length+' dealer non posizionati: '+uniqM.join(', ');}
