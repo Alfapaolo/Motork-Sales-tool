@@ -42,6 +42,9 @@ body{font-family:system-ui,sans-serif;background:#f5f5f0;height:100vh;height:100
 #omw-via:focus{border-color:#f57c00;box-shadow:0 0 0 2px rgba(245,124,0,.2)}
 #omw-partenza:focus,#omw-arrivo:focus{border-color:#1a5cb8}
 .omw-via-label{font-size:10px;color:#f57c00;font-weight:700;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+#region-select{border:1px solid #ccc;border-radius:6px;padding:5px 8px;font-size:12px;background:#fff;cursor:pointer;max-width:140px}
+#region-select option.region-header{font-weight:700;background:#f0f4ff;color:#1a5cb8}
+#region-select option.province-item{padding-left:12px;color:#333}
 #map.ai-open{margin-left:300px}
 
 #omw-partenza:focus,#omw-arrivo:focus{border-color:#1a5cb8}
@@ -135,6 +138,46 @@ input[type=text]{border:1px solid #ddd;border-radius:6px;padding:5px 10px;font-s
     <button id="omw-go" onclick="runOnMyWay()">🔍 Cerca</button>
     <button id="omw-clear" onclick="clearRoute()">✕</button>
     <button id="omw-export" onclick="exportUnified()">⬇ DOCX</button>
+    <select id="region-select" onchange="filterByRegion()" title="Filtra per regione o provincia">
+      <option value="">Tutta Italia</option>
+      <optgroup label="LOMBARDIA">
+        <option value="region:LO" class="region-header">Lombardia (tutte)</option>
+        <option value="prov:BG">  Bergamo</option>
+        <option value="prov:BS">  Brescia</option>
+        <option value="prov:CO">  Como</option>
+        <option value="prov:CR">  Cremona</option>
+        <option value="prov:LC">  Lecco</option>
+        <option value="prov:LO">  Lodi</option>
+        <option value="prov:MN">  Mantova</option>
+        <option value="prov:MI">  Milano</option>
+        <option value="prov:MB">  Monza</option>
+        <option value="prov:PV">  Pavia</option>
+        <option value="prov:SO">  Sondrio</option>
+        <option value="prov:VA">  Varese</option>
+      </optgroup>
+      <optgroup label="PIEMONTE">
+        <option value="region:PI" class="region-header">Piemonte (tutte)</option>
+        <option value="prov:AL">  Alessandria</option>
+        <option value="prov:AT">  Asti</option>
+        <option value="prov:BI">  Biella</option>
+        <option value="prov:CN">  Cuneo</option>
+        <option value="prov:NO">  Novara</option>
+        <option value="prov:TO">  Torino</option>
+        <option value="prov:VB">  Verbania</option>
+        <option value="prov:VC">  Vercelli</option>
+      </optgroup>
+      <optgroup label="LIGURIA">
+        <option value="region:LI" class="region-header">Liguria (tutte)</option>
+        <option value="prov:GE">  Genova</option>
+        <option value="prov:IM">  Imperia</option>
+        <option value="prov:SP">  La Spezia</option>
+        <option value="prov:SV">  Savona</option>
+      </optgroup>
+      <optgroup label="VALLE D'AOSTA">
+        <option value="region:VA2" class="region-header">Valle d'Aosta (tutte)</option>
+        <option value="prov:AO">  Aosta</option>
+      </optgroup>
+    </select>
   </div>
   <div id="omw-row2">
   <button class="btn" style="background:#f5f5f0;padding:5px 8px;font-size:16px;line-height:1" onclick="locateMe()" title="Centra sulla mia posizione">📍</button>
@@ -735,7 +778,7 @@ function filterMarkers(){
   }
   markers.forEach(function(o){
     var d=o.dealer;
-    if((q ? d.Name.toLowerCase().includes(q) : (activeTypes.size>0&&activeRatings.size>0&&activeTypes.has(d.Customer_Type__c)&&activeRatings.has(d.Rating)))){
+    if(matchesRegionFilter(d)&&(q ? d.Name.toLowerCase().includes(q) : (activeTypes.size>0&&activeRatings.size>0&&activeTypes.has(d.Customer_Type__c)&&activeRatings.has(d.Rating)))){
       markerLayer.addLayer(o.marker);
       visible++;
     }
@@ -921,7 +964,7 @@ function placeMarker(d,coords){
   m._dealerName=d.Name;
   m.bindTooltip(d.Name,{permanent:false,direction:'right',className:'dealer-label',offset:[8,0]});
   markers.push({marker:m,dealer:d});
-  if(activeTypes.size>0&&activeRatings.size>0&&activeTypes.has(d.Customer_Type__c)&&activeRatings.has(d.Rating))
+  if(matchesRegionFilter(d)&&activeTypes.size>0&&activeRatings.size>0&&activeTypes.has(d.Customer_Type__c)&&activeRatings.has(d.Rating))
     markerLayer.addLayer(m);
 }
 
@@ -1091,6 +1134,8 @@ window.searchNearMe=function(){
     },function(){
       alert('Impossibile rilevare la posizione');
       document.getElementById('nearme-km').value = '';
+  document.getElementById('region-select').value = '';
+  activeRegionFilter = null;
     });
   }
 };
@@ -1172,6 +1217,8 @@ function clearRoute() {
   document.getElementById('omw-result-panel').style.display = 'none';
   document.getElementById('omw-clear').style.display = 'none';
   document.getElementById('nearme-km').value = '';
+  document.getElementById('region-select').value = '';
+  activeRegionFilter = null;
   document.getElementById('omw-panel-list').innerHTML = '';
   filterMarkers();
 }
@@ -1884,6 +1931,39 @@ function exportUnified() {
   exportDOCX(visibleList, 'Dealer visibili sulla mappa', 'dealer_mappa_visibili.docx');
 }
 
+
+// ===== REGION / PROVINCE FILTER =====
+var REGION_PROVS = {
+  'LO': ['BG','BS','CO','CR','LC','LO','MN','MI','MB','PV','SO','VA'],
+  'PI': ['AL','AT','BI','CN','NO','TO','VB','VC'],
+  'LI': ['GE','IM','SP','SV'],
+  'VA2': ['AO']
+};
+
+var activeRegionFilter = null; // null = tutto, {type:'region',code:'LO'} o {type:'prov',code:'BG'}
+
+function filterByRegion() {
+  var val = document.getElementById('region-select').value;
+  if(!val) {
+    activeRegionFilter = null;
+  } else {
+    var parts = val.split(':');
+    activeRegionFilter = {type: parts[0], code: parts[1]};
+  }
+  filterMarkers();
+}
+
+function matchesRegionFilter(d) {
+  if(!activeRegionFilter) return true;
+  var prov = (d.BillingState||'').toUpperCase().trim();
+  if(activeRegionFilter.type === 'prov') {
+    return prov === activeRegionFilter.code;
+  } else {
+    var provs = REGION_PROVS[activeRegionFilter.code] || [];
+    return provs.indexOf(prov) >= 0;
+  }
+}
+// ===== END REGION FILTER =====
 </script>
 </body>
 </html>
