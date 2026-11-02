@@ -1,3 +1,4 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -486,7 +487,7 @@ input.price-active{border-width:2px}
     <!-- CRM -->
     <div class="section">
       <div class="section-hdr" onclick="toggleSection('s-crm')">
-        <span><span class="section-hdr-name">LEADSPARK</span><span class="section-hdr-sub">: gestione lead, preventivi e contratti, BDC AI e Agenti AI, Automation, CDP</span></span><span>▼</span>
+        <span><span class="section-hdr-name">LEADSPARK</span><span class="section-hdr-sub">: gestione lead, preventivi e contratti, Automation, CDP</span></span><span>▼</span>
       </div>
       <div id="s-crm" class="section-body open">
         <table>
@@ -525,6 +526,29 @@ input.price-active{border-width:2px}
             <th>Free</th>
           </tr></thead>
           <tbody id="tbody-aftersales"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- AGENTSPARK -->
+    <div class="section">
+      <div class="section-hdr" onclick="toggleSection('s-agent')">
+        <span><span class="section-hdr-name">AGENTSPARK</span><span class="section-hdr-sub">: agenti AI, chat AI e BDC AI</span></span><span>▼</span>
+      </div>
+      <div id="s-agent" class="section-body open">
+        <table>
+          <thead><tr>
+            <th title="✅ Verde = in offerta (quotato) · ❓ Rosso = suggerito · SP = unisci nel pacchetto SparK Platform">✅❓<span class="th-sp">SP</span></th>
+            <th style="text-align:left">Prodotto</th>
+            <th>Variabili</th>
+            <th>Canone<br>base</th>
+            <th>UT<br>calc.</th>
+            <th>UT<br>libero</th>
+            <th>Canone<br>calc.</th>
+            <th>Canone<br>libero</th>
+            <th>Free</th>
+          </tr></thead>
+          <tbody id="tbody-agent"></tbody>
         </table>
       </div>
     </div>
@@ -748,15 +772,26 @@ const products = {
     { id:'lsk_rev',  name:'LeadSparK Revolution',                        ut:1500, canone:100,  licenses:1, licensesPrice:100, presentUrl:'https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present' },
     { id:'lsk_wa',   name:'LeadSparK WhatsApp Business',                 ut:500,  canone:39,   licenses:1, licensesPrice:39, presentUrl:'https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present' },
     { id:'lsk_conf', name:'LeadSparK Car Configurator',                  ut:800,  canone:100,  brands:1, brandsPrice:100, presentUrl:'https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present' },
-    { id:'lsk_mkt',  name:'LeadSparK Marketing/Process/AI Automation',   ut:3000, canone:550, presentUrl:'https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present' },
+    { id:'lsk_mkt',  name:'EngageSparK (Marketing & AI Process Automation)',   ut:3000, canone:550, presentUrl:'https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present' },
     { id:'lsk_dw',   name:'LeadSparK Revolution - Data Warehouse',        ut:0,    canone:100,  licenses:1, licensesPrice:0 },
-    { id:'csk_100',  name:'CallSparK - Gestione AI 100 lead/mese',       ut:1500, canone:350,  locations:1, locationPrice:100, presentUrl:'https://docs.google.com/presentation/d/185utUR8TkIl8lUsW3DkpNNW8RDtiVBHUIB_ghK8A2hk/present' },
-    { id:'csk_200',  name:'CallSparK - Gestione AI 200 lead/mese',       ut:2000, canone:580,  locations:1, locationPrice:100, presentUrl:'https://docs.google.com/presentation/d/185utUR8TkIl8lUsW3DkpNNW8RDtiVBHUIB_ghK8A2hk/present' },
-    { id:'csk_300',  name:'CallSparK - Gestione AI 300 lead/mese',       ut:2500, canone:790,  locations:1, locationPrice:100, presentUrl:'https://docs.google.com/presentation/d/185utUR8TkIl8lUsW3DkpNNW8RDtiVBHUIB_ghK8A2hk/present' },
-    { id:'csk_500',  name:'CallSparK - Gestione AI 500 lead/mese',       ut:3000, canone:1200, locations:1, locationPrice:100, presentUrl:'https://docs.google.com/presentation/d/185utUR8TkIl8lUsW3DkpNNW8RDtiVBHUIB_ghK8A2hk/present' },
-    { id:'csk_cust', name:'CallSparK - Custom (input Sedi + lead/mese)', ut:2000, canone:0,   isDualCustom:true, dualLabel1:'Sedi', dualLabel2:'lead' },
-    { id:'agsk',     name:'AgentSparK', ut:0, canone:0, hasFreeText:true },
-    { id:'cdp',      name:'Customer Data Platform - CDP AI',              ut:1200, canone:100, presentUrl:'https://docs.google.com/presentation/d/15DxZnZXd-AmXoCEoW38UfM-Vzy7moBLVhvx8gkTfzDc/present' }
+    { id:'cdp',      name:'OmniSparK (Customer Data Platform)',              ut:1200, canone:100, presentUrl:'https://docs.google.com/presentation/d/15DxZnZXd-AmXoCEoW38UfM-Vzy7moBLVhvx8gkTfzDc/present' }
+  ],
+  agent: [
+    { id:'agsk_agents', name:'AgentSparK Agenti attivi (fee per agente)', ut:0, canone:0, isDualCustom:true, dualLabel1:'Agenti MotorK', dualLabel2:'Agenti esterni', dualPrice1:29, dualPrice2:49 },
+    { id:'agsk_tier',   name:'AgentSparK Tier', ut:0, canone:0, isTier:true, tiers:[{name:'Starter',price:500,credits:500,agents:2,desc:'500 crediti · max 2 agenti'},{name:'Growth',price:1000,credits:1000,agents:3,desc:'1000 crediti · max 3 agenti'},{name:'Pro',price:2000,credits:2000,agents:5,desc:'2000 crediti · max 5 agenti'},{name:'Scale',price:4000,credits:4000,agents:8,desc:'4000 crediti · max 8 agenti'},{name:'Enterprise',price:8000,credits:8000,agents:15,desc:'8000 crediti · max 15 agenti'}] },
+    { id:'agentik', name:'AgentiK (Chat AI su WebSparK)', ut:0, canone:0, isTier:true, tiers:[
+      {name:'Starter',price:39,ut:0,desc:'20 chat e 4 lead inclusi/mese'},
+      {name:'Light',price:79,ut:0,desc:'50 chat e 10 lead inclusi/mese'},
+      {name:'Smart',price:149,ut:0,desc:'100 chat e 20 lead inclusi/mese'},
+      {name:'Pro',price:299,ut:0,desc:'250 chat e 50 lead inclusi/mese'},
+      {name:'Scale',price:499,ut:0,desc:'500 chat e 100 lead inclusi/mese'} ] },
+    { id:'csk', name:'CallSparK Gestione AI', ut:0, canone:0, isTier:true, sediPrice:100, tiers:[
+      {name:'100 lead/mese',price:350,ut:1500,desc:''},
+      {name:'200 lead/mese',price:580,ut:2000,desc:''},
+      {name:'300 lead/mese',price:790,ut:2500,desc:''},
+      {name:'500 lead/mese',price:1200,ut:3000,desc:''},
+      {name:'Custom',price:0,ut:2000,desc:'canone libero'} ],
+      presentUrl:'https://docs.google.com/presentation/d/185utUR8TkIl8lUsW3DkpNNW8RDtiVBHUIB_ghK8A2hk/present' },
   ],
   aftersales: [
     { id:'fsk', name:'FidSparK',    ut:1000, canone:100, locations:1, locationPrice:50, presentUrl:'https://docs.google.com/presentation/d/1tKwQ8I8RfuCLswVCublwRyTGEnwUCwqAmaMzWxID7Is/present' },
@@ -851,7 +886,14 @@ function renderTable(section, tbodyId) {
 
     // --- Cella variabili (colonna 3) ---
     var varHtml = '';
-    if (p.isDualCustom) {
+    if (p.isTier) {
+      varHtml = '<div class="var-cell" style="flex-direction:column;align-items:flex-start;gap:3px"><select class="inp-var" onchange="calculateAll()" style="max-width:240px">' +
+        p.tiers.map(function(t, i) { return '<option value="' + (i + 1) + '">' + t.name + (t.desc ? ' · ' + t.desc : '') + '</option>'; }).join('') +
+        '</select>' +
+        (p.sediPrice ? '<div class="var-cell"><span class="var-label">Sedi</span><input type="number" class="inp-var-1" min="1" step="1" placeholder="1" oninput="calculateAll()"><span class="var-price">&times;&nbsp;€' + p.sediPrice + ' oltre la 1ª</span></div>' : '') +
+        (p.id === 'agsk_tier' ? '<div class="tier-warn" style="color:#F90032;font-size:11px;font-weight:600"></div>' : '') +
+        '</div>';
+    } else if (p.isDualCustom) {
       varHtml = '<div class="var-cell-dual">' +
         '<div class="var-cell"><span class="var-label">' + p.dualLabel1 + '</span><input type="number" class="inp-var-1" min="0" step="1" oninput="calculateAll()" placeholder="0"></div>' +
         '<div class="var-cell"><span class="var-label">' + p.dualLabel2 + '</span><input type="number" class="inp-var-2" min="0" step="1" oninput="calculateAll()" placeholder="0"></div>' +
@@ -889,10 +931,12 @@ function renderTable(section, tbodyId) {
     }
 
     // --- Canone base (colonna 4) ---
-    var canoneBaseHtml = p.isDualCustom
+    var canoneBaseHtml = p.isTier
+      ? '<span class="tier-price">€&nbsp;' + p.tiers[0].price.toLocaleString('it-IT') + '</span>'
+      : p.isDualCustom
       ? '<div class="var-cell-dual">' +
-          '<div class="var-cell-stack"><span class="var-label-sm">€/' + p.dualLabel1.toLowerCase() + '</span><input type="number" class="inp-custom-unitprice-1" placeholder="0" oninput="calculateAll()" title="Prezzo per ' + p.dualLabel1.toLowerCase() + '"></div>' +
-          '<div class="var-cell-stack"><span class="var-label-sm">€/' + p.dualLabel2 + '</span><input type="number" class="inp-custom-unitprice-2" placeholder="0" oninput="calculateAll()" title="Prezzo per ' + p.dualLabel2 + '"></div>' +
+          '<div class="var-cell-stack"><span class="var-label-sm">€/' + p.dualLabel1.toLowerCase() + '</span><input type="number" class="inp-custom-unitprice-1" placeholder="0" value="' + (p.dualPrice1 != null ? p.dualPrice1 : '') + '" oninput="calculateAll()" title="Prezzo per ' + p.dualLabel1.toLowerCase() + '"></div>' +
+          '<div class="var-cell-stack"><span class="var-label-sm">€/' + p.dualLabel2 + '</span><input type="number" class="inp-custom-unitprice-2" placeholder="0" value="' + (p.dualPrice2 != null ? p.dualPrice2 : '') + '" oninput="calculateAll()" title="Prezzo per ' + p.dualLabel2 + '"></div>' +
         '</div>'
       : p.isCustom
       ? '<input type="number" class="inp-custom-unitprice" placeholder="€/unità" oninput="calculateAll()" style="width:56px" title="Prezzo per singola unità (moltiplicato per la quantità inserita in Variabili)">'
@@ -952,6 +996,13 @@ function handleCbToggle(cb) {
     if (spModeActive) sp.checked = true;
   }
 
+  // AgentSparK: se flaggo gli agenti, anche il tier si flagga (stesso stato, in offerta o suggerito)
+  if (row.dataset.pid === 'agsk_agents' && cb.checked && (cb.classList.contains('cb-cost') || cb.classList.contains('cb-suggest'))) {
+    var tierRow = document.querySelector('tr[data-pid="agsk_tier"]');
+    var tierCb = tierRow ? tierRow.querySelector(cb.classList.contains('cb-cost') ? '.cb-cost' : '.cb-suggest') : null;
+    if (tierCb && !tierCb.checked) { tierCb.checked = true; handleCbToggle(tierCb); return; }
+  }
+
   calculateAll();
 }
 
@@ -985,6 +1036,14 @@ function getRowCanoneCalc(row) {
     var price1 = p1 ? (parseFloat(p1.value) || 0) : 0;
     var price2 = p2 ? (parseFloat(p2.value) || 0) : 0;
     base = qty1 * price1 + qty2 * price2;
+  } else if (p.isTier) {
+    var ti = Math.min(p.tiers.length, Math.max(1, parseInt(varInp ? varInp.value : 1) || 1)) - 1;
+    base = p.tiers[ti].price;
+    if (p.sediPrice && p.tiers[ti].price > 0) {
+      var sIn = row.querySelector('.inp-var-1');
+      var nSedi = sIn ? (parseInt(sIn.value) || 1) : 1;
+      base += Math.max(0, nSedi - 1) * p.sediPrice;
+    }
   } else if (p.isCustom) {
     var qty = varInp ? (parseFloat(varInp.value) || 0) : 0;
     var unitPriceInp = row.querySelector('.inp-custom-unitprice');
@@ -1021,6 +1080,10 @@ function getRowUTCalc(row) {
   var p = products[section].find(function(x) { return x.id === pid; });
   if (!p) return 0;
   if (p.utMultiplier) return getRowCanoneCalc(row) * p.utMultiplier;
+  if (p.isTier) {
+    var tv = row.querySelector('.inp-var');
+    return p.tiers[Math.min(p.tiers.length, Math.max(1, parseInt(tv ? tv.value : 1) || 1)) - 1].ut || 0;
+  }
   return p.ut;
 }
 
@@ -1053,7 +1116,7 @@ function getActiveSPPackage() {
 
   var famStock = spCandidates.some(function(i) { return i.section === 'stock'; });
   var famWeb   = spCandidates.some(function(i) { return i.section === 'web'; });
-  var famLead  = spCandidates.some(function(i) { return i.section === 'crm'; });
+  var famLead  = spCandidates.some(function(i) { return i.section === 'crm' || i.section === 'agent'; });
   var famPost  = spCandidates.some(function(i) { return i.section === 'aftersales'; });
   var famOther = spCandidates.some(function(i) { return i.section === 'integrazioni' || i.section === 'marketing'; });
 
@@ -1313,7 +1376,38 @@ function generateClientCalculator() {
 
 
 
+function updateAgentTierWarning() {
+  document.querySelectorAll('tr[data-pid] .tier-price').forEach(function(tpEl) {
+    var trw = tpEl.closest('tr');
+    var pp = products[trw.dataset.section].find(function(x) { return x.id === trw.dataset.pid; });
+    var sv = trw.querySelector('.inp-var');
+    if (!pp || !pp.tiers) return;
+    var tt = pp.tiers[Math.min(pp.tiers.length, Math.max(1, parseInt(sv ? sv.value : 1) || 1)) - 1];
+    tpEl.innerHTML = tt.price > 0 ? '€&nbsp;' + tt.price.toLocaleString('it-IT') : '—';
+  });
+  var tierRow = document.querySelector('tr[data-pid="agsk_tier"]');
+  var agRow = document.querySelector('tr[data-pid="agsk_agents"]');
+  if (!tierRow) return;
+  var warn = tierRow.querySelector('.tier-warn');
+  if (!warn) return;
+  var p = products.agent.find(function(x) { return x.id === 'agsk_tier'; });
+  var sel = tierRow.querySelector('.inp-var');
+  var ti = Math.min(p.tiers.length, Math.max(1, parseInt(sel ? sel.value : 1) || 1)) - 1;
+  var n = 0;
+  if (agRow) {
+    var v1 = agRow.querySelector('.inp-var-1'), v2 = agRow.querySelector('.inp-var-2');
+    n = (v1 ? (parseInt(v1.value) || 0) : 0) + (v2 ? (parseInt(v2.value) || 0) : 0);
+  }
+  if (n > p.tiers[ti].agents) {
+    var need = p.tiers.findIndex(function(t) { return t.agents >= n; });
+    warn.textContent = 'Con ' + n + ' agenti il tier ' + p.tiers[ti].name + ' (max ' + p.tiers[ti].agents + ') non basta' + (need >= 0 ? ': serve almeno ' + p.tiers[need].name : ': oltre Enterprise, da valutare') + '. Oltre il limite si sale di tier subito.';
+  } else {
+    warn.textContent = '';
+  }
+}
+
 function calculateAll() {
+  updateAgentTierWarning();
   var pkg = getActiveSPPackage();
   var totalUT = 0, totalCanone = 0;
   document.querySelectorAll('tr[data-pid]').forEach(function(row) {
@@ -1494,7 +1588,7 @@ function switchTab(tabId, btn) {
   if (btn) btn.classList.add('active');
 }
 
-const sectionOpen = { 's-stock':true,'s-web':true,'s-crm':true,'s-aftersales':true,'s-integrazioni':false,'s-marketing':true };
+const sectionOpen = { 's-stock':true,'s-web':true,'s-crm':true,'s-aftersales':true,'s-agent':true,'s-integrazioni':false,'s-marketing':true };
 
 function toggleSection(id) {
   const body = document.getElementById(id);
@@ -1775,14 +1869,15 @@ function loadOfferFromLog(id) {
       else if (p.licenses)  varInp.value = p.licenses;
       else if (p.brands)    varInp.value = p.brands;
       else if (p.feeds)     varInp.value = p.feeds;
+      else if (p.isTier)    varInp.value = '1';
       else                  varInp.value = '';
     }
     var utOv  = row.querySelector('.inp-ut-ov');  if (utOv)  utOv.value  = '';
     var unitPriceInp = row.querySelector('.inp-custom-unitprice'); if (unitPriceInp) unitPriceInp.value = '';
     var v1 = row.querySelector('.inp-var-1'); if (v1) v1.value = '';
     var v2 = row.querySelector('.inp-var-2'); if (v2) v2.value = '';
-    var p1 = row.querySelector('.inp-custom-unitprice-1'); if (p1) p1.value = '';
-    var p2 = row.querySelector('.inp-custom-unitprice-2'); if (p2) p2.value = '';
+    var p1 = row.querySelector('.inp-custom-unitprice-1'); if (p1) p1.value = (p && p.dualPrice1 != null) ? p.dualPrice1 : '';
+    var p2 = row.querySelector('.inp-custom-unitprice-2'); if (p2) p2.value = (p && p.dualPrice2 != null) ? p.dualPrice2 : '';
     var freeInp = row.querySelector('.inp-free-months'); if (freeInp) freeInp.value = '';
     var canOv = row.querySelector('.inp-can-ov'); if (canOv) canOv.value = '';
   });
@@ -1809,6 +1904,7 @@ function loadOfferFromLog(id) {
 
   // Prodotti dell'offerta
   (entry.rows || []).forEach(function(r) {
+    legacyRow(r);
     var row = document.querySelector('tr[data-pid="' + r.pid + '"][data-section="' + r.section + '"]');
     if (!row) return;
     var cbCost    = row.querySelector('.cb-cost');
@@ -2285,14 +2381,15 @@ async function applyPreset(id) {
       else if (p.licenses)  varInp.value = p.licenses;
       else if (p.brands)    varInp.value = p.brands;
       else if (p.feeds)     varInp.value = p.feeds;
+      else if (p.isTier)    varInp.value = '1';
       else                  varInp.value = '';
     }
     var utOv  = row.querySelector('.inp-ut-ov');  if (utOv)  utOv.value  = '';
     var unitPriceInp = row.querySelector('.inp-custom-unitprice'); if (unitPriceInp) unitPriceInp.value = '';
     var v1 = row.querySelector('.inp-var-1'); if (v1) v1.value = '';
     var v2 = row.querySelector('.inp-var-2'); if (v2) v2.value = '';
-    var p1 = row.querySelector('.inp-custom-unitprice-1'); if (p1) p1.value = '';
-    var p2 = row.querySelector('.inp-custom-unitprice-2'); if (p2) p2.value = '';
+    var p1 = row.querySelector('.inp-custom-unitprice-1'); if (p1) p1.value = (p && p.dualPrice1 != null) ? p.dualPrice1 : '';
+    var p2 = row.querySelector('.inp-custom-unitprice-2'); if (p2) p2.value = (p && p.dualPrice2 != null) ? p.dualPrice2 : '';
     var freeInp = row.querySelector('.inp-free-months'); if (freeInp) freeInp.value = '';
     var canOv = row.querySelector('.inp-can-ov'); if (canOv) canOv.value = '';
   });
@@ -2309,6 +2406,7 @@ async function applyPreset(id) {
   document.getElementById('sp-canone-pct').value                 = preset.spCanonePct        || '';
 
   (preset.rows || []).forEach(function(r) {
+    legacyRow(r);
     var row = document.querySelector('tr[data-pid="' + r.pid + '"][data-section="' + r.section + '"]');
     if (!row) return;
     var cbCost    = row.querySelector('.cb-cost');
@@ -2337,6 +2435,7 @@ async function applyPreset(id) {
 }
 
 function computePresetRowListino(r) {
+  legacyRow(r);
   var p = products[r.section] ? products[r.section].find(function(x) { return x.id === r.pid; }) : null;
   if (!p) return { ut: 0, canone: 0 };
   var ut = p.ut || 0;
@@ -2346,6 +2445,11 @@ function computePresetRowListino(r) {
     var qty1 = parseFloat(r.var1) || 0, qty2 = parseFloat(r.var2) || 0;
     var price1 = parseFloat(r.unitPrice1) || 0, price2 = parseFloat(r.unitPrice2) || 0;
     canone = qty1 * price1 + qty2 * price2;
+  } else if (p.isTier) {
+    var tix = Math.min(p.tiers.length, Math.max(1, parseInt(r.varVal) || 1)) - 1;
+    canone = p.tiers[tix].price;
+    ut = p.tiers[tix].ut || 0;
+    if (p.sediPrice && p.tiers[tix].price > 0) canone += Math.max(0, (parseInt(r.var1) || 1) - 1) * p.sediPrice;
   } else if (p.isCustom) {
     var qty = parseFloat(r.varVal) || 0;
     var unitPrice = parseFloat(r.unitPrice) || 0;
@@ -2392,6 +2496,7 @@ function getPresetProductSummary(preset) {
   var parts = [];
   (preset.rows || []).forEach(function(r) {
     if (!r.cost) return; // solo i prodotti "in offerta", coerenti con quanto viene quotato
+    legacyRow(r);
     var p = products[r.section] ? products[r.section].find(function(x) { return x.id === r.pid; }) : null;
     if (!p) return;
     var baseName = p.name.split(' (')[0]; // taglia eventuali note tra parentesi nel nome (es. cookie policy)
@@ -2519,7 +2624,7 @@ function seedDefaultPresetsIfEmpty() {
     mkRow('fsk', 'aftersales', '1')
   ]);
   var withRicontatto = withRecensioni.concat([
-    mkRow('csk_100', 'crm', '1')
+    mkRow('csk', 'agent', '1')
   ]);
 
   var presetsDefault = [
@@ -2667,14 +2772,15 @@ function applyParsedOfferToForm(parsed) {
       else if (p.licenses)  varInp.value = p.licenses;
       else if (p.brands)    varInp.value = p.brands;
       else if (p.feeds)     varInp.value = p.feeds;
+      else if (p.isTier)    varInp.value = '1';
       else                  varInp.value = '';
     }
     var utOv  = row.querySelector('.inp-ut-ov');  if (utOv)  utOv.value  = '';
     var unitPriceInp = row.querySelector('.inp-custom-unitprice'); if (unitPriceInp) unitPriceInp.value = '';
     var v1 = row.querySelector('.inp-var-1'); if (v1) v1.value = '';
     var v2 = row.querySelector('.inp-var-2'); if (v2) v2.value = '';
-    var p1 = row.querySelector('.inp-custom-unitprice-1'); if (p1) p1.value = '';
-    var p2 = row.querySelector('.inp-custom-unitprice-2'); if (p2) p2.value = '';
+    var p1 = row.querySelector('.inp-custom-unitprice-1'); if (p1) p1.value = (p && p.dualPrice1 != null) ? p.dualPrice1 : '';
+    var p2 = row.querySelector('.inp-custom-unitprice-2'); if (p2) p2.value = (p && p.dualPrice2 != null) ? p.dualPrice2 : '';
     var freeInp = row.querySelector('.inp-free-months'); if (freeInp) freeInp.value = '';
     var canOv = row.querySelector('.inp-can-ov'); if (canOv) canOv.value = '';
   });
@@ -2688,6 +2794,7 @@ function applyParsedOfferToForm(parsed) {
 
   var matched = 0;
   parsed.rows.forEach(function(r) {
+    legacyRow(r);
     var row = document.querySelector('tr[data-pid="' + r.pid + '"][data-section="' + r.section + '"]');
     if (!row) return;
     var cbCost    = row.querySelector('.cb-cost');
@@ -2739,10 +2846,39 @@ var VAR_DISPLAY_MAP = {
   lsk_rev:     { label:'utenze', singular:'utenza', nFormat:true },
   lsk_wa:      { label:'utenze', singular:'utenza', nFormat:true },
   lsk_conf:    { label:'configuratori', singular:'configuratore', nFormat:true },
+  agsk_agents: { label1:'Agenti MotorK', label2:'Agenti esterni' },
   csk_cust:    { label1:'Sedi', label2:'lead/mese gestite da AI' },
   fsk:         { label:'sedi', singular:'sede', nFormat:true },
   psk:         { label:'brand', singular:'brand', nFormat:true }
 };
+
+// Compatibilita con Preset e Log salvati prima della sezione AgentSparK: le righe CallSparK/AgentSparK stavano in 'crm'
+function legacyRow(r) {
+  var m = { csk_100:1, csk_200:2, csk_300:3, csk_500:4, csk_cust:5, agentik_starter:1, agentik_light:2, agentik_smart:3, agentik_pro:4, agentik_scale:5 };
+  if (m[r.pid]) {
+    var old = r.pid;
+    if (old.indexOf('csk_') === 0) {
+      if (old === 'csk_cust') {
+        var cv = (parseFloat(r.var1) || 0) * (parseFloat(r.unitPrice1) || 0) + (parseFloat(r.var2) || 0) * (parseFloat(r.unitPrice2) || 0);
+        if (cv > 0 && !r.canOv) r.canOv = String(cv);
+      } else if (r.varVal !== '' && r.varVal != null) {
+        r.var1 = r.varVal;
+      }
+      r.pid = 'csk';
+    } else {
+      r.pid = 'agentik';
+    }
+    r.varVal = String(m[old]);
+    r.section = 'agent';
+  }
+  r.section = legacySec(r.section, r.pid);
+  return r;
+}
+
+function legacySec(section, pid) {
+  if (section === 'crm' && (pid === 'agsk' || String(pid).indexOf('csk_') === 0)) return 'agent';
+  return section;
+}
 
 function getProductVarSuffix(p, row) {
   if (p.hasFreeText) {
@@ -2751,6 +2887,23 @@ function getProductVarSuffix(p, row) {
     return desc ? ' (' + desc + ')' : '';
   }
 
+  if (p.isTier) {
+    var vi = row ? row.querySelector('.inp-var') : null;
+    var t = p.tiers[Math.min(p.tiers.length, Math.max(1, parseInt(vi ? vi.value : 1) || 1)) - 1];
+    var parts2 = [];
+    if (t.credits) {
+      parts2.push(t.name, t.credits.toLocaleString('it-IT') + ' crediti inclusi', 'fino a ' + t.agents + ' agenti');
+    } else {
+      parts2.push(t.name);
+      if (t.desc && t.name !== 'Custom') parts2.push(t.desc);
+    }
+    if (p.sediPrice) {
+      var si = row ? row.querySelector('.inp-var-1') : null;
+      var ns = si ? (parseInt(si.value) || 1) : 1;
+      parts2.push('Sedi n° ' + ns);
+    }
+    return ' (' + parts2.join(', ') + ')';
+  }
   var cfg = VAR_DISPLAY_MAP[p.id];
   if (!cfg) return '';
 
@@ -2810,6 +2963,7 @@ function renderBozza() {
     { key:'web',          label:'<strong style="color:#F90032">WEBSPARK</strong><span style="font-weight:400;color:#666"> — area sito/i web, gestione della comunicazione e della SEO/GEO</span>' },
     { key:'crm',          label:'<strong style="color:#F90032">LEADSPARK</strong><span style="font-weight:400;color:#666"> — gestione lead, preventivi e contratti, BDC AI e Agenti AI, Automation, CDP</span>' },
     { key:'aftersales',   label:'<strong style="color:#F90032">POSTVENDITA</strong><span style="font-weight:400;color:#666"> — gestione recensioni e predizione interventi di officina</span>' },
+    { key:'agent',        label:'<strong style="color:#F90032">AGENTSPARK</strong><span style="font-weight:400;color:#666"> — agenti AI, chat AI e BDC AI</span>' },
     { key:'integrazioni', label:'🔗 Integrazioni' },
     { key:'marketing',    label:'📊 Marketing' }
   ];
@@ -2817,6 +2971,7 @@ function renderBozza() {
   var costItems = [], suggestItems = [];
   var spPackage = getActiveSPPackage(); // stessa funzione usata dal totale in toolbar, per coerenza
   var hasIntegrazioni = false;
+  var hasAgentCosti = false;
 
   sectionDefs.forEach(function(s) {
     var rows = Array.from(document.querySelectorAll('tr[data-section="' + s.key + '"]'));
@@ -2830,7 +2985,9 @@ function renderBozza() {
       if (cbCost && cbCost.checked) {
         var freeInp = row.querySelector('.inp-free-months');
         var freeMonths = freeInp ? (parseInt(freeInp.value) || 0) : 0;
-        var item = { name: p.name + getProductVarSuffix(p, row), ut: getRowUT(row), utCalc: getRowUTCalc(row), canone: getRowCanone(row), canoneCalc: getRowCanoneCalc(row), freeMonths: freeMonths, presentUrl: p.presentUrl || '', isSP: isRowInSPPackage(spPackage, row) };
+        var isAgsk = (pid === 'agsk_tier' || pid === 'agsk_agents');
+        if (isAgsk) hasAgentCosti = true;
+        var item = { name: p.name + getProductVarSuffix(p, row) + (isAgsk ? ' *' : ''), ut: getRowUT(row), utCalc: getRowUTCalc(row), canone: getRowCanone(row), canoneCalc: getRowCanoneCalc(row), freeMonths: freeMonths, presentUrl: p.presentUrl || '', isSP: isRowInSPPackage(spPackage, row) };
         sectionCost.push(item);
         if (s.key === 'integrazioni') hasIntegrazioni = true;
       }
@@ -2987,6 +3144,10 @@ function renderBozza() {
   }
 
   html += '</div>';
+
+  if (hasAgentCosti) {
+    html += '<div class="bozza-integrazioni-nota">* Il listino AgentSparK comprende la sola piattaforma MotorK. I costi dei canali di terze parti (WhatsApp, SMS, voce e Twilio) non sono inclusi: sono extra, fatturati a parte in base all\'utilizzo e concordati caso per caso.</div>';
+  }
 
   if (hasIntegrazioni) {
     html += '<div class="bozza-integrazioni-nota">* Il canone delle integrazioni è calcolato per Partita IVA / flusso dati DMS: se il dealer ha più sedi sotto un\'unica Partita IVA, il canone è unico. Se ha più Partite IVA o il DMS invia più flussi distinti, il calcolo è comunque impostato per 1, ma serve un approfondimento specifico.</div>';
@@ -3304,6 +3465,7 @@ function populateRandom() {
   pickFromSection('stock',       2 + Math.floor(Math.random()*2), true);
   pickFromSection('web',         2 + Math.floor(Math.random()*2), true);
   pickFromSection('crm',         2 + Math.floor(Math.random()*2), true);
+  pickFromSection('agent',       1 + Math.floor(Math.random()*2), true);
   pickFromSection('aftersales',  1 + Math.floor(Math.random()*2), true);  // max 2 prodotti totali
   pickFromSection('integrazioni',2 + Math.floor(Math.random()*2), true);
 
@@ -3365,6 +3527,7 @@ document.addEventListener('DOMContentLoaded', function() {
   renderTable('web', 'tbody-web');
   renderTable('crm', 'tbody-crm');
   renderTable('aftersales', 'tbody-aftersales');
+  renderTable('agent', 'tbody-agent');
   renderTable('marketing', 'tbody-marketing');
   renderTable('integrazioni', 'tbody-integrazioni-spark');
   calculateAll();
@@ -3385,3 +3548,4 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 </body>
 </html>
+</body></html>
