@@ -738,17 +738,10 @@ const products = {
   stock: [
     { id:'ssk_multi',   name:'StockSparK - Multipubblicazione da targa / telaio', ut:0, canone:80, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/present' },
     { id:'ssk_app',     name:'StockSparK APP - 360° interno/esterno',              ut:0, canone:90, locations:1, locationPrice:30, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/present' },
-    { id:'bgrem_100',   name:'Rimozione sfondo - 100+20 immagini/mese (20 in omaggio)',               ut:0, canone:70, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/present' },
-    { id:'bgrem_250',   name:'Rimozione sfondo - 250+20 immagini/mese (20 in omaggio)',               ut:0, canone:160, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/present' },
-    { id:'bgrem_500',   name:'Rimozione sfondo - 500+20 immagini/mese (20 in omaggio)',               ut:0, canone:280, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/present' },
-    { id:'bgrem_1000',  name:'Rimozione sfondo - 1000+20 immagini/mese (20 in omaggio)',              ut:0, canone:500, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/present' },
+    { id:'bgrem', name:'Rimozione sfondo', ut:0, canone:0, isTier:true, tiers:[{name:'100+20 immagini/mese',price:70,ut:0,desc:'20 in omaggio'},{name:'250+20 immagini/mese',price:160,ut:0,desc:'20 in omaggio'},{name:'500+20 immagini/mese',price:280,ut:0,desc:'20 in omaggio'},{name:'1000+20 immagini/mese',price:500,ut:0,desc:'20 in omaggio'}], presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/present' },
     { id:'bgrem_custom',name:'Rimozione sfondo - Custom (input immagini/mese)',    ut:0, canone:0, isCustom:true, customLabel:'immagini' },
     { id:'bgrem_sfondo',name:'Rimozione sfondo - Sfondo personalizzato',           ut:0, canone:20 },
-    { id:'aiv_20',      name:'AI Video - 20 video simultanei',                     ut:0, canone:100, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/present' },
-    { id:'aiv_50',      name:'AI Video - 50 video simultanei',                     ut:0, canone:140, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/present' },
-    { id:'aiv_100',     name:'AI Video - 100 video simultanei',                    ut:0, canone:221, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/present' },
-    { id:'aiv_200',     name:'AI Video - 200 video simultanei',                    ut:0, canone:371, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/present' },
-    { id:'aiv_500',     name:'AI Video - 500 video simultanei',                    ut:0, canone:875, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/present' },
+    { id:'aiv', name:'AI Video', ut:0, canone:0, isTier:true, tiers:[{name:'20 video simultanei',price:100,ut:0,desc:''},{name:'50 video simultanei',price:140,ut:0,desc:''},{name:'100 video simultanei',price:221,ut:0,desc:''},{name:'200 video simultanei',price:371,ut:0,desc:''},{name:'500 video simultanei',price:875,ut:0,desc:''}], presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/present' },
     { id:'aiv_custom',  name:'AI Video - Custom (input posti video attivi)',        ut:0, canone:0, isCustom:true, customLabel:'posti' }
   ],
   web: [
@@ -2613,11 +2606,11 @@ function seedDefaultPresetsIfEmpty() {
     mkRow('ssk_app', 'stock', '1')
   ]);
   var withCrm = withFoto.concat([
-    mkRow('bgrem_100', 'stock'),
+    mkRow('bgrem', 'stock', '1'),
     mkRow('lsk_rev',   'crm', '2')
   ]);
   var withVideo = withCrm.concat([
-    mkRow('aiv_20', 'stock'),
+    mkRow('aiv', 'stock', '1'),
     mkRow('lsk_wa', 'crm', '2')
   ]);
   var withRecensioni = withVideo.concat([
@@ -2854,8 +2847,12 @@ var VAR_DISPLAY_MAP = {
 
 // Compatibilita con Preset e Log salvati prima della sezione AgentSparK: le righe CallSparK/AgentSparK stavano in 'crm'
 function legacyRow(r) {
-  var m = { csk_100:1, csk_200:2, csk_300:3, csk_500:4, csk_cust:5, agentik_starter:1, agentik_light:2, agentik_smart:3, agentik_pro:4, agentik_scale:5 };
-  if (m[r.pid]) {
+  var m = { csk_100:['csk',1,'agent'], csk_200:['csk',2,'agent'], csk_300:['csk',3,'agent'], csk_500:['csk',4,'agent'], csk_cust:['csk',5,'agent'],
+    agentik_starter:['agentik',1,'agent'], agentik_light:['agentik',2,'agent'], agentik_smart:['agentik',3,'agent'], agentik_pro:['agentik',4,'agent'], agentik_scale:['agentik',5,'agent'],
+    bgrem_100:['bgrem',1,'stock'], bgrem_250:['bgrem',2,'stock'], bgrem_500:['bgrem',3,'stock'], bgrem_1000:['bgrem',4,'stock'],
+    aiv_20:['aiv',1,'stock'], aiv_50:['aiv',2,'stock'], aiv_100:['aiv',3,'stock'], aiv_200:['aiv',4,'stock'], aiv_500:['aiv',5,'stock'] };
+  var e = m[r.pid];
+  if (e) {
     var old = r.pid;
     if (old.indexOf('csk_') === 0) {
       if (old === 'csk_cust') {
@@ -2864,12 +2861,10 @@ function legacyRow(r) {
       } else if (r.varVal !== '' && r.varVal != null) {
         r.var1 = r.varVal;
       }
-      r.pid = 'csk';
-    } else {
-      r.pid = 'agentik';
     }
-    r.varVal = String(m[old]);
-    r.section = 'agent';
+    r.pid = e[0];
+    r.varVal = String(e[1]);
+    r.section = e[2];
   }
   r.section = legacySec(r.section, r.pid);
   return r;
