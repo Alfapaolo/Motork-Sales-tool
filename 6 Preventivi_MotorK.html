@@ -738,7 +738,7 @@ const products = {
   stock: [
     { id:'ssk_multi',   name:'StockSparK - Multipubblicazione da targa / telaio', ut:0, canone:80, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/present' },
     { id:'ssk_app',     name:'StockSparK APP - 360° interno/esterno',              ut:0, canone:90, locations:1, locationPrice:30, presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/present' },
-    { id:'bgrem', name:'Rimozione sfondo', ut:0, canone:0, isTier:true, tiers:[{name:'100+20 immagini/mese',price:70,ut:0,desc:'20 in omaggio'},{name:'250+20 immagini/mese',price:160,ut:0,desc:'20 in omaggio'},{name:'500+20 immagini/mese',price:280,ut:0,desc:'20 in omaggio'},{name:'1000+20 immagini/mese',price:500,ut:0,desc:'20 in omaggio'}], presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/present' },
+    { id:'bgrem', name:'Rimozione sfondo', ut:0, canone:0, isTier:true, tiers:[{name:'100 immagini/mese + 20 omaggio (Tot 120)',price:70,ut:0},{name:'250 immagini/mese + 20 omaggio (Tot 270)',price:160,ut:0},{name:'500 immagini/mese + 20 omaggio (Tot 520)',price:280,ut:0},{name:'1000 immagini/mese + 20 omaggio (Tot 1020)',price:500,ut:0}], presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/present' },
     { id:'bgrem_custom',name:'Rimozione sfondo - Custom (input immagini/mese)',    ut:0, canone:0, isCustom:true, customLabel:'immagini' },
     { id:'bgrem_sfondo',name:'Rimozione sfondo - Sfondo personalizzato',           ut:0, canone:20 },
     { id:'aiv', name:'AI Video', ut:0, canone:0, isTier:true, tiers:[{name:'20 video simultanei',price:100,ut:0,desc:''},{name:'50 video simultanei',price:140,ut:0,desc:''},{name:'100 video simultanei',price:221,ut:0,desc:''},{name:'200 video simultanei',price:371,ut:0,desc:''},{name:'500 video simultanei',price:875,ut:0,desc:''}], presentUrl:'https://docs.google.com/presentation/d/1RdfwLkG7d9tTQAxQf3istj_qPEh4eGhdYCMNqnvCdqo/present' },
@@ -880,7 +880,7 @@ function renderTable(section, tbodyId) {
     // --- Cella variabili (colonna 3) ---
     var varHtml = '';
     if (p.isTier) {
-      varHtml = '<div class="var-cell" style="flex-direction:column;align-items:flex-start;gap:3px"><select class="inp-var" onchange="calculateAll()" style="max-width:240px">' +
+      varHtml = '<div class="var-cell" style="flex-direction:column;align-items:flex-start;gap:3px"><select class="inp-var" onchange="calculateAll()" style="max-width:300px">' +
         p.tiers.map(function(t, i) { return '<option value="' + (i + 1) + '">' + t.name + (t.desc ? ' · ' + t.desc : '') + '</option>'; }).join('') +
         '</select>' +
         (p.sediPrice ? '<div class="var-cell"><span class="var-label">Sedi</span><input type="number" class="inp-var-1" min="1" step="1" placeholder="1" oninput="calculateAll()"><span class="var-price">&times;&nbsp;€' + p.sediPrice + ' oltre la 1ª</span></div>' : '') +
@@ -2889,7 +2889,7 @@ function getProductVarSuffix(p, row) {
     if (t.credits) {
       parts2.push(t.name, t.credits.toLocaleString('it-IT') + ' crediti inclusi', 'fino a ' + t.agents + ' agenti');
     } else {
-      parts2.push(t.name);
+      parts2.push(t.name.replace(/ \((.*)\)$/, ', $1'));
       if (t.desc && t.name !== 'Custom') parts2.push(t.desc);
     }
     if (p.sediPrice) {
