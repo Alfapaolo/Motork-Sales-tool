@@ -102,6 +102,11 @@ input[type=number].inp-var{width:48px}
 .var-price{font-size:12px;color:#4D4D4D;white-space:nowrap}
 input[type=number].inp-custom-unitprice{width:56px}
 input[type=number].inp-ut-ov{width:72px;color:#c00020;border-color:#c00020;background:#fff8f9}
+input[type=number].inp-ut-base,input[type=number].inp-can-base{width:64px;display:none;margin-left:3px;color:#666;border:1px dashed #999;background:#fafafa}
+input[type=number].inp-ut-base.open,input[type=number].inp-can-base.open{display:inline-block}
+.base-toggle{border:none;background:none;color:#aaa;cursor:pointer;font-size:12px;padding:0 2px;margin-left:2px}
+.base-toggle:hover{color:#F90032}
+.has-base{text-decoration:underline dotted;text-underline-offset:3px}
 input[type=number].inp-can-ov{width:72px;color:#1a6fd4;border-color:#1a6fd4;background:#f5f8ff}
 .price-active{font-weight:800!important}
 input.price-active{border-width:2px}
@@ -942,7 +947,9 @@ function renderTable(section, tbodyId) {
     var utOvHtml = '<input type="number" class="inp-ut-ov" placeholder="inserisci" oninput="calculateAll()" title="Sostituisce/imposta la UT">';
 
     // --- Canone calcolato (colonna 8) ---
-    var canCalcHtml = '<span class="can-calc" id="can-' + p.id + '">—</span>';
+    var canCalcHtml = '<span class="can-calc" id="can-' + p.id + '">—</span>' +
+      '<button type="button" class="base-toggle" onclick="toggleBase(this)" title="Listino di riferimento diverso: lo sconto si calcola su questo valore">✎</button>' +
+      '<input type="number" class="inp-can-base" placeholder="listino" oninput="calculateAll()" title="Listino di riferimento del canone (base per lo sconto)">';
 
     // --- Canone libero override (colonna 9) ---
     var canOvHtml = '<input type="number" class="inp-can-ov" placeholder="inserisci" oninput="calculateAll()" title="Sostituisce/imposta il canone">';
@@ -961,7 +968,9 @@ function renderTable(section, tbodyId) {
       '<td>' + p.name + (p.presentUrl ? '<a class="pres-link" href="' + p.presentUrl + '" target="_blank" title="Vedi presentazione">↗ presentazione</a>' : '') + '</td>' +
       '<td style="text-align:center">' + varHtml + '</td>' +
       '<td>' + canoneBaseHtml + '</td>' +
-      '<td id="ut-' + p.id + '">' + utCalcHtml + '</td>' +
+      '<td><span id="ut-' + p.id + '">' + utCalcHtml + '</span>' +
+        '<button type="button" class="base-toggle" onclick="toggleBase(this)" title="Listino di riferimento diverso: lo sconto si calcola su questo valore">✎</button>' +
+        '<input type="number" class="inp-ut-base" placeholder="listino" oninput="calculateAll()" title="Listino di riferimento della UT (base per lo sconto)"></td>' +
       '<td>' + utOvHtml + '</td>' +
       '<td>' + canCalcHtml + '</td>' +
       '<td>' + canOvHtml + '</td>' +
@@ -1010,7 +1019,21 @@ function handleSpToggle(cb) {
   calculateAll();
 }
 
+function toggleBase(btn) {
+  var inp = btn.parentNode.querySelector('input[type=number]');
+  if (!inp) return;
+  if (inp.classList.contains('open') && inp.value === '') inp.classList.remove('open');
+  else { inp.classList.add('open'); inp.focus(); }
+}
+
+// Listino di riferimento manuale: se compilato sostituisce il valore calcolato e diventa la base per sconti e risparmi
 function getRowCanoneCalc(row) {
+  var b = row.querySelector('.inp-can-base');
+  if (b && b.value !== '') return parseFloat(b.value) || 0;
+  return getRowCanonePure(row);
+}
+
+function getRowCanonePure(row) {
   var pid = row.dataset.pid;
   var section = row.dataset.section;
   var p = products[section].find(function(x) { return x.id === pid; });
@@ -1068,11 +1091,17 @@ function getRowCanone(row) {
 }
 
 function getRowUTCalc(row) {
+  var b = row.querySelector('.inp-ut-base');
+  if (b && b.value !== '') return parseFloat(b.value) || 0;
+  return getRowUTPure(row);
+}
+
+function getRowUTPure(row) {
   var pid = row.dataset.pid;
   var section = row.dataset.section;
   var p = products[section].find(function(x) { return x.id === pid; });
   if (!p) return 0;
-  if (p.utMultiplier) return getRowCanoneCalc(row) * p.utMultiplier;
+  if (p.utMultiplier) return getRowCanonePure(row) * p.utMultiplier;
   if (p.isTier) {
     var tv = row.querySelector('.inp-var');
     return p.tiers[Math.min(p.tiers.length, Math.max(1, parseInt(tv ? tv.value : 1) || 1)) - 1].ut || 0;
@@ -1423,6 +1452,11 @@ function calculateAll() {
     var isSelected = !!(cost && cost.checked);
     var utHasOverride = !!(utOvInput && utOvInput.value !== '');
     var canHasOverride = !!(canOvInput && canOvInput.value !== '');
+    var ubIn = row.querySelector('.inp-ut-base'), cbIn = row.querySelector('.inp-can-base');
+    if (ubIn && ubIn.value !== '') ubIn.classList.add('open');
+    if (cbIn && cbIn.value !== '') cbIn.classList.add('open');
+    if (utCalcCell) utCalcCell.classList.toggle('has-base', !!(ubIn && ubIn.value !== ''));
+    if (canCalcSpan) canCalcSpan.classList.toggle('has-base', !!(cbIn && cbIn.value !== ''));
     if (utCalcCell)  utCalcCell.classList.toggle('price-active', isSelected && !utHasOverride);
     if (utOvInput)   utOvInput.classList.toggle('price-active', isSelected && utHasOverride);
     if (canCalcSpan) canCalcSpan.classList.toggle('price-active', isSelected && !canHasOverride);
@@ -1784,6 +1818,8 @@ function collectOfferState() {
       varVal: varInp ? varInp.value : '',
       utOv: utOv ? utOv.value : '',
       canOv: canOv ? canOv.value : '',
+      utBase: (row.querySelector('.inp-ut-base') || {value:''}).value,
+      canBase: (row.querySelector('.inp-can-base') || {value:''}).value,
       unitPrice: unitPriceInp ? unitPriceInp.value : '',
       var1: v1 ? v1.value : '',
       var2: v2 ? v2.value : '',
@@ -1866,6 +1902,7 @@ function loadOfferFromLog(id) {
       else                  varInp.value = '';
     }
     var utOv  = row.querySelector('.inp-ut-ov');  if (utOv)  utOv.value  = '';
+    ['.inp-ut-base', '.inp-can-base'].forEach(function(sel) { var e = row.querySelector(sel); if (e) { e.value = ''; e.classList.remove('open'); } });
     var unitPriceInp = row.querySelector('.inp-custom-unitprice'); if (unitPriceInp) unitPriceInp.value = '';
     var v1 = row.querySelector('.inp-var-1'); if (v1) v1.value = '';
     var v2 = row.querySelector('.inp-var-2'); if (v2) v2.value = '';
@@ -1918,6 +1955,7 @@ function loadOfferFromLog(id) {
     var freeDescInp = row.querySelector('.inp-free-desc'); if (freeDescInp && r.freeDesc) freeDescInp.value = r.freeDesc;
     var utOv  = row.querySelector('.inp-ut-ov');  if (utOv  && r.utOv)  utOv.value  = r.utOv;
     var canOv = row.querySelector('.inp-can-ov'); if (canOv && r.canOv) canOv.value = r.canOv;
+    [['.inp-ut-base', r.utBase], ['.inp-can-base', r.canBase]].forEach(function(a) { var e = row.querySelector(a[0]); if (e && a[1]) e.value = a[1]; });
   });
 
   calculateAll();
@@ -2283,6 +2321,8 @@ function collectPresetState() {
       varVal: varInp ? varInp.value : '',
       utOv: utOv ? utOv.value : '',
       canOv: canOv ? canOv.value : '',
+      utBase: (row.querySelector('.inp-ut-base') || {value:''}).value,
+      canBase: (row.querySelector('.inp-can-base') || {value:''}).value,
       unitPrice: unitPriceInp ? unitPriceInp.value : '',
       var1: v1 ? v1.value : '',
       var2: v2 ? v2.value : '',
@@ -2378,6 +2418,7 @@ async function applyPreset(id) {
       else                  varInp.value = '';
     }
     var utOv  = row.querySelector('.inp-ut-ov');  if (utOv)  utOv.value  = '';
+    ['.inp-ut-base', '.inp-can-base'].forEach(function(sel) { var e = row.querySelector(sel); if (e) { e.value = ''; e.classList.remove('open'); } });
     var unitPriceInp = row.querySelector('.inp-custom-unitprice'); if (unitPriceInp) unitPriceInp.value = '';
     var v1 = row.querySelector('.inp-var-1'); if (v1) v1.value = '';
     var v2 = row.querySelector('.inp-var-2'); if (v2) v2.value = '';
@@ -2418,6 +2459,7 @@ async function applyPreset(id) {
     var p2 = row.querySelector('.inp-custom-unitprice-2'); if (p2 && r.unitPrice2 !== '' && r.unitPrice2 != null) p2.value = r.unitPrice2;
     var utOv  = row.querySelector('.inp-ut-ov');  if (utOv  && r.utOv)  utOv.value  = r.utOv;
     var canOv = row.querySelector('.inp-can-ov'); if (canOv && r.canOv) canOv.value = r.canOv;
+    [['.inp-ut-base', r.utBase], ['.inp-can-base', r.canBase]].forEach(function(a) { var e = row.querySelector(a[0]); if (e && a[1]) e.value = a[1]; });
     var freeInp = row.querySelector('.inp-free-months'); if (freeInp && r.freeMonths !== '' && r.freeMonths != null) freeInp.value = r.freeMonths;
     var freeDescInp = row.querySelector('.inp-free-desc'); if (freeDescInp && r.freeDesc) freeDescInp.value = r.freeDesc;
   });
@@ -2464,6 +2506,8 @@ function computePresetRowListino(r) {
     canone = p.canone + Math.max(0, n - p.feeds) * p.feedsPrice;
   }
   if (p.utMultiplier) ut = canone * p.utMultiplier;
+  if (r.utBase !== '' && r.utBase != null) ut = parseFloat(r.utBase) || 0;
+  if (r.canBase !== '' && r.canBase != null) canone = parseFloat(r.canBase) || 0;
   if (r.utOv !== '' && r.utOv != null) ut = parseFloat(r.utOv) || 0;
   if (r.canOv !== '' && r.canOv != null) canone = parseFloat(r.canOv) || 0;
   return { ut: ut, canone: canone };
@@ -2769,6 +2813,7 @@ function applyParsedOfferToForm(parsed) {
       else                  varInp.value = '';
     }
     var utOv  = row.querySelector('.inp-ut-ov');  if (utOv)  utOv.value  = '';
+    ['.inp-ut-base', '.inp-can-base'].forEach(function(sel) { var e = row.querySelector(sel); if (e) { e.value = ''; e.classList.remove('open'); } });
     var unitPriceInp = row.querySelector('.inp-custom-unitprice'); if (unitPriceInp) unitPriceInp.value = '';
     var v1 = row.querySelector('.inp-var-1'); if (v1) v1.value = '';
     var v2 = row.querySelector('.inp-var-2'); if (v2) v2.value = '';
