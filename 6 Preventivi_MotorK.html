@@ -71,7 +71,7 @@ th:last-child{border-right:none}
 th:nth-child(1){width:66px;text-align:center}   /* ✅❓SP checkbox in offerta / suggerito / pacchetto */
 .th-sp{display:inline;font-size:9px;letter-spacing:.5px;margin-left:2px;color:#fff;opacity:.85;vertical-align:middle}
 th:nth-child(2){text-align:left}                 /* Nome prodotto - auto */
-th:nth-child(3){width:190px;text-align:center}   /* Variabili */
+th:nth-child(3){width:285px;text-align:center}   /* Variabili */
 th:nth-child(4){width:110px}                     /* Canone base */
 th:nth-child(5){width:80px}                      /* UT calc */
 th:nth-child(6){width:82px}                      /* UT libero */
@@ -102,8 +102,8 @@ input[type=number].inp-var{width:48px}
 .var-price{font-size:12px;color:#4D4D4D;white-space:nowrap}
 input[type=number].inp-custom-unitprice{width:56px}
 input[type=number].inp-ut-ov{width:72px;color:#c00020;border-color:#c00020;background:#fff8f9}
-input[type=number].inp-ut-base,input[type=number].inp-can-base{width:64px;display:none;margin-left:3px;color:#666;border:1px dashed #999;background:#fafafa}
-input[type=number].inp-ut-base.open,input[type=number].inp-can-base.open{display:inline-block}
+input[type=number].inp-ut-base,input[type=number].inp-can-base{width:64px;display:none;color:#666;border:1px dashed #999;background:#fafafa}
+input[type=number].inp-ut-base.open,input[type=number].inp-can-base.open{display:block;margin:3px auto 0;width:68px;box-sizing:border-box}
 .base-toggle{border:none;background:none;color:#aaa;cursor:pointer;font-size:12px;padding:0 2px;margin-left:2px}
 .base-toggle:hover{color:#F90032}
 .has-base{text-decoration:underline dotted;text-underline-offset:3px}
@@ -885,7 +885,7 @@ function renderTable(section, tbodyId) {
     // --- Cella variabili (colonna 3) ---
     var varHtml = '';
     if (p.isTier) {
-      varHtml = '<div class="var-cell" style="flex-direction:column;align-items:flex-start;gap:3px"><select class="inp-var" onchange="calculateAll()" style="max-width:300px">' +
+      varHtml = '<div class="var-cell" style="flex-direction:column;align-items:stretch;gap:3px;width:100%"><select class="inp-var" onchange="calculateAll()" style="width:100%;max-width:100%;box-sizing:border-box;font-size:12px;text-overflow:ellipsis">' +
         p.tiers.map(function(t, i) { return '<option value="' + (i + 1) + '">' + t.name + (t.desc ? ' · ' + t.desc : '') + '</option>'; }).join('') +
         '</select>' +
         (p.sediPrice ? '<div class="var-cell"><span class="var-label">Sedi</span><input type="number" class="inp-var-1" min="1" step="1" placeholder="1" oninput="calculateAll()"><span class="var-price">&times;&nbsp;€' + p.sediPrice + ' oltre la 1ª</span></div>' : '') +
