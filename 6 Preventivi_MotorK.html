@@ -170,6 +170,12 @@ input.price-active{border-width:2px}
 .bozza-opts{display:flex;align-items:center;gap:14px;font-size:12px;color:#444;background:#f6f6f6;border:1px solid #e4e4e4;border-radius:6px;padding:6px 12px}
 .bozza-opts label{display:inline-flex;align-items:center;gap:5px;cursor:pointer;white-space:nowrap}
 .bozza-opts-title{font-weight:700;color:#888;font-size:10px;text-transform:uppercase;letter-spacing:.6px}
+.bozza-mig-hdr td{background:#F1F3F5;color:#222;font-weight:700;font-size:11px;padding:5px 12px}
+.bozza-mig-row td{background:#FAFAFB}
+.mig-hdr td{background:#F1F3F5;color:#222;font-weight:700;font-size:12px;padding:3px 10px}
+.mig-row td{background:#FAFAFB;padding-top:2px;padding-bottom:2px;font-size:12px}
+.mig-row .var-cell input{padding:2px 4px;width:52px}
+.mig-row .var-cell-dual{flex-direction:row!important;gap:10px;justify-content:center}
 .bozza-firma-inline{margin-top:30px;break-inside:avoid;page-break-inside:avoid}
 .bozza-hint{font-size:12px;color:#C2C1C1;font-style:italic}
 .bozza-page{background:#fff;border:none;border-radius:0;padding:32px 40px;max-width:900px;margin:0 auto;box-shadow:none;font-family:'Figtree',Arial,sans-serif}
@@ -777,6 +783,10 @@ const products = {
   ],
   crm: [
     { id:'lsk_rev',  name:'LeadSparK Ultra',                        ut:1500, canone:100,  licenses:1, licensesPrice:100, presentUrl:'https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present' },
+    { id:'lsk_mig_old', name:'Migrazione da LeadSparK Essential a LeadSparK Ultra: canone attuale Essential', ut:0, canone:0, migRole:'old', rowLabel:'Canone attuale Essential' },
+    { id:'lsk_mig_new', name:'Migrazione da LeadSparK Essential a LeadSparK Ultra: nuovo canone Ultra', ut:0, canone:100, licenses:1, licensesPrice:100, migRole:'new', rowLabel:'Nuovo canone LeadSparK Ultra' },
+    { id:'lsk_mig_ut',  name:'Migrazione da LeadSparK Essential a LeadSparK Ultra: Una Tantum di migrazione e canone differenza', ut:1500, canone:0, migRole:'ut', rowLabel:'Una Tantum di migrazione e canone per differenza' },
+    { id:'lsk_rev_free', name:'LeadSparK Ultra (licenze gratuite)', ut:0, canone:0, freeLic:true, licPrice:100 },
     { id:'lsk_wa',   name:'LeadSparK WhatsApp Business',                 ut:500,  canone:39,   licenses:1, licensesPrice:39, presentUrl:'https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present' },
     { id:'lsk_conf', name:'LeadSparK Car Configurator',                  utMultiplier:4, canone:50,   brands:1, brandsPrice:50, presentUrl:'https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present' },
     { id:'lsk_mkt',  name:'EngageSparK (Marketing & AI Process Automation)',   ut:3000, canone:550, presentUrl:'https://docs.google.com/presentation/d/1GfPmJ9rUcIxjSNRfaHlolAM4RUX1C1R5xsDXR3g7S48/present' },
@@ -887,7 +897,15 @@ function renderTable(section, tbodyId) {
   if (!tbody) return;
   tbody.innerHTML = '';
   products[section].forEach(function(p) {
+    if (p.migRole === 'old') {
+      var hdr = document.createElement('tr');
+      hdr.className = 'mig-hdr';
+      hdr.innerHTML = '<td><div class="cb-pair"><input type="checkbox" class="mig-master" title="In offerta: Migrazione Essential a Ultra (attiva tutte e 3 le righe)" onchange="migMasterToggle(this)"></div></td>' +
+        '<td colspan="8">Migrazione da LeadSparK Essential a LeadSparK Ultra</td>';
+      tbody.appendChild(hdr);
+    }
     var tr = document.createElement('tr');
+    if (p.migRole) tr.className = 'mig-row' + (p.migRole === 'ut' ? ' mig-last' : '');
     tr.dataset.pid = p.id;
     tr.dataset.section = section;
 
@@ -919,6 +937,15 @@ function renderTable(section, tbodyId) {
       varHtml = '<div class="var-cell"><span class="var-label">' + locLabel + '</span>' +
         '<input type="number" class="inp-var" min="1" value="' + p.locations + '" step="1" oninput="calculateAll()">' +
         '<span class="var-price">&times;&nbsp;€' + p.locationPrice + '</span></div>';
+    } else if (p.migRole === 'old') {
+      varHtml = '<div class="var-cell-dual">' +
+        '<div class="var-cell"><span class="var-label">N° utenze</span><input type="number" class="inp-var-1" min="0" step="1" oninput="calculateAll()" placeholder="0"></div>' +
+        '<div class="var-cell"><span class="var-label">€/utenza</span><input type="number" class="inp-var-2" min="0" step="1" oninput="calculateAll()" placeholder="0"></div>' +
+        '</div>';
+    } else if (p.freeLic) {
+      varHtml = '<div class="var-cell"><span class="var-label">Licenze gratuite</span>' +
+        '<input type="number" class="inp-var" min="0" step="1" placeholder="0" oninput="onFreeLicInput(this)">' +
+        '<span class="var-price">&times;&nbsp;€' + p.licPrice + ' omaggiate</span></div>';
     } else if (p.licenses) {
       varHtml = '<div class="var-cell"><span class="var-label">Licenze</span>' +
         '<input type="number" class="inp-var" min="1" value="' + p.licenses + '" step="1" oninput="calculateAll()">' +
@@ -974,7 +1001,7 @@ function renderTable(section, tbodyId) {
           '<input type="checkbox" class="cb-sp" title="📦 Unisci nel pacchetto SparK Platform (serve min. 2 prodotti flaggati)" onchange="handleSpToggle(this)">' +
         '</div>' +
       '</td>' +
-      '<td>' + p.name + (p.presentUrl ? '<a class="pres-link" href="' + p.presentUrl + '" target="_blank" title="Vedi presentazione">↗ presentazione</a>' : '') + '</td>' +
+      '<td>' + (p.rowLabel || p.name) + (p.presentUrl ? '<a class="pres-link" href="' + p.presentUrl + '" target="_blank" title="Vedi presentazione">↗ presentazione</a>' : '') + '</td>' +
       '<td style="text-align:center">' + varHtml + '</td>' +
       '<td>' + canoneBaseHtml + '</td>' +
       '<td><span id="ut-' + p.id + '">' + utCalcHtml + '</span>' +
@@ -985,6 +1012,7 @@ function renderTable(section, tbodyId) {
       '<td>' + canOvHtml + '</td>' +
       '<td>' + freeHtml + '</td>';
 
+    if (p.migRole) { var cbp = tr.querySelector('.cb-pair'); if (cbp) cbp.style.visibility = 'hidden'; }
     tbody.appendChild(tr);
   });
 }
@@ -1005,6 +1033,31 @@ function handleCbToggle(cb) {
   if (cb.classList.contains('cb-cost') && cb.checked && sp) {
     var spModeActive = Array.from(document.querySelectorAll('.cb-sp')).some(function(el) { return el.checked; });
     if (spModeActive) sp.checked = true;
+  }
+
+  // Migrazione Essential a Ultra: le 3 righe si flaggano insieme e sono alternative alla riga LeadSparK Ultra normale
+  var pRole = getProductOfRow(row);
+  var migPids = ['lsk_mig_old', 'lsk_mig_new', 'lsk_mig_ut'];
+  if (cb.classList.contains('cb-cost')) {
+    if (pRole && pRole.migRole) {
+      migPids.forEach(function(id) {
+        var mr = document.querySelector('tr[data-pid="' + id + '"]');
+        if (!mr) return;
+        var mc = mr.querySelector('.cb-cost'), ms = mr.querySelector('.cb-suggest'), mp = mr.querySelector('.cb-sp');
+        mc.checked = cb.checked;
+        if (cb.checked && ms) ms.checked = false;
+        if (mp) mp.checked = false;
+      });
+      if (cb.checked) {
+        var ur = document.querySelector('tr[data-pid="lsk_rev"]');
+        if (ur) { ur.querySelector('.cb-cost').checked = false; var usp = ur.querySelector('.cb-sp'); if (usp) usp.checked = false; }
+      }
+    } else if (row.dataset.pid === 'lsk_rev' && cb.checked) {
+      migPids.forEach(function(id) {
+        var mr = document.querySelector('tr[data-pid="' + id + '"]');
+        if (mr) { mr.querySelector('.cb-cost').checked = false; var mp2 = mr.querySelector('.cb-sp'); if (mp2) mp2.checked = false; }
+      });
+    }
   }
 
   // AgentSparK: se flaggo gli agenti, anche il tier si flagga (stesso stato, in offerta o suggerito)
@@ -1028,6 +1081,13 @@ function handleSpToggle(cb) {
   calculateAll();
 }
 
+function onFreeLicInput(inp) {
+  var row = inp.closest('tr');
+  var cb = row ? row.querySelector('.cb-cost') : null;
+  if (cb && (parseInt(inp.value) || 0) > 0 && !cb.checked) { cb.checked = true; handleCbToggle(cb); return; }
+  calculateAll();
+}
+
 function toggleBase(btn) {
   var inp = btn.parentNode.querySelector('input[type=number]');
   if (!inp) return;
@@ -1042,11 +1102,50 @@ function getRowCanoneCalc(row) {
   return getRowCanonePure(row);
 }
 
+// Migrazione da LeadSparK Essential a Ultra: 3 righe collegate (canone attuale scritto a mano, nuovo canone, UT di migrazione con canone differenza)
+function getProductOfRow(row) {
+  var list = products[row.dataset.section];
+  return list ? list.find(function(x) { return x.id === row.dataset.pid; }) : null;
+}
+
+function migOldValue() {
+  var r = document.querySelector('tr[data-pid="lsk_mig_old"]');
+  if (!r) return 0;
+  var a = r.querySelector('.inp-var-1'), b = r.querySelector('.inp-var-2');
+  return (a ? (parseFloat(a.value) || 0) : 0) * (b ? (parseFloat(b.value) || 0) : 0);
+}
+
+function migMasterToggle(m) {
+  var r = document.querySelector('tr[data-pid="lsk_mig_ut"]');
+  if (!r) return;
+  var c = r.querySelector('.cb-cost');
+  c.checked = m.checked;
+  handleCbToggle(c);
+}
+
+function migSyncMaster() {
+  var m = document.querySelector('.mig-master'), r = document.querySelector('tr[data-pid="lsk_mig_ut"] .cb-cost');
+  if (m && r) m.checked = r.checked;
+}
+
+function migNewRow() { return document.querySelector('tr[data-pid="lsk_mig_new"]'); }
+
+// Canone del nuovo Ultra come lo vede il cliente (con eventuale sconto manuale)
+function migNewFinal() {
+  var nr = migNewRow();
+  if (!nr) return 0;
+  var ov = nr.querySelector('.inp-can-ov');
+  if (ov && ov.value !== '') return parseFloat(ov.value) || 0;
+  return getRowCanoneCalc(nr);
+}
+
 function getRowCanonePure(row) {
   var pid = row.dataset.pid;
   var section = row.dataset.section;
   var p = products[section].find(function(x) { return x.id === pid; });
   if (!p) return 0;
+  if (p.migRole === 'old') return migOldValue();
+  if (p.migRole === 'ut') { var nrw = migNewRow(); return Math.max(0, (nrw ? getRowCanoneCalc(nrw) : 0) - migOldValue()); }
 
   var base = p.canone;
   var varInp = row.querySelector('.inp-var');
@@ -1094,8 +1193,15 @@ function getRowCanonePure(row) {
 }
 
 function getRowCanone(row) {
+  var pm = getProductOfRow(row);
+  if (pm && (pm.migRole === 'old' || pm.migRole === 'new')) return 0; // righe informative: non entrano nei totali
   var canOv = row.querySelector('.inp-can-ov');
   if (canOv && canOv.value !== '') return parseFloat(canOv.value) || 0;
+  if (pm && pm.migRole === 'ut') {
+    var baseIn = row.querySelector('.inp-can-base');
+    if (baseIn && baseIn.value !== '') return parseFloat(baseIn.value) || 0;
+    return Math.max(0, migNewFinal() - migOldValue());
+  }
   return getRowCanoneCalc(row);
 }
 
@@ -1119,6 +1225,8 @@ function getRowUTPure(row) {
 }
 
 function getRowUT(row) {
+  var pm = getProductOfRow(row);
+  if (pm && (pm.migRole === 'old' || pm.migRole === 'new')) return 0;
   var utOv = row.querySelector('.inp-ut-ov');
   if (utOv && utOv.value !== '') return parseFloat(utOv.value) || 0;
   return getRowUTCalc(row);
@@ -1135,6 +1243,7 @@ function getActiveSPPackage() {
     var pid = row.dataset.pid, section = row.dataset.section;
     var p = products[section] ? products[section].find(function(x) { return x.id === pid; }) : null;
     if (!p) return;
+    if (p.migRole || p.freeLic) return;
     var freeInp = row.querySelector('.inp-free-months');
     spCandidates.push({
       pid: pid, section: section,
@@ -1438,6 +1547,7 @@ function updateAgentTierWarning() {
 }
 
 function calculateAll() {
+  migSyncMaster();
   updateAgentTierWarning();
   var pkg = getActiveSPPackage();
   var totalUT = 0, totalCanone = 0;
@@ -2487,7 +2597,21 @@ async function applyPreset(id) {
   switchTab('spark', sparkBtn);
 }
 
-function computePresetRowListino(r) {
+function computePresetRowListino(r, allRows) {
+  var raw = computePresetRowListinoRaw(r);
+  var pr = products[r.section] ? products[r.section].find(function(x) { return x.id === r.pid; }) : null;
+  if (pr && (pr.migRole === 'old' || pr.migRole === 'new')) return { ut: 0, canone: 0 };
+  if (pr && pr.migRole === 'ut' && !(r.canOv !== '' && r.canOv != null)) {
+    var rows = allRows || [];
+    var nw = rows.find(function(x) { return x.pid === 'lsk_mig_new'; });
+    var od = rows.find(function(x) { return x.pid === 'lsk_mig_old'; });
+    var newC = nw ? computePresetRowListinoRaw(nw).canone : 0;
+    raw.canone = Math.max(0, newC - (od ? (parseFloat(od.var1) || 0) * (parseFloat(od.var2) || 0) : 0));
+  }
+  return raw;
+}
+
+function computePresetRowListinoRaw(r) {
   legacyRow(r);
   var p = products[r.section] ? products[r.section].find(function(x) { return x.id === r.pid; }) : null;
   if (!p) return { ut: 0, canone: 0 };
@@ -2535,7 +2659,7 @@ function computePresetPricing(preset) {
   var utListino = 0, canListino = 0;
   (preset.rows || []).forEach(function(r) {
     if (!r.cost) return;
-    var c = computePresetRowListino(r);
+    var c = computePresetRowListino(r, preset.rows);
     utListino += c.ut;
     canListino += c.canone;
   });
@@ -3049,13 +3173,34 @@ function renderBozza() {
       if (cbCost && cbCost.checked) {
         var freeInp = row.querySelector('.inp-free-months');
         var freeMonths = freeInp ? (parseInt(freeInp.value) || 0) : 0;
+        if (p.migRole) {
+          if (p.migRole === 'ut') {
+            var nrow = migNewRow();
+            var nPm = products.crm.find(function(x) { return x.id === 'lsk_mig_new'; });
+            sectionCost.push({
+              isMig: true,
+              oldVal: migOldValue(),
+              newName: 'LeadSparK Ultra, nuovo canone' + (nrow ? getProductVarSuffix(nPm, nrow) : ''),
+              newFinal: migNewFinal(), newCalc: nrow ? getRowCanoneCalc(nrow) : 0,
+              ut: getRowUT(row), utCalc: getRowUTCalc(row), canone: getRowCanone(row), canoneCalc: getRowCanoneCalc(row),
+              freeMonths: 0
+            });
+          }
+          return;
+        }
+        if (p.freeLic) {
+          var flIn = row.querySelector('.inp-var');
+          var flN = flIn ? (parseInt(flIn.value) || 0) : 0;
+          if (flN > 0) sectionCost.push({ name: 'LeadSparK Ultra (licenze gratuite n° ' + flN + ')', isFreeLic: true, gift: flN * p.licPrice, ut: 0, utCalc: 0, canone: 0, canoneCalc: 0, freeMonths: 0 });
+          return;
+        }
         var isAgsk = (pid === 'agsk_tier' || pid === 'agsk_agents');
         if (isAgsk) hasAgentCosti = true;
         var item = { name: p.name + getProductVarSuffix(p, row) + (isAgsk ? ' *' : ''), ut: getRowUT(row), utCalc: getRowUTCalc(row), canone: getRowCanone(row), canoneCalc: getRowCanoneCalc(row), freeMonths: freeMonths, presentUrl: p.presentUrl || '', isSP: isRowInSPPackage(spPackage, row) };
         sectionCost.push(item);
         if (s.key === 'integrazioni') hasIntegrazioni = true;
       }
-      if (cbSuggest && cbSuggest.checked) {
+      if (cbSuggest && cbSuggest.checked && !p.migRole) {
         suggestItems.push({ name: p.name + getProductVarSuffix(p, row), presentUrl: p.presentUrl || '' });
       }
     });
@@ -3175,6 +3320,20 @@ function renderBozza() {
     html += '<th>Prodotto</th><th>Una Tantum</th><th>Canone / mese</th>';
     html += '</tr></thead><tbody>';
     section.rows.forEach(function(item) {
+      if (item.isMig) {
+        totalUT += item.ut; totalCan += item.canone;
+        listinoUT += item.utCalc; listinoCan += item.canoneCalc;
+        var mc = 'class="bozza-mig-row"';
+        html += '<tr class="bozza-mig-hdr"><td colspan="3">Migrazione da LeadSparK Essential a LeadSparK Ultra</td></tr>';
+        html += '<tr ' + mc + '><td>Canone attuale LeadSparK Essential</td><td>—</td><td style="color:#666">€ ' + Math.round(item.oldVal).toLocaleString('it-IT') + '</td></tr>';
+        html += '<tr ' + mc + '><td>' + item.newName + '</td><td>—</td><td>' + formatRowPriceCell(item.newFinal, item.newCalc, true, 0) + '</td></tr>';
+        html += '<tr ' + mc + ' style="font-weight:600"><td>Una Tantum di migrazione e canone differenza<div style="font-size:10px;color:#777;font-weight:400">nuovo canone meno canone attuale: paghi solo la differenza</div></td><td>' + formatRowPriceCell(item.ut, item.utCalc, false) + '</td><td>€ ' + Math.round(item.canone).toLocaleString('it-IT') + '</td></tr>';
+        return;
+      }
+      if (item.isFreeLic) {
+        html += '<tr class="bozza-free-lic"><td>' + item.name + '</td><td>—</td><td><span style="color:#1E9E5A;font-weight:600">Omaggio</span> <span style="color:#888;text-decoration:line-through">€ ' + item.gift.toLocaleString('it-IT') + '</span></td></tr>';
+        return;
+      }
       var isPkgMember = spPackage && item.isSP;
       if (!isPkgMember) { totalUT += item.ut; totalCan += item.canone; }
       listinoUT  += item.utCalc;
@@ -3510,7 +3669,7 @@ function populateRandom() {
     var eligible = rows.filter(function(r) {
       var pid = r.dataset.pid;
       var p = products[section].find(function(x) { return x.id === pid; });
-      return p && !p.isCustom;
+      return p && !p.isCustom && !p.migRole && !p.freeLic;
     });
     // Mescola e prendi N
     eligible.sort(function() { return Math.random() - 0.5; });
